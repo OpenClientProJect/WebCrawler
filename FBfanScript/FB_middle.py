@@ -507,7 +507,7 @@ async def execute_tasks_immediately(status_window, content0, content1, cookies, 
 
     if source_mapping is None:
         source_mapping = {}
-
+    cookies = getCookie()
     crawler = Crawler(cookies, data, users, start_position, content0, content1, task_order, rest_times, source_mapping)
     crawler.completion_times = completion_times
 
@@ -540,7 +540,7 @@ async def execute_tasks_immediately(status_window, content0, content1, cookies, 
         await asyncio.sleep(1)
 
     except Exception as e:
-        status_window.update_signal.emit(f"任务执行失败: {str(e)}")
+        # status_window.update_signal.emit(f"任务执行失败: {str(e)}")
         await asyncio.sleep(1)
         print(f"任务执行失败: {str(e)}")
     finally:
