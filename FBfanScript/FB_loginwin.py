@@ -38,7 +38,7 @@ class MyApplog(QDialog):
 
         self.title_label = QLabel("Facebook登錄", self)  # 自定义标题文本
         self.title_label.setFont(QFont("Arial", 15, QFont.Bold))
-        self.title_label.setStyleSheet("color: #6a5acd;font-weight: bold;")  # 设置标题颜色
+        self.title_label.setStyleSheet("color: #326aff;font-weight: bold;")  # 设置标题颜色
         self.setFixedSize(350, 0)  # 设置窗口的固定大小
         title_bar.addWidget(self.title_label)
         title_bar.addStretch(1)
@@ -49,13 +49,13 @@ class MyApplog(QDialog):
         minimize_button.setFixedSize(20, 20)  # 缩小按钮尺寸
         minimize_button.setStyleSheet("""
             QPushButton {
-                background-color: #6a5acd;
+                background-color: #165dff;
                 color: white;
                 border-radius: 10px;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #5a4abc;
+                background-color: #69a1ff;
             }
             QPushButton:pressed {
                 background-color: #4a3aac;
@@ -70,7 +70,7 @@ class MyApplog(QDialog):
         close_button.setFixedSize(20, 20)  # 缩小按钮尺寸
         close_button.setStyleSheet("""
             QPushButton {
-                background-color: #ff6b6b;
+                background-color: #69a1ff;
                 color: white;
                 border-radius: 10px;
                 border: none;
@@ -165,7 +165,7 @@ class MyApplog(QDialog):
         self.button.setStyleSheet("""
             QPushButton {
                 border-radius: 10px;
-                background-color: #6495ed;
+                background-color: #1049da;
                 color: white;
                 font-size: 16px;
                 font-weight: bold;

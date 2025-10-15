@@ -152,7 +152,7 @@ class MyApp(QWidget):
         # 添加登录表单标题
         login_title = QLabel("用戶登錄")
         login_title.setFont(QFont("微軟雅黑", 16, QFont.Bold))
-        login_title.setStyleSheet("margin-top: 10px; margin-bottom: 20px;color: #3b3f99;font-weight: bold;")
+        login_title.setStyleSheet("margin-top: 10px; margin-bottom: 20px;color: #1e5eff;font-weight: bold;")
         login_title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(login_title)
 
@@ -256,7 +256,7 @@ class MyApp(QWidget):
         self.button.setStyleSheet("""
             QPushButton {
                 border-radius: 8px;
-                background-color: #66b4ff;
+                background-color: #1e5eff;
                 color: white;
                 font-size: 12px;
                 font-weight: bold;
