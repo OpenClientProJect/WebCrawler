@@ -33,7 +33,7 @@ class DraggableLabel(QLabel):
             border-radius: 12px;
             font-weight: bold;
             font-size: 14px;
-            color: white;
+            color: #3d4252;
             margin: 5px;
             border: none;
             /* 磨砂玻璃效果阴影 */
@@ -57,7 +57,7 @@ class DraggableLabel(QLabel):
                 border-radius: 10px;
                 font-weight: bold;
                 font-size: 14px;
-                color: white;
+                color: #3d4252;
                 margin: 5px;
                 border: none;
                 /* 悬停时阴影更明显 */
@@ -75,7 +75,7 @@ class DraggableLabel(QLabel):
                 border-radius: 10px;
                 font-weight: bold;
                 font-size: 14px;
-                color: white;
+                color: #3d4252;
                 margin: 5px;
                 border: none;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 
@@ -574,7 +574,7 @@ class TaskOrderWindow(QDialog):
 
     def initUI(self):
         # 设置窗口背景颜色
-        self.setStyleSheet("background-color: #e2dbff; color: white;")
+        self.setStyleSheet("background-color: #e6f0ff; color: white;")
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -584,7 +584,7 @@ class TaskOrderWindow(QDialog):
         title_bar = QWidget()
         title_bar.setFixedHeight(30)
         title_bar.setStyleSheet("""
-            background-color: #eff4ff; 
+            background-color: #e6f0ff; 
             border-top-left-radius: 5px; 
             border-top-right-radius: 5px;
         """)
@@ -592,7 +592,7 @@ class TaskOrderWindow(QDialog):
         title_bar_layout.setContentsMargins(10, 0, 5, 0)
 
         self.title_label = QLabel("任務執行順序")
-        self.title_label.setStyleSheet("color: black;")  # 改为黑色字体
+        self.title_label.setStyleSheet("color: #739bff;")  # 改为黑色字体
         self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
         title_bar_layout.addWidget(self.title_label)
         title_bar_layout.addStretch(1)
@@ -652,12 +652,12 @@ class TaskOrderWindow(QDialog):
 
         # 右侧可拖拽标签区域
         right_panel = QFrame()
-        right_panel.setStyleSheet("background-color: #e2dbff;")
+        right_panel.setStyleSheet("background-color: #e6f0ff;")
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 10, 10, 10)
 
         label = QLabel("拖拽任務到左側區域:")
-        label.setStyleSheet("color: blue;font-size: 13px;")  # 改为蓝色字体
+        label.setStyleSheet("color: #739bff;font-size: 13px;")  # 改为蓝色字体
         label.setFont(QFont("微軟雅黑", 12))
         label.setAlignment(Qt.AlignLeft)
         right_layout.addWidget(label)
@@ -758,9 +758,9 @@ class TaskOrderWindow(QDialog):
                 background-color: #ff6b6b;
                 color: white;
                 border: none;
-                border-radius: 5px;
-                padding: 8px;
+                padding: 10px;
                 font-weight: bold;
+                border-radius: 5px;
             }
             QPushButton:hover {
                 background-color: #ee5253;
@@ -895,7 +895,35 @@ class TaskOrderWindow(QDialog):
     # 在 TaskOrderWindow 类的 saveOrder 方法中添加启动时间设置
     def saveOrder(self):
         if not self.current_order:
-            QMessageBox.warning(self, "警告", "請先添加任務到左側!")
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("警告")
+            msg_box.setText("請先添加任務到左側!")
+            msg_box.setIcon(QMessageBox.Warning)
+
+            # 设置消息框的样式
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                    color: black;  // 设置文字颜色为黑色
+                    border-radius: 8px;
+                }
+                QMessageBox QLabel {
+                    color: black;  // 确保标签文字也是黑色
+                }
+                QMessageBox QPushButton {
+                    background-color: #63b5ff;
+                    color: white;
+                    border: none;
+                    padding: 8px;
+                    font-weight: bold;
+                    border-radius: 5px;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #3492ED;
+                }
+            """)
+
+            msg_box.exec_()
             return
 
         # 弹出启动时间设置对话框
@@ -909,16 +937,16 @@ class TaskOrderWindow(QDialog):
         dialog.setStyleSheet("""
             QDialog {
                 background-color: #f5f8ff;
-                color: #333333;
+                color: black;
             }
             QLabel {
-                color: #333333;
+                color: black;
                 font-size: 14px;
                 background-color: transparent;
             }
             QLineEdit {
                 background-color: white;
-                color: #333333;
+                color: black;
                 border: 1px solid #cccccc;
                 border-radius: 4px;
                 padding: 8px;
@@ -926,7 +954,7 @@ class TaskOrderWindow(QDialog):
             }
             QPushButton {
                 background-color: #63b5ff;
-                color: white;
+                color: black;
                 border: none;
                 padding: 8px 16px;
                 font-weight: bold;
