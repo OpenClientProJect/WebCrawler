@@ -25,7 +25,7 @@ class MyApplog(QDialog):
         # 设置窗口属性
         self.setWindowTitle('賬號登錄')  # 这个标题现在只用于任务栏显示
         # 设置窗口背景颜色
-        self.setStyleSheet("background-color: #f8f4ff;")
+        self.setStyleSheet("background-color: #e6f0ff;")
 
         # 创建整体布局
         main_layout = QVBoxLayout()
