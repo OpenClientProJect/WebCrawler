@@ -116,7 +116,7 @@ class StatusWindow(QDialog):
         # 任务标题
         task_title = QLabel("任務隊列")
         task_title.setFont(QFont("微软雅黑", 12, QFont.Bold))
-        task_title.setStyleSheet("color: #6a5acd; padding: 5px; border-bottom: 1px solid #d4d4ff;")
+        task_title.setStyleSheet("color: #165dff; padding: 5px; border-bottom: 1px solid #d4d4ff;")
         task_title.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(task_title)
 
@@ -165,14 +165,14 @@ class StatusWindow(QDialog):
         title_container = QWidget()
         title_container.setFixedHeight(40)
         title_container.setStyleSheet(
-            "background-color: #e2dbff; border-top-right-radius: 8px;")
+            "background-color: #e6f0ff; border-top-right-radius: 8px;")
 
         title_bar = QHBoxLayout(title_container)
         title_bar.setContentsMargins(15, 0, 15, 0)
 
         self.title_label = QLabel("執行任務狀態")
         self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        self.title_label.setStyleSheet("color: #333333; background: transparent;")
+        self.title_label.setStyleSheet("color: #165dff; background: transparent;")
         title_bar.addWidget(self.title_label)
         title_bar.addStretch(1)
 
@@ -183,7 +183,7 @@ class StatusWindow(QDialog):
         min_button.clicked.connect(self.showMinimized)
         min_button.setStyleSheet("""
             QPushButton {
-                background-color: #6a5acd;
+                background-color: #165dff;
                 color: white;
                 border-radius: 10px;
                 border: none;
@@ -204,7 +204,7 @@ class StatusWindow(QDialog):
         close_button.clicked.connect(self.close)
         close_button.setStyleSheet("""
             QPushButton {
-                background-color: #6a5acd;
+                background-color: #69a1ff;
                 color: white;
                 border-radius: 10px;
                 border: none;
@@ -336,7 +336,7 @@ class StatusWindow(QDialog):
 
         # 任务颜色映射
         task_colors = {
-            0: "#9ee6ef",
+            0: "#165dff",
             1: "#b4ddb6",
             2: "#6A5ACD",
             3: "#DDA0DD",
