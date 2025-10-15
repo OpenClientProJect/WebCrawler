@@ -87,7 +87,7 @@ class DraggableLabel(QLabel):
 
     def getDarkerColor(self):
         """获取更深的颜色用于悬停效果"""
-        colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+        colors = ["#165dff", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
         original_color = colors[self.index]
         # 简单的颜色变暗处理
         if original_color.startswith('#'):
@@ -102,7 +102,7 @@ class DraggableLabel(QLabel):
 
     def getOriginalColor(self):
         """获取原始颜色"""
-        colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+        colors = ["#165dff", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
         return colors[self.index]
 
     def mousePressEvent(self, event):
@@ -256,7 +256,7 @@ class DropArea(QFrame):
                         self.labels.pop(i)
 
                         # 创建新标签并添加到相同位置
-                        colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+                        colors = ["#165dff", "#a5d6a7", "#9fa8da", "#DDA0DD", "#f8bbd0", "#ffe0b2"]
                         texts = ["關鍵字任務", "搜尋添加好友", "社團邀請好友", "粉轉邀請好友", "用戶留言", "休息時間"]
                         new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                         new_label.is_internal = True  # 标记为内部标签
@@ -308,7 +308,7 @@ class DropArea(QFrame):
                         self.swapLabels(source_index, target_index)
                 else:
                     # 外部拖动：插入新标签并移除目标标签
-                    colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+                    colors = ["#165dff", "#a5d6a7", "#9fa8da", "#DDA0DD", "#f8bbd0", "#ffe0b2"]
                     texts = ["關鍵字任務", "搜尋添加好友", "社團邀請好友", "粉轉邀請好友", "用戶留言", "休息時間"]
 
                     # 移除目标位置的标签
@@ -344,7 +344,7 @@ class DropArea(QFrame):
                     self.labels.insert(target_index, new_label)
             else:
                 # 添加到末尾
-                colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+                colors = ["#165dff", "#a5d6a7", "#9fa8da", "#DDA0DD", "#f8bbd0", "#ffe0b2"]
                 texts = ["關鍵字任務", "搜尋添加好友", "社團邀請好友", "粉轉邀請好友", "用戶留言", "休息時間"]
                 new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                 new_label.is_internal = True  # 标记为内部标签
@@ -663,7 +663,7 @@ class TaskOrderWindow(QDialog):
         right_layout.addWidget(label)
 
         # 创建4个可拖拽的标签，但根据配置决定是否显示
-        colors = ["#9ee6ef", "#b4ddb6", "#6A5ACD", "#DDA0DD", "#f598b7", "#ffd598"]
+        colors = ["#165dff", "#a5d6a7", "#9fa8da", "#DDA0DD", "#f8bbd0", "#ffe0b2"]
         texts = ["關鍵字任務", "搜尋添加好友", "社團邀請好友", "粉轉邀請好友", "用戶留言", "休息時間"]
 
         # 根据配置决定哪些标签应该显示
