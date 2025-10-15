@@ -201,50 +201,6 @@ class DropArea(QFrame):
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.scroll_area)
 
-        # 创建包含"新增區域"标签和"清空任務"按钮的容器
-        bottom_container = QWidget()
-        bottom_container.setStyleSheet("background-color: #ffffff;")
-        bottom_layout = QHBoxLayout(bottom_container)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(10)
-
-        # 美化"添加区域"标签
-        self.add_area_label = QLabel("新增區域")
-        self.add_area_label.setAlignment(Qt.AlignCenter)
-        self.add_area_label.setStyleSheet("""
-            QLabel {
-                color: #666666;
-                font-size: 16px;
-                font-weight: bold;
-                padding: 10px;
-                background-color: transparent;
-            }
-        """)
-        self.add_area_label.setFont(QFont("微軟雅黑", 10))
-        # bottom_layout.addWidget(self.add_area_label)
-        bottom_layout.addStretch(1)
-        # 添加清空按钮
-        self.clear_btn = QPushButton("清空任務")
-        self.clear_btn.setFixedWidth(self.clear_btn.fontMetrics().width("清空任務") + 20)
-        self.clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ff6b6b;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ee5253;
-            }
-        """)
-        bottom_layout.addWidget(self.clear_btn)
-
-        # 添加弹性空间使元素居中
-        bottom_layout.addStretch(1)
-
-        main_layout.addWidget(bottom_container)
 
         self.setLayout(main_layout)
 
@@ -688,10 +644,8 @@ class TaskOrderWindow(QDialog):
         left_panel = QVBoxLayout()
         left_panel.setContentsMargins(0, 0, 0, 0)
 
-        # 放置区域 - 现在DropArea内部已经包含了清空按钮
+        # 放置区域
         self.drop_area = DropArea()
-        # 连接清空按钮的点击事件
-        self.drop_area.clear_btn.clicked.connect(self.clearAll)
         left_panel.addWidget(self.drop_area)
 
         content_layout.addLayout(left_panel, 2)  # 2/3的空间
@@ -794,6 +748,25 @@ class TaskOrderWindow(QDialog):
         save_btn_container = QWidget()
         save_btn_layout = QHBoxLayout(save_btn_container)
         save_btn_layout.setContentsMargins(0, 0, 0, 0)
+        save_btn_layout.setSpacing(10)
+
+        # 添加清空按钮
+        self.clear_btn = QPushButton("清空任務")
+        self.clear_btn.setFixedWidth(self.clear_btn.fontMetrics().width("清空任務") + 20)
+        self.clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ff6b6b;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ee5253;
+            }
+        """)
+        save_btn_layout.addWidget(self.clear_btn)
 
         save_btn = QPushButton("保存順序")
         save_btn.setFixedWidth(save_btn.fontMetrics().width("保存順序") + 20)
@@ -811,6 +784,7 @@ class TaskOrderWindow(QDialog):
             }
         """)
         save_btn.clicked.connect(self.saveOrder)
+        save_btn_layout.addWidget(save_btn)
         # 添加操作指南文本
         guide_text = QLabel(
             "操作指南:\n"
@@ -834,7 +808,7 @@ class TaskOrderWindow(QDialog):
         """)
         guide_text.setWordWrap(True)  # 允许文本换行
         right_layout.addWidget(guide_text)
-        right_layout.addWidget(save_btn)
+        right_layout.addWidget(save_btn_container)
         content_layout.addWidget(right_panel, 1)  # 1/3的空间
 
         main_layout.addWidget(content_widget)
@@ -842,6 +816,7 @@ class TaskOrderWindow(QDialog):
 
         # 连接顺序改变信号
         self.drop_area.orderChanged.connect(self.onOrderChanged)
+        self.clear_btn.clicked.connect(self.clearAll)
 
         self.current_order = []
 
