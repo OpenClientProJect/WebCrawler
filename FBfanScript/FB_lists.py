@@ -223,24 +223,6 @@ class DropArea(QFrame):
         self.add_area_label.setFont(QFont("微軟雅黑", 10))
         # bottom_layout.addWidget(self.add_area_label)
         bottom_layout.addStretch(1)
-        # 添加清空按钮
-        self.clear_btn = QPushButton("清空任務")
-        self.clear_btn.setFixedWidth(self.clear_btn.fontMetrics().width("清空任務") + 20)
-        self.clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ff6b6b;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ee5253;
-            }
-        """)
-        bottom_layout.addWidget(self.clear_btn)
-
         # 添加弹性空间使元素居中
         bottom_layout.addStretch(1)
 
@@ -811,6 +793,28 @@ class TaskOrderWindow(QDialog):
             }
         """)
         save_btn.clicked.connect(self.saveOrder)
+        
+        # 添加清空按钮
+        self.clear_btn = QPushButton("清空任務")
+        self.clear_btn.setFixedWidth(self.clear_btn.fontMetrics().width("清空任務") + 20)
+        self.clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ff6b6b;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ee5253;
+            }
+        """)
+        self.clear_btn.clicked.connect(self.clearAll)
+        
+        save_btn_layout.addWidget(save_btn)
+        save_btn_layout.addWidget(self.clear_btn)
+        
         # 添加操作指南文本
         guide_text = QLabel(
             "操作指南:\n"
@@ -834,7 +838,7 @@ class TaskOrderWindow(QDialog):
         """)
         guide_text.setWordWrap(True)  # 允许文本换行
         right_layout.addWidget(guide_text)
-        right_layout.addWidget(save_btn)
+        right_layout.addWidget(save_btn_container)
         content_layout.addWidget(right_panel, 1)  # 1/3的空间
 
         main_layout.addWidget(content_widget)
