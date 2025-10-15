@@ -185,7 +185,7 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
 
 
 async def check_version():
-    version = '1.0.0.7'
+    version = '1.0.0.8'
     remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=InstagramScript'
 
     async with aiohttp.ClientSession() as session:
