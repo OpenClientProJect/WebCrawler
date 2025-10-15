@@ -33,7 +33,7 @@ class DraggableLabel(QLabel):
             border-radius: 12px;
             font-weight: bold;
             font-size: 14px;
-            color: #3d4252;
+            color: white;
             margin: 5px;
             border: none;
             /* 磨砂玻璃效果阴影 */
@@ -57,7 +57,7 @@ class DraggableLabel(QLabel):
                 border-radius: 10px;
                 font-weight: bold;
                 font-size: 14px;
-                color: #3d4252;
+                color: white;
                 margin: 5px;
                 border: none;
                 /* 悬停时阴影更明显 */
@@ -75,7 +75,7 @@ class DraggableLabel(QLabel):
                 border-radius: 10px;
                 font-weight: bold;
                 font-size: 14px;
-                color: #3d4252;
+                color: white;
                 margin: 5px;
                 border: none;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 
