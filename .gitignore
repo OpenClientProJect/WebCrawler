@@ -1,0 +1,12 @@
+/instagram/dist/
+/.idea
+/instagram.iml
+/.venv/
+/FBScriptver.spec
+/InstagramScriptver.spec
+/dist/
+/build/
+/.workflow/
+/ai.py
+/bi.py
+/pi.py

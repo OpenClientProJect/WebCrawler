@@ -1,0 +1,16 @@
+{
+    "account": {
+        "username": "yxin71322",
+        "password": "Ww123456."
+    },
+    "database": {
+        "host": "dbs.kydb.vip",
+        "name": "FbSocietiesUser",
+        "username": "sa",
+        "password": "Yunsin@#861123823_shp4"
+    },
+    "crawler": {
+        "delay": 15,
+        "proxy": "http://127.0.0.1:25378"
+    }
+}

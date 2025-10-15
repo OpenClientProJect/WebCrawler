@@ -1,0 +1,15 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\IGProtocol]
+@="URL:IGProtocol Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\IGProtocol\DefaultIcon]
+@="C:\\Users\\Administrator\\PycharmProjects\\PythonProject1\\Igver\\IGver.exe,1"
+
+[HKEY_CLASSES_ROOT\IGProtocol\shell]
+
+[HKEY_CLASSES_ROOT\IGProtocol\shell\open]
+
+[HKEY_CLASSES_ROOT\IGProtocol\shell\open\command]
+@="\"C:\\Users\\Administrator\\PycharmProjects\\PythonProject1\\Igver\\IGver.exe\" \"%1\""

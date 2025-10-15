@@ -1,0 +1,5 @@
+asyncio==3.4.3
+playwright==1.51.0
+pymssql==2.3.4
+python-dotenv==1.1.0
+requests==2.32.3
