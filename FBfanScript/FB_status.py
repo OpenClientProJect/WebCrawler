@@ -107,7 +107,7 @@ class StatusWindow(QDialog):
         # 左侧任务方块区域
         self.left_panel = QWidget()
         self.left_panel.setFixedWidth(200)  # 固定宽度
-        self.left_panel.setStyleSheet("background-color: #f8f7ff; border-right: 1px solid #e0e0e0;")
+        self.left_panel.setStyleSheet("background-color: #e6f0ff; border-right: 1px solid #e0e0e0;")
 
         left_layout = QVBoxLayout(self.left_panel)
         left_layout.setContentsMargins(10, 50, 10, 10)

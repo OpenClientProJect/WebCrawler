@@ -315,7 +315,7 @@ class MyApp(QWidget):
         # 设置窗口样式
         self.setStyleSheet("""
             QWidget {
-                background-color: white;
+                background-color: #e6f0ff;
             }
         """)
 
