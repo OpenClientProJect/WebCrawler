@@ -79,7 +79,7 @@ class MyApp(QWidget):
 
         # 创建轮播图
         self.slider = ImageSlider()
-        self.slider.add_image(resource_path("slide4.png"))
+        self.slider.add_image(resource_path("loginba.png"))
 
         left_layout.addWidget(self.slider)
 
