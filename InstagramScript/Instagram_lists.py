@@ -40,6 +40,65 @@ class DraggableLabel(QLabel):
         self.setMinimumHeight(80)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
+    # 添加鼠标悬停效果
+    def enterEvent(self, event):
+        if self.draggable:
+            self.setStyleSheet(f"""
+                background-color: {self.getDarkerColor()}; 
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 14px;
+                color: #3d4252;
+                margin: 5px;
+                border: none;
+                /* 悬停时阴影更明显 */
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25), 
+                            0 8px 25px rgba(0, 0, 0, 0.2);
+                transform: translateY(-2px);
+                transition: all 0.3s ease;
+            """)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self.draggable:
+            self.setStyleSheet(f"""
+                background-color: {self.getOriginalColor()}; 
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 14px;
+                color: #3d4252;
+                margin: 5px;
+                border: none;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 
+                            0 6px 20px rgba(0, 0, 0, 0.15);
+                transform: translateY(0);
+                transition: all 0.3s ease;
+            """)
+        super().leaveEvent(event)
+
+    def getDarkerColor(self):
+        """获取更深的颜色用于悬停效果"""
+        colors = ["#f598b7", "#9ee6ef", "#b4ddb6", "#ffd598"]
+        original_color = colors[self.index]
+        # 简单的颜色变暗处理
+        if original_color.startswith('#'):
+            r = int(original_color[1:3], 16)
+            g = int(original_color[3:5], 16)
+            b = int(original_color[5:7], 16)
+            r = max(0, r - 20)
+            g = max(0, g - 20)
+            b = max(0, b - 20)
+            return f"#{r:02x}{g:02x}{b:02x}"
+        return original_color
+
+    def getOriginalColor(self):
+        """获取原始颜色"""
+        colors = ["#f598b7", "#9ee6ef", "#b4ddb6", "#ffd598"]
+        return colors[self.index]
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.draggable:
+            self.drag_start_position = event.pos()
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and self.draggable:
             self.drag_start_position = event.pos()
