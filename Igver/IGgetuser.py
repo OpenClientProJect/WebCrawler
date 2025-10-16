@@ -4,7 +4,7 @@ import asyncio
 from task import main
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,QMessageBox
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from qasync import QEventLoop, asyncClose, asyncSlot
 
 class MyApp(QWidget):
@@ -187,6 +187,9 @@ class MyApp(QWidget):
                 outline: none;
             }
         """
+        # 输入框大小
+        input_size = QSize(350, 40)
+
 
         # 设备号输入区域
         device_group = QVBoxLayout()
@@ -200,6 +203,7 @@ class MyApp(QWidget):
         self.input0.setText("000")
         self.input0.setPlaceholderText("請輸入設備號...")
         self.input0.setStyleSheet(input_style)
+        self.input0.setFixedSize(input_size)
         device_group.addWidget(self.input0)
 
         content_layout.addLayout(device_group)
@@ -232,6 +236,7 @@ class MyApp(QWidget):
         self.input1.setText("")
         self.input1.setPlaceholderText("請輸入關鍵詞...")
         self.input1.setStyleSheet(input_style)
+        self.input1.setFixedSize(input_size)
         keyword_group.addWidget(self.input1)
 
         content_layout.addLayout(keyword_group)
@@ -264,6 +269,7 @@ class MyApp(QWidget):
         self.input2.setText("2025")
         self.input2.setPlaceholderText("請輸入獲取的人數...")
         self.input2.setStyleSheet(input_style)
+        self.input2.setFixedSize(input_size)
         count_group.addWidget(self.input2)
 
         content_layout.addLayout(count_group)
@@ -277,6 +283,7 @@ class MyApp(QWidget):
         browser_group.addWidget(browser_label)
 
         self.browser_dropdown = QComboBox(self)
+        self.browser_dropdown.setFixedSize(input_size)
         self.browser_dropdown.addItem("隱藏輸入的鏈接地址框")
         self.browser_dropdown.addItem("顯示輸入的鏈接地址框")
         self.browser_dropdown.setStyleSheet(dropdown_style)
@@ -303,6 +310,7 @@ class MyApp(QWidget):
         self.dropdown = QComboBox(self)
         self.dropdown.addItem("隱藏輸入的鏈接地址框")
         self.dropdown.addItem("顯示輸入的鏈接地址框")
+        self.dropdown.setFixedSize(input_size)
         self.dropdown.setStyleSheet(dropdown_style)
         self.dropdown.currentIndexChanged.connect(self.toggle_textbox)
         fans_group.addWidget(self.dropdown)
