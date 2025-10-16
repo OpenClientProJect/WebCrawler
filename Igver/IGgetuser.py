@@ -120,7 +120,7 @@ class MyApp(QWidget):
 
         input_style = """
             QLineEdit {
-                padding: 15px 20px;
+                padding: 5px 10px;
                 border: 2px solid #e1e5e9;
                 border-radius: 12px;
                 background-color: white;
@@ -138,8 +138,8 @@ class MyApp(QWidget):
         label_style = """
             QLabel {
                 color: #495057;
-                font-weight: 600;
-                font-size: 11px;
+                font-weight: 500;
+                font-size: 15px;
                 margin-bottom: 8px;
                 font-family: "微軟雅黑";
             }
@@ -147,7 +147,7 @@ class MyApp(QWidget):
 
         dropdown_style = """
             QComboBox {
-                padding: 12px 20px;
+                padding: 5px 10px;
                 border: 2px solid #e1e5e9;
                 border-radius: 12px;
                 background-color: white;
@@ -208,9 +208,25 @@ class MyApp(QWidget):
         keyword_group = QVBoxLayout()
         keyword_group.setSpacing(8)
 
-        keyword_label = QLabel("🔍 指定關鍵詞", self)
+        # 创建水平布局用于图片和文本
+        keyword_label_layout = QHBoxLayout()
+        keyword_label_layout.setSpacing(3)
+
+        # 添加yuechi图片
+        yuechi_path = resource_path("./image/yuechi.png")
+        yuechi_icon = QLabel(self)
+        yuechi_pixmap = QPixmap(yuechi_path)
+        yuechi_icon.setPixmap(yuechi_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        yuechi_icon.setStyleSheet("background: transparent; border: none;")
+        keyword_label_layout.addWidget(yuechi_icon)
+
+        # 添加文本标签
+        keyword_label = QLabel("指定關鍵詞", self)
         keyword_label.setStyleSheet(label_style)
-        keyword_group.addWidget(keyword_label)
+        keyword_label_layout.addWidget(keyword_label)
+
+        keyword_label_layout.addStretch(1)  # 添加伸缩量
+        keyword_group.addLayout(keyword_label_layout)
 
         self.input1 = QLineEdit(self)
         self.input1.setText("")
@@ -224,9 +240,25 @@ class MyApp(QWidget):
         count_group = QVBoxLayout()
         count_group.setSpacing(8)
 
-        count_label = QLabel("👥 獲取的人數", self)
+        # 创建水平布局用于图片和文本
+        count_label_layout = QHBoxLayout()
+        count_label_layout.setSpacing(3)
+
+        # 添加shequn图片
+        shequn_path = resource_path("./image/shequn.png")
+        shequn_icon = QLabel(self)
+        shequn_pixmap = QPixmap(shequn_path)
+        shequn_icon.setPixmap(shequn_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        shequn_icon.setStyleSheet("background: transparent; border: none;")
+        count_label_layout.addWidget(shequn_icon)
+
+        # 添加文本标签
+        count_label = QLabel("獲取的人數", self)
         count_label.setStyleSheet(label_style)
-        count_group.addWidget(count_label)
+        count_label_layout.addWidget(count_label)
+
+        count_label_layout.addStretch(1)  # 添加伸缩量
+        count_group.addLayout(count_label_layout)
 
         self.input2 = QLineEdit(self)
         self.input2.setText("2025")
