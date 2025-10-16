@@ -23,7 +23,7 @@ class MyApp(QWidget):
 
         # 设置窗口属性
         self.setWindowTitle('Instagram用戶獲取')
-        self.setFixedSize(400, 650)  # 设置窗口固定大小
+        self.resize(400, 650)  # 设置窗口初始大小
 
         # 创建整体布局
         main_layout = QVBoxLayout()
@@ -382,17 +382,20 @@ class MyApp(QWidget):
     def toggle_textbox(self, index):
         if index == 0:
             self.hidden_textbox.hide()
-            self.adjustSize()
         elif index == 1:
             self.hidden_textbox.show()
-            self.adjustSize()
+
+        # 调整窗口大小
+        self.adjustSize()
+
     def toggle_browser_input(self, index):
         if index == 0:
             self.hidden_browser_input.hide()
-            self.adjustSize()
         elif index == 1:
             self.hidden_browser_input.show()
-            self.adjustSize()
+
+        # 调整窗口大小
+        self.adjustSize()
 
     # 必须实现的拖动窗口的方法
     def mousePressEvent(self, event):
