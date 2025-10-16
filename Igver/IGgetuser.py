@@ -3,7 +3,7 @@ import sys
 import asyncio
 from task import main
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,QMessageBox
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from qasync import QEventLoop, asyncClose, asyncSlot
 
@@ -22,115 +22,313 @@ class MyApp(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # 设置窗口属性
-        self.setWindowTitle('Instagram用戶獲取')  # 这个标题现在只用于任务栏显示
+        self.setWindowTitle('Instagram用戶獲取')
+        self.setFixedSize(400, 650)  # 设置窗口固定大小
+
         # 创建整体布局
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # 创建自定义标题栏
+        # 创建顶部渐变标题区域
+        header_widget = QWidget()
+        header_widget.setFixedHeight(120)
+        header_widget.setStyleSheet("""
+            QWidget {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #667eea, stop:1 #764ba2);
+            }
+        """)
+
+        header_layout = QVBoxLayout(header_widget)
+        header_layout.setContentsMargins(20, 15, 20, 15)
+
+        # 标题栏
         title_bar = QHBoxLayout()
-        self.title_label = QLabel("Instagram用戶獲取", self)  # 自定义标题文本
-        self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        # self.resize(350, 300)
-        self.setFixedSize(350, 0)  # 设置窗口的固定大小
-        title_bar.addWidget(self.title_label)
+
+        # Instagram图标和标题
+        icon_title_layout = QVBoxLayout()
+        icon_title_layout.setSpacing(8)
+
+        # Instagram图标
+        icon_label = QLabel(self)
+        icon_path = resource_path("./image/Instagram.png")
+        pixmap = QPixmap(icon_path)
+        icon_label.setPixmap(pixmap.scaled(32,32,Qt.KeepAspectRatio,Qt.SmoothTransformation))
+        icon_label.setStyleSheet("background: transparent; border: none;")
+        icon_title_layout.addWidget(icon_label)
+
+        self.title_label = QLabel("Instagram用戶獲取", self)
+        self.title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
+        self.title_label.setStyleSheet("color: white; background: transparent; border: none;")
+        icon_title_layout.addWidget(self.title_label)
+
+        title_bar.addLayout(icon_title_layout)
         title_bar.addStretch(1)
 
-        # 添加关闭按钮到标题栏
-        close_button = QPushButton("-")  # 改变按钮文本为减号表示最小化
-        close_button.setFont(QFont("微軟雅黑", 12))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.showMinimized)  # 连接到最小化方法
-        title_bar.addWidget(close_button)
-        # 添加关闭按钮到标题栏
-        close_button = QPushButton("×")
-        close_button.setFont(QFont("微軟雅黑", 12))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.close)
-        title_bar.addWidget(close_button)
-        close_button.setStyleSheet("""
-                   QPushButton:hover {
-                       background-color: red;
-                   }
-               """)
-        # 将标题栏添加到主布局
-        main_layout.addLayout(title_bar)
-
-        # 创建三个输入框
-        self.input0 = QLineEdit(self)
-        self.input0.setText("000")
-        self.input0.setPlaceholderText("請輸入設備號...")
-        self.input1 = QLineEdit(self)
-        self.input1.setText("")
-        self.input1.setPlaceholderText("請輸入關鍵詞...")
-        self.input2 = QLineEdit(self)
-        self.input2.setText("2025")
-        self.input2.setPlaceholderText("請輸入獲取的人數...")
-        main_layout.addWidget(QLabel("設備號:"))
-        main_layout.addWidget(self.input0)
-        main_layout.addWidget(QLabel("指定關鍵詞:"))
-        main_layout.addWidget(self.input1)
-        main_layout.addWidget(QLabel("獲取的人數:"))
-        main_layout.addWidget(self.input2)
-
-        # 刷新浏览器数下拉菜单
-        self.browser_dropdown = QComboBox(self)
-        self.browser_dropdown.addItem("隱藏輸入的鏈接地址框")
-        self.browser_dropdown.addItem("顯示輸入的鏈接地址框")
-        self.browser_dropdown.currentIndexChanged.connect(self.toggle_browser_input)
-        main_layout.addWidget(QLabel("指定作品的點讚用戶列表和評論用戶列表:"))
-        main_layout.addWidget(self.browser_dropdown)
-
-        # 隐藏的浏览器数输入框
-        self.hidden_browser_input = QTextEdit(self)
-        self.hidden_browser_input.setPlaceholderText("請輸入點讚用戶評論地址...")
-        self.hidden_browser_input.hide()
-        main_layout.addWidget(self.hidden_browser_input)
-        self.toggle_browser_input(self.browser_dropdown.currentIndex())
-
-        # 创建下拉菜单
-        self.dropdown = QComboBox(self)
-        self.dropdown.addItem("隱藏輸入的鏈接地址框")
-        self.dropdown.addItem("顯示輸入的鏈接地址框")
-        self.dropdown.currentIndexChanged.connect(self.toggle_textbox)
-
-        main_layout.addWidget(QLabel("指定作者的粉絲用戶列表:"))
-        main_layout.addWidget(self.dropdown)
-
-        # 创建一个初始状态为隐藏的文本框，并设定最小高度以保持布局稳定
-        self.hidden_textbox = QTextEdit(self)
-        self.hidden_textbox.setPlaceholderText("請輸入粉絲用戶地址...")
-        self.hidden_textbox.hide()
-        main_layout.addWidget(self.hidden_textbox)
-        # 设置默认状态（根据下拉菜单的第一个选项）
-        self.toggle_textbox(self.dropdown.currentIndex())
-
-        # 创建水平布局用于放置按钮并居中
-        button_layout = QHBoxLayout()
-        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
-        self.button = QPushButton('確定', self)
-        self.button.setFixedSize(100, 40)  # 设置按钮大小
-        self.button.setStyleSheet("""
+        # 窗口控制按钮
+        minimize_button = QPushButton("-", self)
+        minimize_button.setFont(QFont("微軟雅黑", 12))
+        minimize_button.setFixedSize(24, 24)
+        minimize_button.setStyleSheet("""
             QPushButton {
-                border-radius: 20px;
-                background-color: #90EE90;
-                font-size: 16px;
+                background-color: rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                color: white;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #7FFFD4;
+                background-color: rgba(255, 255, 255, 0.3);
             }
         """)
-        button_layout.addWidget(self.button)
-        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
+        minimize_button.clicked.connect(self.showMinimized)
+        title_bar.addWidget(minimize_button)
 
-        # 将按钮布局添加到主布局
-        main_layout.addLayout(button_layout)
+        close_button = QPushButton("×", self)
+        close_button.setFont(QFont("微軟雅黑", 12))
+        close_button.setFixedSize(24, 24)
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ff4444;
+            }
+        """)
+        close_button.clicked.connect(self.close)
+        title_bar.addWidget(close_button)
 
-        # 创建左下角的标签
-        self.days_label = QLabel(f"時間：{days}天 版本：{versions}", self)
-        self.days_label.setFont(QFont("微軟雅黑", 10))
-        self.days_label.setStyleSheet("color: gray;")
-        main_layout.addWidget(self.days_label, alignment=Qt.AlignBottom | Qt.AlignLeft)
+        header_layout.addLayout(title_bar)
+
+        # 副标题
+        subtitle = QLabel("高效獲取Instagram用戶數據", self)
+        subtitle.setFont(QFont("微軟雅黑", 10,QFont.Bold))
+        subtitle.setStyleSheet("color: white; background: transparent; border: none; margin-top: 5px;")
+        header_layout.addWidget(subtitle)
+
+        main_layout.addWidget(header_widget)
+
+        # 创建主内容区域
+        content_widget = QWidget()
+
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(25, 25, 25, 25)
+        content_layout.setSpacing(20)
+
+        input_style = """
+            QLineEdit {
+                padding: 15px 20px;
+                border: 2px solid #e1e5e9;
+                border-radius: 12px;
+                background-color: white;
+                font-size: 12px;
+                color: #495057;
+                font-family: "微軟雅黑";
+            }
+            QLineEdit:focus {
+                border-color: #667eea;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+        """
+
+        label_style = """
+            QLabel {
+                color: #495057;
+                font-weight: 600;
+                font-size: 11px;
+                margin-bottom: 8px;
+                font-family: "微軟雅黑";
+            }
+        """
+
+        dropdown_style = """
+            QComboBox {
+                padding: 12px 20px;
+                border: 2px solid #e1e5e9;
+                border-radius: 12px;
+                background-color: white;
+                font-size: 12px;
+                color: #495057;
+                font-family: "微軟雅黑";
+            }
+            QComboBox:focus {
+                border-color: #667eea;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #6c757d;
+                margin-right: 15px;
+            }
+        """
+
+        textarea_style = """
+            QTextEdit {
+                padding: 15px 20px;
+                border: 2px solid #e1e5e9;
+                border-radius: 12px;
+                background-color: white;
+                font-size: 12px;
+                color: #495057;
+                min-height: 100px;
+                font-family: "微軟雅黑";
+            }
+            QTextEdit:focus {
+                border-color: #667eea;
+                outline: none;
+            }
+        """
+
+        # 设备号输入区域
+        device_group = QVBoxLayout()
+        device_group.setSpacing(8)
+
+        device_label = QLabel("📱 設備號", self)
+        device_label.setStyleSheet(label_style)
+        device_group.addWidget(device_label)
+
+        self.input0 = QLineEdit(self)
+        self.input0.setText("000")
+        self.input0.setPlaceholderText("請輸入設備號...")
+        self.input0.setStyleSheet(input_style)
+        device_group.addWidget(self.input0)
+
+        content_layout.addLayout(device_group)
+
+        # 关键词输入区域
+        keyword_group = QVBoxLayout()
+        keyword_group.setSpacing(8)
+
+        keyword_label = QLabel("🔍 指定關鍵詞", self)
+        keyword_label.setStyleSheet(label_style)
+        keyword_group.addWidget(keyword_label)
+
+        self.input1 = QLineEdit(self)
+        self.input1.setText("")
+        self.input1.setPlaceholderText("請輸入關鍵詞...")
+        self.input1.setStyleSheet(input_style)
+        keyword_group.addWidget(self.input1)
+
+        content_layout.addLayout(keyword_group)
+
+        # 人数输入区域
+        count_group = QVBoxLayout()
+        count_group.setSpacing(8)
+
+        count_label = QLabel("👥 獲取的人數", self)
+        count_label.setStyleSheet(label_style)
+        count_group.addWidget(count_label)
+
+        self.input2 = QLineEdit(self)
+        self.input2.setText("2025")
+        self.input2.setPlaceholderText("請輸入獲取的人數...")
+        self.input2.setStyleSheet(input_style)
+        count_group.addWidget(self.input2)
+
+        content_layout.addLayout(count_group)
+
+        # 作品链接区域
+        browser_group = QVBoxLayout()
+        browser_group.setSpacing(8)
+
+        browser_label = QLabel("💝 指定作品的點讚用戶列表和評論用戶列表", self)
+        browser_label.setStyleSheet(label_style)
+        browser_group.addWidget(browser_label)
+
+        self.browser_dropdown = QComboBox(self)
+        self.browser_dropdown.addItem("隱藏輸入的鏈接地址框")
+        self.browser_dropdown.addItem("顯示輸入的鏈接地址框")
+        self.browser_dropdown.setStyleSheet(dropdown_style)
+        self.browser_dropdown.currentIndexChanged.connect(self.toggle_browser_input)
+        browser_group.addWidget(self.browser_dropdown)
+
+        self.hidden_browser_input = QTextEdit(self)
+        self.hidden_browser_input.setPlaceholderText("請輸入點讚用戶評論地址...")
+        self.hidden_browser_input.setStyleSheet(textarea_style)
+        self.hidden_browser_input.hide()
+        browser_group.addWidget(self.hidden_browser_input)
+
+        content_layout.addLayout(browser_group)
+        self.toggle_browser_input(self.browser_dropdown.currentIndex())
+
+        # 粉丝链接区域
+        fans_group = QVBoxLayout()
+        fans_group.setSpacing(8)
+
+        fans_label = QLabel("👤 指定作者的粉絲用戶列表", self)
+        fans_label.setStyleSheet(label_style)
+        fans_group.addWidget(fans_label)
+
+        self.dropdown = QComboBox(self)
+        self.dropdown.addItem("隱藏輸入的鏈接地址框")
+        self.dropdown.addItem("顯示輸入的鏈接地址框")
+        self.dropdown.setStyleSheet(dropdown_style)
+        self.dropdown.currentIndexChanged.connect(self.toggle_textbox)
+        fans_group.addWidget(self.dropdown)
+
+        self.hidden_textbox = QTextEdit(self)
+        self.hidden_textbox.setPlaceholderText("請輸入粉絲用戶地址...")
+        self.hidden_textbox.setStyleSheet(textarea_style)
+        self.hidden_textbox.hide()
+        fans_group.addWidget(self.hidden_textbox)
+
+        content_layout.addLayout(fans_group)
+        self.toggle_textbox(self.dropdown.currentIndex())
+
+        # 确定按钮
+        self.button = QPushButton('🚀 確定執行', self)
+        self.button.setFixedHeight(50)
+        self.button.setFont(QFont("微軟雅黑", 13, QFont.Bold))
+        self.button.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #667eea, stop:1 #764ba2);
+                border-radius: 25px;
+                color: white;
+                font-size: 13px;
+                font-weight: bold;
+                border: none;
+                font-family: "微軟雅黑";
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #5a6fd8, stop:1 #6a4190);
+                transform: translateY(-2px);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #4e5bc6, stop:1 #5e377e);
+            }
+        """)
+        content_layout.addWidget(self.button)
+
+        # 版本信息
+        info_layout = QHBoxLayout()
+
+        time_label = QLabel(f"⏰ 時間: {days}天", self)
+        time_label.setFont(QFont("微軟雅黑", 9))
+        time_label.setStyleSheet("color: #6c757d;")
+        info_layout.addWidget(time_label)
+
+        info_layout.addStretch(1)
+
+        version_label = QLabel(f"📱 版本: {versions}", self)
+        version_label.setFont(QFont("微軟雅黑", 9))
+        version_label.setStyleSheet("color: #6c757d;")
+        info_layout.addWidget(version_label)
+
+        content_layout.addLayout(info_layout)
+
+        main_layout.addWidget(content_widget)
 
         # 连接按钮点击事件到处理函数
         self.button.clicked.connect(self.on_click)
@@ -236,27 +434,30 @@ def win_main(version,day):
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
+
     # 设置应用程序的样式
     app.setStyle('Fusion')
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.WindowText, Qt.white)
-    palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.ToolTipBase, Qt.white)
-    palette.setColor(QPalette.ToolTipText, Qt.white)
-    palette.setColor(QPalette.Text, Qt.white)
-    palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.ButtonText, Qt.white)
-    palette.setColor(QPalette.BrightText, Qt.red)
-    palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.HighlightedText, Qt.black)
+    # 使用现代化的浅色主题
+    palette.setColor(QPalette.Window, QColor(248, 249, 250))  # 浅灰背景
+    palette.setColor(QPalette.WindowText, QColor(73, 80, 87))  # 深色文字
+    palette.setColor(QPalette.Base, QColor(255, 255, 255))  # 白色输入框背景
+    palette.setColor(QPalette.AlternateBase, QColor(233, 236, 239))
+    palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255))
+    palette.setColor(QPalette.ToolTipText, QColor(73, 80, 87))
+    palette.setColor(QPalette.Text, QColor(73, 80, 87))
+    palette.setColor(QPalette.Button, QColor(255, 255, 255))
+    palette.setColor(QPalette.ButtonText, QColor(73, 80, 87))
+    palette.setColor(QPalette.BrightText, QColor(220, 53, 69))
+    palette.setColor(QPalette.Link, QColor(102, 126, 234))  # 主题蓝色
+    palette.setColor(QPalette.Highlight, QColor(118, 75, 162))  # 主题紫色
+    palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
     app.setPalette(palette)
     app.setFont(QFont("微軟雅黑", 10))
+
     ex = MyApp()
     ex.show()
-    # app.exec_()  # 执行事件循环
+
     with loop:
         loop.run_forever()
 def resource_path(relative_path):
