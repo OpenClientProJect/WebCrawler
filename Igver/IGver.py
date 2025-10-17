@@ -183,6 +183,7 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
  # 注释
 def version_ver():
     global version
+    # 版本号
     version = '1.0.0.6'
     print(version)
     remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=IGgetusers'
