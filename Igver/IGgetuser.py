@@ -32,7 +32,7 @@ class MyApp(QWidget):
 
         # 创建顶部渐变标题区域
         header_widget = QWidget()
-        header_widget.setFixedHeight(120)
+        header_widget.setFixedHeight(160)
         header_widget.setStyleSheet("""
             QWidget {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -43,28 +43,9 @@ class MyApp(QWidget):
         header_layout = QVBoxLayout(header_widget)
         header_layout.setContentsMargins(20, 15, 20, 15)
 
-        # 标题栏
-        title_bar = QHBoxLayout()
-
-        # Instagram图标和标题
-        icon_title_layout = QVBoxLayout()
-        icon_title_layout.setSpacing(8)
-
-        # Instagram图标
-        icon_label = QLabel(self)
-        icon_path = resource_path("./image/Instagram.png")
-        pixmap = QPixmap(icon_path)
-        icon_label.setPixmap(pixmap.scaled(32,32,Qt.KeepAspectRatio,Qt.SmoothTransformation))
-        icon_label.setStyleSheet("background: transparent; border: none;")
-        icon_title_layout.addWidget(icon_label)
-
-        self.title_label = QLabel("Instagram用戶獲取", self)
-        self.title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
-        self.title_label.setStyleSheet("color: white; background: transparent; border: none;")
-        icon_title_layout.addWidget(self.title_label)
-
-        title_bar.addLayout(icon_title_layout)
-        title_bar.addStretch(1)
+        # 窗口控制按钮区域（上方）
+        control_buttons_layout = QHBoxLayout()
+        control_buttons_layout.addStretch(1)  # 左侧伸缩空间
 
         # 窗口控制按钮
         minimize_button = QPushButton("-", self)
@@ -82,7 +63,7 @@ class MyApp(QWidget):
             }
         """)
         minimize_button.clicked.connect(self.showMinimized)
-        title_bar.addWidget(minimize_button)
+        control_buttons_layout.addWidget(minimize_button)
 
         close_button = QPushButton("×", self)
         close_button.setFont(QFont("微軟雅黑", 12))
@@ -99,15 +80,39 @@ class MyApp(QWidget):
             }
         """)
         close_button.clicked.connect(self.close)
-        title_bar.addWidget(close_button)
+        control_buttons_layout.addWidget(close_button)
 
-        header_layout.addLayout(title_bar)
+        header_layout.addLayout(control_buttons_layout)
+
+        # 主要内容区域（居中）
+        main_content_layout = QVBoxLayout()
+        main_content_layout.setAlignment(Qt.AlignCenter)  # 设置水平居中
+        main_content_layout.setSpacing(8)
+
+        # Instagram图标
+        icon_label = QLabel(self)
+        icon_path = resource_path("./image/Instagram.png")
+        pixmap = QPixmap(icon_path)
+        icon_label.setPixmap(pixmap.scaled(60,100,Qt.KeepAspectRatio,Qt.SmoothTransformation))
+        icon_label.setStyleSheet("background: transparent; border: none;")
+        icon_label.setAlignment(Qt.AlignCenter)
+        main_content_layout.addWidget(icon_label)
+
+        # 主标题
+        self.title_label = QLabel("Instagram用戶獲取", self)
+        self.title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
+        self.title_label.setStyleSheet("color: white; background: transparent; border: none;")
+        self.title_label.setAlignment(Qt.AlignCenter)
+        main_content_layout.addWidget(self.title_label)
 
         # 副标题
         subtitle = QLabel("高效獲取Instagram用戶數據", self)
-        subtitle.setFont(QFont("微軟雅黑", 10,QFont.Bold))
+        subtitle.setFont(QFont("微軟雅黑", 10, QFont.Bold))
         subtitle.setStyleSheet("color: white; background: transparent; border: none; margin-top: 5px;")
-        header_layout.addWidget(subtitle)
+        subtitle.setAlignment(Qt.AlignCenter)
+        main_content_layout.addWidget(subtitle)
+
+        header_layout.addLayout(main_content_layout)
 
         main_layout.addWidget(header_widget)
 
@@ -360,13 +365,13 @@ class MyApp(QWidget):
         self.button = QPushButton(self)
         self.button.setFixedHeight(50)
         self.button.setFont(QFont("微軟雅黑", 13, QFont.Bold))
-        
+
         # 创建按钮布局
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(15, 0, 15, 0)
         button_layout.setSpacing(8)
         button_layout.setAlignment(Qt.AlignCenter)  # 设置水平居中
-        
+
         # 添加Begin图片
         begin_path = resource_path("./image/Begin.png")
         begin_icon = QLabel(self)
@@ -374,14 +379,14 @@ class MyApp(QWidget):
         begin_icon.setPixmap(begin_pixmap.scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         begin_icon.setStyleSheet("background: transparent; border: none;")
         button_layout.addWidget(begin_icon)
-        
+
         # 添加文本
         button_text = QLabel("確定執行", self)
         button_text.setStyleSheet("color: white; font-size: 13px; font-weight: bold; background: transparent; border: none;")
         button_layout.addWidget(button_text)
-        
+
         self.button.setLayout(button_layout)
-        
+
         self.button.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -411,7 +416,7 @@ class MyApp(QWidget):
         # 时间区域
         time_container_layout = QHBoxLayout()
         time_container_layout.setSpacing(3)
-        
+
         # 添加shizhong图片
         shizhong_path = resource_path("./image/shizhong.png")
         shizhong_icon = QLabel(self)
@@ -419,13 +424,13 @@ class MyApp(QWidget):
         shizhong_icon.setPixmap(shizhong_pixmap.scaled(16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         shizhong_icon.setStyleSheet("background: transparent; border: none;")
         time_container_layout.addWidget(shizhong_icon)
-        
+
         # 添加时间文本
         time_label = QLabel(f"時間: {days}天", self)
         time_label.setFont(QFont("微軟雅黑", 9))
         time_label.setStyleSheet("color: #6c757d; background: transparent;")
         time_container_layout.addWidget(time_label)
-        
+
         info_layout.addLayout(time_container_layout)
 
         info_layout.addStretch(1)
@@ -433,7 +438,7 @@ class MyApp(QWidget):
         # 版本区域
         version_container_layout = QHBoxLayout()
         version_container_layout.setSpacing(3)
-        
+
         # 添加git-branch-line图片
         git_branch_path = resource_path("./image/git-branch-line.png")
         git_branch_icon = QLabel(self)
@@ -441,13 +446,13 @@ class MyApp(QWidget):
         git_branch_icon.setPixmap(git_branch_pixmap.scaled(16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         git_branch_icon.setStyleSheet("background: transparent; border: none;")
         version_container_layout.addWidget(git_branch_icon)
-        
+
         # 添加版本文本
         version_label = QLabel(f"版本: {versions}", self)
         version_label.setFont(QFont("微軟雅黑", 9))
         version_label.setStyleSheet("color: #6c757d; background: transparent;")
         version_container_layout.addWidget(version_label)
-        
+
         info_layout.addLayout(version_container_layout)
 
         content_layout.addLayout(info_layout)
