@@ -59,7 +59,13 @@ class Crawler:
         self.is_phone = 0  # 是否是手机
         self.remote_id = content1  # AnyDesk ID
         self.ui_update_lock = asyncio.Lock()  # 添加UI更新锁
-        
+        self.completion_times = {}  # 新增：存储其他任务的完成时间配置
+
+        # 如果传递了completion_times，则使用它
+        if isinstance(task_order, dict) and 'completion_times' in task_order:
+            self.completion_times = task_order.get('completion_times', {})
+        elif rest_times and 'completion_times' in rest_times:
+            self.completion_times = rest_times.get('completion_times', {})
     # def update_status(self, text):
     #     """更新状态窗口"""
     #     if self.status_window:
@@ -91,17 +97,17 @@ class Crawler:
         """定期上报在线状态"""
         while True:
             await asyncio.sleep(40)  # 每分钟上报一次
-            self.report_online_status()
+            asyncio.create_task(self.report_online_status())
     async def start(self):
         # 程序开始时上报在线状态
-        self.report_online_status()
+        await self.report_online_status()
 
         # 设置定时器，每隔一段时间上报一次在线状态
         asyncio.create_task(self.periodic_online_report())
         
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("啟動瀏覽器...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         playwright = await async_playwright().start()
         self.browser = await playwright.chromium.launch(headless=False, executable_path=self.browser_path,
             ignore_default_args=[
@@ -111,7 +117,14 @@ class Crawler:
         context = await self.browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         )
-
+        await context.add_init_script("""
+                           Object.defineProperty(navigator, 'webdriver', {
+                               get: () => undefined,
+                           });
+                           window.chrome = {
+                               runtime: {},
+                           };
+                       """)
         # 应用cookies到上下文
         if self.cookies:
             await context.add_cookies(self.cookies)
@@ -124,47 +137,59 @@ class Crawler:
             0: self.automate_clicks,
             1: self.message_key,
             2: self.Personal_fawen,
-            3: self.sleep_time
+            3: self.Usersmissing,
+            4: self.sleep_time
         }
 
         if self.task_order:
             print(f"将按照以下顺序执行任务: {self.task_order}")
-            # 按顺序执行任务，而不是同时运行
-            for task_index in self.task_order:
+            # 按顺序执行任务
+            for position, task_index in enumerate(self.task_order):
+                # 更新状态窗口显示当前任务队列
+                if self.status_window:
+                    self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
                 task_func = function_map.get(task_index)
                 if task_func:
                     try:
                         # 如果是休息任务，传递休息时间
-                        if task_index == 3:
-                            # 获取该休息任务的配置时间
-                            rest_time = self.rest_times.get(len(self.executed_tasks) if self.executed_tasks else 0, 60)
+                        if task_index == 4:  # 休息时间任务
+                            rest_time = self.rest_times.get(position, 60)
                             await task_func(rest_time)
                         else:
-                            await task_func()
+                            # 其他任务：获取完成时间并执行带超时控制的任务
+                            completion_time = self.completion_times.get(position, 1800)  # 默认30分钟
+                            await self.execute_task_with_timeout(task_func, task_index, position, completion_time)
 
                         # 记录已执行的任务
-                        self.executed_tasks.append(task_index)
+                        task_id = f"{position}_{task_index}"
+                        self.executed_tasks.append(task_id)
+
+                        # 更新状态窗口显示已完成任务
+                        if self.status_window:
+                            self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
                     except Exception as e:
                         print(f"执行任务 {task_index} 时出错: {str(e)}")
                         await self.robust_update_status(f"任务执行出错: {str(e)}")
                         continue
         # if self.home_Browse :
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     await self.robust_update_status("開始主頁留言...")
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     await self.automate_clicks()#个人主页留言
         #
         # if self.IsKey :
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     await self.robust_update_status("開始關鍵字留言...")
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     print("关键字")#关键字
         #     await self.message_key()
 
         # if self.is_message :
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     await self.robust_update_status("開始個人發文...")
-        #     await asyncio.sleep(random.uniform(2, 4))
+        #     #await asyncio.sleep(random.uniform(2, 4))
         #     print("个人发文")#个人发文
         #     await self.Personal_is_message()
         #     htmljsinput = '//div[@contenteditable="true" and @aria-placeholder="有什麼新鮮事？"or @contenteditable="true" and @aria-placeholder="有什麼新鮮事嗎？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事吗？"]/p'
@@ -172,16 +197,126 @@ class Crawler:
         #     htmljsbut = '//div[@role="dialog"]//div[text()="發佈" or text()="发布"]'
         #     await self.Personal_post(htmljsinput, htmljsbut)
 
-        await self.Usersmissing()  # 用户个人主页留言
-        await asyncio.sleep(random.uniform(2, 4))
-        await self.robust_update_status("-----全部任務完成-----")
-        await asyncio.sleep(random.uniform(2, 4))
+        # await self.Usersmissing()  # 用户个人主页留言
+        #await asyncio.sleep(random.uniform(2, 4))
+        print("任务完成")
+        await self.robust_update_status("全部任務完成...")
 
+        await self.browser.close()
+        #await asyncio.sleep(random.uniform(2, 4))
+    async def execute_task_with_timeout(self, task_func, task_index, position, completion_time):
+        """执行带超时控制的任务"""
+        task_names = {
+            0: "首頁留言",
+            1: "關鍵字任務",
+            2: "個人發文",
+            3: "用戶留言"
+        }
+
+        task_name = task_names.get(task_index, f"任务{task_index}")
+        task_id = f"{position}_{task_index}"  # 任务唯一标识
+
+        if completion_time == 0:
+            await self.robust_update_status(f"開始執行{task_name}，無時間限制")
+            # 对于无时间限制的任务，不显示倒计时
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, -1)  # -1表示无时间限制
+        else:
+            await self.robust_update_status(f"開始執行{task_name}，最大執行時間: {completion_time // 60}分鐘")
+
+        start_time = time.time()
+        task_completed = False
+
+        try:
+            # 创建任务
+            task = asyncio.create_task(task_func())
+
+            if completion_time == 0:
+                # 无时间限制，直接等待任务完成
+                await task
+                task_completed = True
+                elapsed_time = time.time() - start_time
+                await self.robust_update_status(f"{task_name}完成，用時: {int(elapsed_time)}秒")
+            else:
+                # 有时间限制，等待任务完成或超时
+                # 启动倒计时更新
+                if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                    asyncio.create_task(self.update_task_countdown(task_id, completion_time, start_time))
+
+                try:
+                    await asyncio.wait_for(task, timeout=completion_time)
+                    task_completed = True
+                    elapsed_time = time.time() - start_time
+                    remaining_time = completion_time - elapsed_time
+
+                    if remaining_time > 0:
+                        await self.robust_update_status(f"{task_name}提前完成，等待剩余时间: {int(remaining_time)}秒")
+                        # 更新倒计时显示为剩余等待时间
+                        if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                            asyncio.create_task(self.update_waiting_countdown(task_id, int(remaining_time)))
+                        await asyncio.sleep(remaining_time)
+                    else:
+                        await self.robust_update_status(f"{task_name}在指定时间内完成")
+
+                except asyncio.TimeoutError:
+                    await self.robust_update_status(f"{task_name}執行超時，強制結束並進入下一個任務")
+                    # 取消任务
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+
+        except Exception as e:
+            await self.robust_update_status(f"{task_name}執行出錯: {str(e)}")
+            raise
+
+        finally:
+            # 无论任务是否完成，都标记为已完成状态
+            if self.status_window:
+                # 清除倒计时显示
+                if hasattr(self.status_window, 'update_task_countdown'):
+                    self.status_window.update_task_countdown(task_id, 0)
+
+                # 立即更新状态为完成
+                if task_id not in self.executed_tasks:
+                    self.executed_tasks.append(task_id)
+                self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
+    async def update_task_countdown(self, task_id, total_time, start_time):
+        """更新任务执行倒计时"""
+        while True:
+            elapsed_time = time.time() - start_time
+            remaining_time = max(0, total_time - elapsed_time)
+
+            if remaining_time <= 0:
+                break
+
+            # 更新状态窗口的倒计时显示
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, int(remaining_time))
+
+            await asyncio.sleep(1)  # 每秒更新一次
+
+    async def update_waiting_countdown(self, task_id, wait_time):
+        """更新等待倒计时"""
+        remaining = wait_time
+        while remaining > 0:
+            # 更新状态窗口的倒计时显示
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, remaining)
+
+            await asyncio.sleep(1)
+            remaining -= 1
+
+        # 等待结束，清除倒计时
+        if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+            self.status_window.update_task_countdown(task_id, 0)
     async def Personal_fawen(self):
-        self.report_task_status("正在執行個人發文")
-        await asyncio.sleep(random.uniform(2, 4))
+        await self.report_task_status("正在執行個人發文")
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("開始個人發文...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.Personal_is_message()
         htmljsinput = '//div[@contenteditable="true" and @aria-placeholder="有什麼新鮮事？"or @contenteditable="true" and @aria-placeholder="有什麼新鮮事嗎？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事吗？"]/p'
         # htmljsbut = '//div[text()="發佈" or text()="发布"]'
@@ -189,10 +324,10 @@ class Crawler:
         await self.Personal_post(htmljsinput, htmljsbut)
 
     async def automate_clicks(self):
-        self.report_task_status("正在執行主頁留言")
-        await asyncio.sleep(random.uniform(2, 4))
+        await self.report_task_status("正在執行主頁留言")
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("開始主頁留言...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.page.goto(url="https://www.threads.com/", wait_until='load')
         # await self.force_minimize_browser()
         await asyncio.sleep(8)
@@ -206,7 +341,7 @@ class Crawler:
                 # 定位帖子元素
                 post_selector = base_selector.format(i)
                 element = await self.page.wait_for_selector(post_selector, timeout=10000)
-                self.report_task_status(f"正在執行主頁留言第 {i} 个帖子")
+                await self.report_task_status(f"正在執行主頁留言第 {i} 个帖子")
                 if element:
                     await element.scroll_into_view_if_needed()
                     await asyncio.sleep(1)
@@ -215,9 +350,9 @@ class Crawler:
                         like_btn = await self.page.wait_for_selector(like_selector, timeout=5000)
                         if like_btn:
                             await like_btn.click()
-                            await asyncio.sleep(random.uniform(2, 4))
+                            #await asyncio.sleep(random.uniform(2, 4))
                             await self.robust_update_status(f"成功點讚第 {i} 個帖子...")
-                            await asyncio.sleep(random.uniform(2, 4))
+                            #await asyncio.sleep(random.uniform(2, 4))
                             print(f"成功点赞第 {i} 个帖子")
                             await asyncio.sleep(2)
 
@@ -261,9 +396,9 @@ class Crawler:
                                 random_test = random.randint(0, len(self.leavetext_messags) - 1)
 
                                 await comment_box.fill(self.leavetext_messags[random_test])
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 await self.robust_update_status(f"留言內容: {self.leavetext_messags[random_test]}")
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 print(f"已输入留言内容: {self.leavetext_messags[random_test]}")
 
                                 # 等待发送按钮出现
@@ -295,9 +430,9 @@ class Crawler:
                                             print(f"发送按钮未找到，第 {i} 个帖子")
                                     except Exception as e:
                                         print(f"备用發送按钮选择器也失败: {str(e)}")
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 await self.robust_update_status(f"成功留言第 {i} 個帖子...")
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 print(f"成功发送留言第 {i} 个帖子")
                                 # 等待留言发送完成
                                 await asyncio.sleep(2)
@@ -432,33 +567,33 @@ class Crawler:
         return "Bearer IGT:2:" + auth_str.decode('utf-8')
 
     async def Usersmissing(self):
-        self.report_task_status(f"正在執行用戶個人主頁留言")
-        await asyncio.sleep(random.uniform(2, 4))
+        await self.report_task_status(f"正在執行用戶個人主頁留言")
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("開始用戶個人主頁留言...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         for i in range(len(self.UsersLists)):
-            await asyncio.sleep(random.uniform(2, 4))
+            #await asyncio.sleep(random.uniform(2, 4))
             await self.robust_update_status(f"打開用戶：@{self.UsersLists[i]} 主頁")
-            await asyncio.sleep(random.uniform(2, 4))
+            #await asyncio.sleep(random.uniform(2, 4))
             await self.page.goto(url="https://www.threads.com/@"+str(self.UsersLists[i]), wait_until='load')
             # await self.force_minimize_browser()
             await asyncio.sleep(8)
 
             if self.user_Tracking and self.new_user_Tracking_num < self.user_Tracking_num:
-                self.report_task_status(f"正在執行用戶個人主頁留言/用戶追蹤")
-                await asyncio.sleep(random.uniform(2, 4))
+                await self.report_task_status(f"正在執行用戶個人主頁留言/用戶追蹤")
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status("用戶追蹤...")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 print("追踪")
                 await self.UsersTracking()
                 # 添加短暂延迟，确保追踪操作完成
                 await asyncio.sleep(2)
 
             if self.fans and self.new_fans_num < self.fans_num:
-                self.report_task_status(f"正在執行用戶個人主頁留言/@粉絲發送信息")
-                await asyncio.sleep(random.uniform(2, 4))
+                await self.report_task_status(f"正在執行用戶個人主頁留言/@粉絲發送信息")
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status("@粉絲發送信息...")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 print("@粉丝")
                 await self.UsersFans()
                 htmljsinput = '//div[@contenteditable="true" and @aria-placeholder="有什麼新鮮事？"or @contenteditable="true" and @aria-placeholder="有什麼新鮮事嗎？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事？" or @contenteditable="true" and @aria-placeholder="有什么新鲜事吗？"]/p/span[2]'
@@ -468,20 +603,20 @@ class Crawler:
                 await asyncio.sleep(2)
 
             if self.Like:
-                self.report_task_status(f"正在執行用戶個人主頁留言/個人主頁點讚")
-                await asyncio.sleep(random.uniform(2, 4))
+                await self.report_task_status(f"正在執行用戶個人主頁留言/個人主頁點讚")
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status("個人主頁點讚...")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 print("点赞")
                 number = 1
                 htmljs = "#barcelona-page-layout > div > div > div.xb57i2i.x1q594ok.x5lxg6s.x1ja2u2z.x1pq812k.x1rohswg.xfk6m8.x1yqm8si.xjx87ck.x1l7klhg.xs83m0k.x2lwn1j.xx8ngbg.xwo3gff.x1oyok0e.x1odjw0f.x1n2onr6.xq1qtft.xz401s1.x195bbgf.xgb0k9h.x1l19134.xgjo3nb.x1ga7v0g.x15mokao.x18b5jzi.x1q0q8m5.x1t7ytsu.x1ejq31n.xt8cgyo.x128c8uf.x1co6499.xc5fred.x1ma7e2m.x9f619.x78zum5.xdt5ytf.x1iyjqo2.x6ikm8r.xy5w88m.xh8yej3.xbwb3hm.xgh35ic.x19xvnzb.x87ppg5.xev1tu8.xpr2fh2.xgzc8be.x1iorvi4 > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div.x1c1b4dv.x13dflua.x11xpdln > div > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div:nth-child({}) > div > div > div > div > div.x1xdureb.xkbb5z.x13vxnyz > div > div.x4vbgl9.x1qfufaz.x1k70j0n > div "
                 await self.UsersLike(number, htmljs)
 
             if self.Leave:
-                self.report_task_status(f"正在執行用戶個人主頁留言/個人主頁留言")
-                await asyncio.sleep(random.uniform(2, 4))
+                await self.report_task_status(f"正在執行用戶個人主頁留言/個人主頁留言")
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status("個人主頁留言...")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 print("留言")
                 number = 1
                 htmljs = "#barcelona-page-layout > div > div > div.xb57i2i.x1q594ok.x5lxg6s.x1ja2u2z.x1pq812k.x1rohswg.xfk6m8.x1yqm8si.xjx87ck.x1l7klhg.xs83m0k.x2lwn1j.xx8ngbg.xwo3gff.x1oyok0e.x1odjw0f.x1n2onr6.xq1qtft.xz401s1.x195bbgf.xgb0k9h.x1l19134.xgjo3nb.x1ga7v0g.x15mokao.x18b5jzi.x1q0q8m5.x1t7ytsu.x1ejq31n.xt8cgyo.x128c8uf.x1co6499.xc5fred.x1ma7e2m.x9f619.x78zum5.xdt5ytf.x1iyjqo2.x6ikm8r.xy5w88m.xh8yej3.xbwb3hm.xgh35ic.x19xvnzb.x87ppg5.xev1tu8.xpr2fh2.xgzc8be.x1iorvi4 > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div.x1c1b4dv.x13dflua.x11xpdln > div > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div:nth-child({}) > div > div > div > div > div.x1xdureb.xkbb5z.x13vxnyz > div > div.x4vbgl9.x1qfufaz.x1k70j0n > div "
@@ -496,9 +631,9 @@ class Crawler:
             text = await self.page.locator(base_selector).inner_text()
             print("获取的文本：", text)
             if text =="已关注" or text =="追蹤中":
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status("已經追蹤跳過...")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 await asyncio.sleep(8)
                 return False
             if element:
@@ -601,9 +736,9 @@ class Crawler:
                                 random_test = random.randint(0, len(self.leavetext_messags) - 1)
 
                                 await comment_box.fill(self.leavetext_messags[random_test])
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 await self.robust_update_status(f"留言內容: {self.leavetext_messags[random_test]}")
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 print(f"已输入留言内容: {self.leavetext_messags[random_test]}")
 
                                 # 等待发送按钮出现
@@ -647,9 +782,9 @@ class Crawler:
 
     async def Personal_post(self, htmljsinput, htmljsbut):
         print("输入框")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("開始尋找文本框...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         try:
             # 等待留言框出现
             await asyncio.sleep(2)
@@ -666,15 +801,15 @@ class Crawler:
                 random_test = random.randint(0, len(self.leave_text) - 1)
 
                 await comment_box.fill(self.leave_text[random_test])
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 await self.robust_update_status(f"留言內容: {self.leave_text[random_test]}")
-                await asyncio.sleep(random.uniform(2, 4))
+                #await asyncio.sleep(random.uniform(2, 4))
                 print(f"已输入留言内容: {self.leave_text[random_test]}")
                 if self.message_pic :
                     self.pic_path = await GetHtmlpic(self.init)
-                    await asyncio.sleep(random.uniform(2, 4))
+                    #await asyncio.sleep(random.uniform(2, 4))
                     await self.robust_update_status("下載圖片...")
-                    await asyncio.sleep(random.uniform(2, 4))
+                    #await asyncio.sleep(random.uniform(2, 4))
                     await asyncio.sleep(2)
                     if  self.pic_path is not None :
                         await asyncio.sleep(2)
@@ -682,9 +817,9 @@ class Crawler:
                         file_input = await self.page.query_selector('input[type="file"]')
                         if file_input:
                             await file_input.set_input_files(self.pic_path)
-                            await asyncio.sleep(random.uniform(2, 4))
+                            #await asyncio.sleep(random.uniform(2, 4))
                             await self.robust_update_status("通过文件选择器上传图片")
-                            await asyncio.sleep(random.uniform(2, 4))
+                            #await asyncio.sleep(random.uniform(2, 4))
 
                     print(f"已输入图片地址: {self.pic_path}")
                 # 等待发送按钮出现
@@ -710,16 +845,16 @@ class Crawler:
             print(f"使用完整路径选择器也失败: {str(e)}")
 
     async def message_key(self):
-        self.report_task_status(f"正在執行關鍵字留言")
-        await asyncio.sleep(random.uniform(2, 4))
+        await self.report_task_status(f"正在執行關鍵字留言")
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("開始關鍵字留言...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         for num in range(len(self.Key)):
             print(self.Key[num])
-            await asyncio.sleep(random.uniform(2, 4))
+            #await asyncio.sleep(random.uniform(2, 4))
             await self.robust_update_status(f"關鍵字: "+self.Key[num])
-            await asyncio.sleep(random.uniform(2, 4))
-            self.report_task_status(f"正在執行關鍵字留言,關鍵字: {self.Key[num]}")
+            #await asyncio.sleep(random.uniform(2, 4))
+            await self.report_task_status(f"正在執行關鍵字留言,關鍵字: {self.Key[num]}")
             await self.page.goto(url="https://www.threads.com/search?q=" + str(self.Key[num]), wait_until='load')
             # await self.force_minimize_browser()
             await asyncio.sleep(8)
@@ -727,10 +862,10 @@ class Crawler:
             out_count = 0
             for i in range(1, self.Key_num + 1):
                 try:
-                    await asyncio.sleep(random.uniform(2, 4))
+                    #await asyncio.sleep(random.uniform(2, 4))
                     await self.robust_update_status(f"開始第 {i} 個帖子...")
-                    await asyncio.sleep(random.uniform(2, 4))
-                    self.report_task_status(f"正在執行關鍵字留言,第 {i} 個帖子")
+                    #await asyncio.sleep(random.uniform(2, 4))
+                    await self.report_task_status(f"正在執行關鍵字留言,第 {i} 個帖子")
                     base_selector = "#barcelona-page-layout > div > div > div.xb57i2i.x1q594ok.x5lxg6s.x1ja2u2z.x1pq812k.x1rohswg.xfk6m8.x1yqm8si.xjx87ck.x1l7klhg.xs83m0k.x2lwn1j.xx8ngbg.xwo3gff.x1oyok0e.x1odjw0f.x1n2onr6.xq1qtft.xz401s1.x195bbgf.xgb0k9h.x1l19134.xgjo3nb.x1ga7v0g.x15mokao.x18b5jzi.x1q0q8m5.x1t7ytsu.x1ejq31n.xt8cgyo.x128c8uf.x1co6499.xc5fred.x1ma7e2m.x9f619.x78zum5.xdt5ytf.x1iyjqo2.x6ikm8r.xy5w88m.xh8yej3.xbwb3hm.xgh35ic.x19xvnzb.x87ppg5.xev1tu8.xpr2fh2.xgzc8be.xz9dl7a > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div.x6s0dn4.xamitd3.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6.xh8yej3 > div > div.x1iyjqo2.x14vqqas > div > div > div.x78zum5.xdt5ytf.x1iyjqo2.x1n2onr6 > div:nth-child({}) > div > div > div > div > div.x1xdureb.xkbb5z.x13vxnyz > div > div.x4vbgl9.x1qfufaz.x1k70j0n > div "
                     # 定位帖子元素
                     post_selector = base_selector.format(i)
@@ -743,9 +878,9 @@ class Crawler:
                             like_btn = await self.page.wait_for_selector(like_selector, timeout=5000)
                             if like_btn:
                                 await like_btn.click()
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 await self.robust_update_status(f"成功點讚第 {i} 個帖子...")
-                                await asyncio.sleep(random.uniform(2, 4))
+                                #await asyncio.sleep(random.uniform(2, 4))
                                 print(f"成功点赞第 {i} 个帖子")
                                 await asyncio.sleep(2)
 
@@ -789,9 +924,9 @@ class Crawler:
                                     random_test = random.randint(0, len(self.leavetext_messags) - 1)
 
                                     await comment_box.fill(self.leavetext_messags[random_test])
-                                    await asyncio.sleep(random.uniform(2, 4))
+                                    #await asyncio.sleep(random.uniform(2, 4))
                                     await self.robust_update_status(f"留言內容: {self.leavetext_messags[random_test]}")
-                                    await asyncio.sleep(random.uniform(2, 4))
+                                    #await asyncio.sleep(random.uniform(2, 4))
                                     print(f"已输入留言内容: {self.leavetext_messags[random_test]}")
 
                                     # 等待发送按钮出现
@@ -827,9 +962,9 @@ class Crawler:
                                                 print(f"发送按钮未找到，第 {i} 个帖子")
                                         except Exception as e:
                                             print(f"备用發送按钮选择器也失败: {str(e)}")
-                                    await asyncio.sleep(random.uniform(2, 4))
+                                    #await asyncio.sleep(random.uniform(2, 4))
                                     await self.robust_update_status(f"成功留言第 {i} 個帖子...")
-                                    await asyncio.sleep(random.uniform(2, 4))
+                                    #await asyncio.sleep(random.uniform(2, 4))
                                     print(f"成功发送留言第 {i} 个帖子")
                                     await asyncio.sleep(2)
                                 else:
@@ -838,9 +973,9 @@ class Crawler:
                     await asyncio.sleep(8)
                 except Exception as e:
                     print(f"使用完整路径选择器也失败: {str(e)}")
-                    await asyncio.sleep(random.uniform(2, 4))
+                    #await asyncio.sleep(random.uniform(2, 4))
                     await self.robust_update_status("被限制留言或當前序號沒有貼文...跳過")
-                    await asyncio.sleep(random.uniform(2, 4))
+                    #await asyncio.sleep(random.uniform(2, 4))
                     out_count += 1
                     if out_count == 3:
                         break
@@ -910,9 +1045,9 @@ class Crawler:
         self.minimize_browser_window()
 
     async def sleep_time(self, rest_time=60):
-        self.report_task_status("正在執行程序休息...")
+        await self.report_task_status("正在執行程序休息...")
         """执行休息任务"""
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status(f"開始休息，持續 {rest_time} 秒...")
 
         # 发送倒计时信号
@@ -927,30 +1062,48 @@ class Crawler:
             if self.status_window and remaining > 0:
                 self.status_window.countdown_signal.emit(remaining)
 
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
         await self.robust_update_status("休息結束，繼續執行任務...")
-        await asyncio.sleep(random.uniform(2, 4))
+        #await asyncio.sleep(random.uniform(2, 4))
 
         # 隐藏倒计时显示
         if self.status_window:
             self.status_window.countdown_signal.emit(0)
-    def report_online_status(self):
-        """上报在线状态"""
+
+    async def report_online_status(self):
+        """异步上报在线状态"""
         try:
             url = f"http://aj.ry188.vip/API/UpDataState.aspx?Account={self.account}&DeviceNumber={self.device_number}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}&RunText=在线"
-            response = requests.get(url, timeout=18)
-            print(f"在线状态上报: {response.status_code}")
+
+            # 使用 aiohttp 进行异步请求
+            timeout = aiohttp.ClientTimeout(total=10)  # 设置10秒超时
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"在线状态上报: {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print("在线状态上报超时")
+            return False
         except Exception as e:
             print(f"在线状态上报失败: {e}")
+            return False
 
-    def report_task_status(self, task_name):
-        """上报任务执行状态"""
+    async def report_task_status(self, task_name):
+        """异步上报任务执行状态"""
         try:
             url = f"http://aj.ry188.vip/API/UpDataRunState.aspx?Account={self.account}&DeviceNumber={self.device_number}&RunText={task_name}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}"
-            response = requests.get(url, timeout=18)
-            print(f"任务状态上报: {task_name} - {response.status_code}")
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"任务状态上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"任务状态上报超时: {task_name}")
+            return False
         except Exception as e:
             print(f"任务状态上报失败: {e}")
+            return False
     def generate_machine_code(self):
         # 获取设备型号（去除空格）
         device_model = platform.machine().replace(" ", "")

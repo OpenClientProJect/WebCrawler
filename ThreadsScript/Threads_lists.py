@@ -40,6 +40,61 @@ class DraggableLabel(QLabel):
         self.setMinimumHeight(80)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
+    # 添加鼠标悬停效果
+    def enterEvent(self, event):
+        if self.draggable:
+            self.setStyleSheet(f"""
+                background-color: {self.getDarkerColor()}; 
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 14px;
+                color: #3d4252;
+                margin: 5px;
+                border: none;
+                /* 悬停时阴影更明显 */
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25), 
+                            0 8px 25px rgba(0, 0, 0, 0.2);
+                transform: translateY(-2px);
+                transition: all 0.3s ease;
+            """)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self.draggable:
+            self.setStyleSheet(f"""
+                background-color: {self.getOriginalColor()}; 
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 14px;
+                color: #3d4252;
+                margin: 5px;
+                border: none;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 
+                            0 6px 20px rgba(0, 0, 0, 0.15);
+                transform: translateY(0);
+                transition: all 0.3s ease;
+            """)
+        super().leaveEvent(event)
+
+    def getDarkerColor(self):
+        """获取更深的颜色用于悬停效果"""
+        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+        original_color = colors[self.index]
+        # 简单的颜色变暗处理
+        if original_color.startswith('#'):
+            r = int(original_color[1:3], 16)
+            g = int(original_color[3:5], 16)
+            b = int(original_color[5:7], 16)
+            r = max(0, r - 20)
+            g = max(0, g - 20)
+            b = max(0, b - 20)
+            return f"#{r:02x}{g:02x}{b:02x}"
+        return original_color
+
+    def getOriginalColor(self):
+        """获取原始颜色"""
+        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+        return colors[self.index]
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and self.draggable:
             self.drag_start_position = event.pos()
@@ -235,19 +290,25 @@ class DropArea(QFrame):
                         self.labels.pop(i)
 
                         # 创建新标签并添加到相同位置
-                        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#e6e6fa"]
-                        texts = ["首頁留言", "關鍵字任務", "個人發文", "休息時間"]
+                        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+                        texts = ["首頁留言", "關鍵字任務", "個人發文", "用戶留言", "休息時間"]
                         new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                         new_label.is_internal = True  # 标记为内部标签
 
                         # 如果是休息时间任务，弹出输入框获取休息时间
-                        if index == 3:  # 休息时间任务的索引为3
+                        if index == 4:  # 休息时间任务的索引为3
                             rest_time, ok = self.getRestTime()
                             if ok:
                                 new_label.rest_time = rest_time
                             else:
                                 new_label.rest_time = 60  # 默认60秒
-
+                                # 为其他任务添加完成时间输入框
+                        elif index in [0, 1, 2,3]:  # 其他任务
+                            completion_time, ok = self.getCompletionTime(index, texts[index])
+                            if ok:
+                                new_label.completion_time = completion_time
+                            else:
+                                new_label.completion_time = 1800  # 默认30分钟（1800秒）
                         new_label.setContextMenuPolicy(Qt.CustomContextMenu)
                         new_label.customContextMenuRequested.connect(
                             lambda pos, label=new_label: self.showContextMenu(pos, label))
@@ -281,8 +342,8 @@ class DropArea(QFrame):
                         self.swapLabels(source_index, target_index)
                 else:
                     # 外部拖动：插入新标签并移除目标标签
-                    colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#e6e6fa"]
-                    texts = ["首頁留言", "關鍵字任務", "個人發文", "休息時間"]
+                    colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+                    texts = ["首頁留言", "關鍵字任務", "個人發文", "用戶留言", "休息時間"]
 
                     # 移除目标位置的标签
                     target_label = self.labels[target_index]
@@ -295,13 +356,18 @@ class DropArea(QFrame):
                     new_label.is_internal = True  # 标记为内部标签
 
                     # 如果是休息时间任务，弹出输入框获取休息时间
-                    if index == 3:  # 休息时间任务的索引为3
+                    if index == 4:  # 休息时间任务的索引为3
                         rest_time, ok = self.getRestTime()
                         if ok:
                             new_label.rest_time = rest_time
                         else:
                             new_label.rest_time = 60  # 默认60秒
-
+                    elif index in [0, 1, 2,3]:  # 其他任务
+                        completion_time, ok = self.getCompletionTime(index, texts[index])
+                        if ok:
+                            new_label.completion_time = completion_time
+                        else:
+                            new_label.completion_time = 1800  # 默认30分钟（1800秒）
                     new_label.setContextMenuPolicy(Qt.CustomContextMenu)
                     new_label.customContextMenuRequested.connect(
                         lambda pos, label=new_label: self.showContextMenu(pos, label))
@@ -310,19 +376,24 @@ class DropArea(QFrame):
                     self.labels.insert(target_index, new_label)
             else:
                 # 添加到末尾
-                colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#e6e6fa"]
-                texts = ["首頁留言", "關鍵字任務", "個人發文", "休息時間"]
+                colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+                texts = ["首頁留言", "關鍵字任務", "個人發文", "用戶留言", "休息時間"]
                 new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                 new_label.is_internal = True  # 标记为内部标签
 
                 # 如果是休息时间任务，弹出输入框获取休息时间
-                if index == 3:  # 休息时间任务的索引为3
+                if index == 4:  # 休息时间任务的索引为3
                     rest_time, ok = self.getRestTime()
                     if ok:
                         new_label.rest_time = rest_time
                     else:
                         new_label.rest_time = 60  # 默认60秒
-
+                elif index in [0, 1, 2,3]:  # 其他任务
+                    completion_time, ok = self.getCompletionTime(index, texts[index])
+                    if ok:
+                        new_label.completion_time = completion_time
+                    else:
+                        new_label.completion_time = 1800  # 默认30分钟（1800秒）
                 new_label.setContextMenuPolicy(Qt.CustomContextMenu)
                 new_label.customContextMenuRequested.connect(
                     lambda pos, label=new_label: self.showContextMenu(pos, label))
@@ -335,6 +406,56 @@ class DropArea(QFrame):
 
         # 重置拖动状态
         self.drag_in_progress = False
+    def getCompletionTime(self, task_index, task_name):
+        """获取任务完成时间，使用自定义样式的输入对话框"""
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(f"{task_name}完成時間")
+        dialog.setLabelText(f"請輸入{task_name}的最大執行時間（分鐘）:\n(輸入0表示不受時間限制)1分-8時")
+        dialog.setInputMode(QInputDialog.IntInput)
+        dialog.setIntRange(0, 480)  # 0分钟到8小时，0表示无限制
+        dialog.setIntValue(30)  # 默认30分钟
+
+        # 设置对话框样式以匹配应用程序主题
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #f5f8ff;
+                color: #333333;
+            }
+            QLabel {
+                color: #333333;
+                font-size: 14px;
+                background-color: transparent;
+            }
+            QSpinBox {
+                background-color: white;
+                color: #333333;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 5px;
+                selection-background-color: #3492ED;
+            }
+            QPushButton {
+                background-color: #63b5ff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                font-weight: bold;
+                border-radius: 5px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #3492ED;
+            }
+        """)
+
+        result = dialog.exec_()
+        if result == QDialog.Accepted:
+            minutes = dialog.intValue()
+            if minutes == 0:
+                return 0, True  # 0表示无时间限制
+            else:
+                return minutes * 60, True  # 转换为秒
+        return 1800, False  # 默认30分钟
 
     def getRestTime(self):
         """获取休息时间，使用自定义样式的输入对话框"""
@@ -575,11 +696,11 @@ class TaskOrderWindow(QDialog):
         right_layout.addWidget(label)
 
         # 创建4个可拖拽的标签，但根据配置决定是否显示
-        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#e6e6fa"]
-        texts = ["首頁留言", "關鍵字任務", "個人發文", "休息時間"]
+        colors = ["#ffcccb", "#b2f0b2", "#ccccff", "#f8bbd0", "#e6e6fa"]
+        texts = ["首頁留言", "關鍵字任務", "個人發文", "用戶留言", "休息時間"]
 
         # 根据配置决定哪些标签应该显示
-        show_labels = [True, True, True, True]  # 默认全部显示
+        show_labels = [True, True, True, True, True]  # 默认全部显示
 
         if self.config:
             show_labels[0] = self.config.get("Home_IsEnableBrowse", False)
@@ -606,7 +727,7 @@ class TaskOrderWindow(QDialog):
 
         # 放置可见的标签
         row, col = 0, 0
-        for i in range(4):
+        for i in range(5):
             if show_labels[i]:
                 draggable_label = DraggableLabel(i, colors[i], texts[i], draggable=True)
                 grid_layout.addWidget(draggable_label, row, col)
@@ -748,24 +869,110 @@ class TaskOrderWindow(QDialog):
         self.current_order = order
         print("当前顺序:", order)
 
+    # 在 TaskOrderWindow 类的 saveOrder 方法中添加启动时间设置
     def saveOrder(self):
         if not self.current_order:
-            QMessageBox.warning(self, "警告", "請先添加任務到左側!")
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("警告")
+            msg_box.setText("請先添加任務到左側!")
+            msg_box.setIcon(QMessageBox.Warning)
+
+            # 设置消息框的样式
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    background-color: white;
+                    color: black;  // 设置文字颜色为黑色
+                    border-radius: 8px;
+                }
+                QMessageBox QLabel {
+                    color: black;  // 确保标签文字也是黑色
+                }
+                QMessageBox QPushButton {
+                    background-color: #63b5ff;
+                    color: white;
+                    border: none;
+                    padding: 8px;
+                    font-weight: bold;
+                    border-radius: 5px;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #3492ED;
+                }
+            """)
+
+            msg_box.exec_()
             return
 
-        # 收集所有休息时间任务的配置
+        # 弹出启动时间设置对话框
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle("設置啟動時間")
+        dialog.setLabelText("請輸入每日啟動時間（24小時制，格式 HH:MM）:\n輸入 0 表示立即運行")
+        dialog.setInputMode(QInputDialog.TextInput)
+        dialog.setTextValue("09:00")  # 默认9点
+
+        # 设置对话框样式
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #f5f8ff;
+                color: black;
+            }
+            QLabel {
+                color: black;
+                font-size: 14px;
+                background-color: transparent;
+            }
+            QLineEdit {
+                background-color: white;
+                color: black;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #63b5ff;
+                color: black;
+                border: none;
+                padding: 8px 16px;
+                font-weight: bold;
+                border-radius: 5px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #3492ED;
+            }
+        """)
+
+        result = dialog.exec_()
+        scheduled_time = "0"  # 默认立即运行
+
+        if result == QDialog.Accepted:
+            scheduled_time = dialog.textValue().strip()
+            # 验证时间格式
+            if scheduled_time != "0":
+                import re
+                if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', scheduled_time):
+                    QMessageBox.warning(self, "輸入錯誤", "時間格式不正確，請使用 HH:MM 格式（如 09:00）")
+                    return
+
+        # 收集所有任务的配置
         rest_times = {}
+        completion_times = {}
+
         for i, label in enumerate(self.drop_area.labels):
             if hasattr(label, 'rest_time'):
                 rest_times[i] = label.rest_time
+            if hasattr(label, 'completion_time'):
+                completion_times[i] = label.completion_time
 
         self.accept_order = {
             'order': self.current_order,
-            'rest_times': rest_times
+            'rest_times': rest_times,
+            'completion_times': completion_times,
+            'scheduled_time': scheduled_time  # 添加计划时间
         }
 
         print(f"保存顺序: {self.accept_order}")
-        # self.accept()  # 关闭对话框并返回 Accepted
         self.hide()
 
     def closeEvent(self, event):

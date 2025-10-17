@@ -793,7 +793,7 @@ class Crawler:
                 else:
                     print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
                     await asyncio.sleep(10)  # 等待10秒
-                await self.class_fb_set()
+                await self.class_fb_set(page)
             except Exception as e:
                 current_url = await page.evaluate("() => window.location.href")
                 if "login" in current_url or "authentication" in current_url or "checkpoint" in current_url:
@@ -1665,17 +1665,17 @@ class Crawler:
         #     except Exception as e:
         #         print(f"处理第 {i} 个帖子时出错: {str(e)}")
 
-    async def class_fb_set(self):
+    async def class_fb_set(self,page):
         try:
             Option_selector = '//div[@data-visualcompletion="ignore-dynamic"]//div[@role="button" and contains(@aria-label, "選項")]'
-            Option_but = await self.page.wait_for_selector(Option_selector, timeout=10000)
+            Option_but = await page.wait_for_selector(Option_selector, timeout=10000)
             if Option_but:
                 await Option_but.scroll_into_view_if_needed()
                 await asyncio.sleep(1)
                 await Option_but.click()
                 await asyncio.sleep(random.uniform(5, 8))
                 disabled_selector = '//div[@aria-label="聊天室設定"]//div[@aria-checked="true" and contains(@aria-label, "彈出新訊息")]'
-                disabled_but = await self.page.wait_for_selector(disabled_selector, timeout=10000)
+                disabled_but = await page.wait_for_selector(disabled_selector, timeout=10000)
                 if disabled_but:
                     await disabled_but.scroll_into_view_if_needed()
                     await asyncio.sleep(1)
