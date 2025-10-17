@@ -16,7 +16,6 @@ class ProgressWindow(QDialog):
         icon_path = resource_path("IGicon.ico")
         self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setWindowTitle("Instagram 爬取進度")
         self.setFixedSize(800, 600)
         self.counters = {
             'comment': 0,
@@ -30,22 +29,22 @@ class ProgressWindow(QDialog):
         # 鼠标拖拽相关
         self.drag_pos = None
 
-        # 创建主布局
+        # 主布局
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 创建标题栏
+        # 标题栏
         self.create_header(main_layout)
 
-        # 创建内容区域
+        # 内容区域
         self.create_content_area(main_layout)
 
         self.setLayout(main_layout)
         self.update_signal.connect(self.update_display)
 
     def create_header(self, main_layout):
-        """创建蓝紫渐变标题栏"""
+        """蓝紫渐变标题栏"""
         header_widget = QWidget()
         header_widget.setFixedHeight(60)
         header_widget.setStyleSheet("""
@@ -58,11 +57,26 @@ class ProgressWindow(QDialog):
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(20, 15, 20, 15)
 
-        # 左侧标题
+        # 左侧图标和标题
+        left_layout = QHBoxLayout()
+        left_layout.setSpacing(10)
+
+        # ListWhite图片
+        list_icon = QLabel()
+        list_pixmap = QPixmap()
+        list_pixmap.load(resource_path("./image/ListWhite.png"))
+        if not list_pixmap.isNull():
+            list_icon.setPixmap(list_pixmap.scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        list_icon.setStyleSheet("background: transparent; border: none;")
+        left_layout.addWidget(list_icon)
+
+        # 标题
         title_label = QLabel("Instagram 爬取進度")
         title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
         title_label.setStyleSheet("color: white; background: transparent; border: none;")
-        header_layout.addWidget(title_label)
+        left_layout.addWidget(title_label)
+
+        header_layout.addLayout(left_layout)
 
         # 中间伸缩空间
         header_layout.addStretch(1)

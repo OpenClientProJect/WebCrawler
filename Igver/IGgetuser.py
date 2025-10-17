@@ -3,9 +3,36 @@ import sys
 import asyncio
 from task import main
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,QMessageBox
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap, QPainter
 from PyQt5.QtCore import Qt, QSize
 from qasync import QEventLoop, asyncClose, asyncSlot
+
+class CustomComboBox(QComboBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.arrow_icon = None
+        
+    def setArrowIcon(self, icon_path):
+        """设置自定义箭头图标"""
+        self.arrow_icon = QPixmap(icon_path)
+        
+    def paintEvent(self, event):
+        """重写绘制事件以显示自定义箭头"""
+        super().paintEvent(event)
+        
+        if self.arrow_icon and not self.arrow_icon.isNull():
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.Antialiasing)
+            
+            # 计算箭头位置（右侧中央）
+            rect = self.rect()
+            arrow_size = 16
+            x = rect.width() - 25  # 距离右边25px
+            y = (rect.height() - arrow_size) // 2  # 垂直居中
+            
+            # 绘制箭头图标
+            painter.drawPixmap(x, y, arrow_size, arrow_size, self.arrow_icon)
+            painter.end()
 
 class MyApp(QWidget):
     def __init__(self):
@@ -167,13 +194,6 @@ class MyApp(QWidget):
                 border: none;
                 width: 30px;
             }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid #6c757d;
-                margin-right: 15px;
-            }
         """
 
         textarea_style = """
@@ -303,11 +323,15 @@ class MyApp(QWidget):
         browser_label_layout.addStretch(1)  # 添加伸缩量
         browser_group.addLayout(browser_label_layout)
 
-        self.browser_dropdown = QComboBox(self)
+        self.browser_dropdown = CustomComboBox(self)
         self.browser_dropdown.setFixedSize(input_size)
         self.browser_dropdown.addItem("隱藏輸入的鏈接地址框")
         self.browser_dropdown.addItem("顯示輸入的鏈接地址框")
         self.browser_dropdown.setStyleSheet(dropdown_style)
+        
+        # 箭头图标
+        self.browser_dropdown.setArrowIcon(resource_path("./image/under.svg"))
+
         self.browser_dropdown.currentIndexChanged.connect(self.toggle_browser_input)
         browser_group.addWidget(self.browser_dropdown)
 
@@ -344,11 +368,15 @@ class MyApp(QWidget):
         fans_label_layout.addStretch(1)  # 添加伸缩量
         fans_group.addLayout(fans_label_layout)
 
-        self.dropdown = QComboBox(self)
+        self.dropdown = CustomComboBox(self)
         self.dropdown.addItem("隱藏輸入的鏈接地址框")
         self.dropdown.addItem("顯示輸入的鏈接地址框")
         self.dropdown.setFixedSize(input_size)
         self.dropdown.setStyleSheet(dropdown_style)
+        
+        # 箭头图标
+        self.dropdown.setArrowIcon(resource_path("./image/under.svg"))
+
         self.dropdown.currentIndexChanged.connect(self.toggle_textbox)
         fans_group.addWidget(self.dropdown)
 

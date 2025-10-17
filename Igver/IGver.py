@@ -180,7 +180,7 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
         create_shutdown_and_extract_script(local_path)
     except Exception as e:
         print(f"下载文件时发生错误： {e}")
-
+ # 注释
 def version_ver():
     global version
     version = '1.0.0.6'
