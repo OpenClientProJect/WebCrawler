@@ -278,9 +278,25 @@ class MyApp(QWidget):
         browser_group = QVBoxLayout()
         browser_group.setSpacing(8)
 
-        browser_label = QLabel("💝 指定作品的點讚用戶列表和評論用戶列表", self)
+        # 创建水平布局
+        browser_label_layout = QHBoxLayout()
+        browser_label_layout.setSpacing(3)
+
+        # 图片左侧
+        browser_peth = resource_path("./image/shixin.png")
+        shixin_icon = QLabel(self)
+        shixin_pixmap = QPixmap(browser_peth)
+        shixin_icon.setPixmap(shixin_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        shixin_icon.setStyleSheet("background: transparent; border: none;")
+        browser_label_layout.addWidget(shixin_icon)
+
+        # 文本标签右侧
+        browser_label = QLabel("指定作品的點讚用戶列表和評論用戶列表", self)
         browser_label.setStyleSheet(label_style)
-        browser_group.addWidget(browser_label)
+        browser_label_layout.addWidget(browser_label)
+
+        browser_label_layout.addStretch(1)  # 添加伸缩量
+        browser_group.addLayout(browser_label_layout)
 
         self.browser_dropdown = QComboBox(self)
         self.browser_dropdown.setFixedSize(input_size)
@@ -303,9 +319,25 @@ class MyApp(QWidget):
         fans_group = QVBoxLayout()
         fans_group.setSpacing(8)
 
-        fans_label = QLabel("👤 指定作者的粉絲用戶列表", self)
+        # 创建水平布局
+        fans_label_layout = QHBoxLayout()
+        fans_label_layout.setSpacing(3)
+
+        # 图片左侧
+        fans_peth = resource_path("./image/renqun.png")
+        renqun_icon = QLabel(self)
+        renqun_pixmap = QPixmap(fans_peth)
+        renqun_icon.setPixmap(renqun_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        renqun_icon.setStyleSheet("background: transparent; border: none;")
+        fans_label_layout.addWidget(renqun_icon)
+
+        # 文本标签右侧
+        fans_label = QLabel("指定作者的粉絲用戶列表", self)
         fans_label.setStyleSheet(label_style)
-        fans_group.addWidget(fans_label)
+        fans_label_layout.addWidget(fans_label)
+
+        fans_label_layout.addStretch(1)  # 添加伸缩量
+        fans_group.addLayout(fans_label_layout)
 
         self.dropdown = QComboBox(self)
         self.dropdown.addItem("隱藏輸入的鏈接地址框")
@@ -325,9 +357,31 @@ class MyApp(QWidget):
         self.toggle_textbox(self.dropdown.currentIndex())
 
         # 确定按钮
-        self.button = QPushButton('🚀 確定執行', self)
+        self.button = QPushButton(self)
         self.button.setFixedHeight(50)
         self.button.setFont(QFont("微軟雅黑", 13, QFont.Bold))
+        
+        # 创建按钮布局
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(15, 0, 15, 0)
+        button_layout.setSpacing(8)
+        button_layout.setAlignment(Qt.AlignCenter)  # 设置水平居中
+        
+        # 添加Begin图片
+        begin_path = resource_path("./image/Begin.png")
+        begin_icon = QLabel(self)
+        begin_pixmap = QPixmap(begin_path)
+        begin_icon.setPixmap(begin_pixmap.scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        begin_icon.setStyleSheet("background: transparent; border: none;")
+        button_layout.addWidget(begin_icon)
+        
+        # 添加文本
+        button_text = QLabel("確定執行", self)
+        button_text.setStyleSheet("color: white; font-size: 13px; font-weight: bold; background: transparent; border: none;")
+        button_layout.addWidget(button_text)
+        
+        self.button.setLayout(button_layout)
+        
         self.button.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -354,17 +408,47 @@ class MyApp(QWidget):
         # 版本信息
         info_layout = QHBoxLayout()
 
-        time_label = QLabel(f"⏰ 時間: {days}天", self)
+        # 时间区域
+        time_container_layout = QHBoxLayout()
+        time_container_layout.setSpacing(3)
+        
+        # 添加shizhong图片
+        shizhong_path = resource_path("./image/shizhong.png")
+        shizhong_icon = QLabel(self)
+        shizhong_pixmap = QPixmap(shizhong_path)
+        shizhong_icon.setPixmap(shizhong_pixmap.scaled(16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        shizhong_icon.setStyleSheet("background: transparent; border: none;")
+        time_container_layout.addWidget(shizhong_icon)
+        
+        # 添加时间文本
+        time_label = QLabel(f"時間: {days}天", self)
         time_label.setFont(QFont("微軟雅黑", 9))
-        time_label.setStyleSheet("color: #6c757d;")
-        info_layout.addWidget(time_label)
+        time_label.setStyleSheet("color: #6c757d; background: transparent;")
+        time_container_layout.addWidget(time_label)
+        
+        info_layout.addLayout(time_container_layout)
 
         info_layout.addStretch(1)
 
-        version_label = QLabel(f"📱 版本: {versions}", self)
+        # 版本区域
+        version_container_layout = QHBoxLayout()
+        version_container_layout.setSpacing(3)
+        
+        # 添加git-branch-line图片
+        git_branch_path = resource_path("./image/git-branch-line.png")
+        git_branch_icon = QLabel(self)
+        git_branch_pixmap = QPixmap(git_branch_path)
+        git_branch_icon.setPixmap(git_branch_pixmap.scaled(16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        git_branch_icon.setStyleSheet("background: transparent; border: none;")
+        version_container_layout.addWidget(git_branch_icon)
+        
+        # 添加版本文本
+        version_label = QLabel(f"版本: {versions}", self)
         version_label.setFont(QFont("微軟雅黑", 9))
-        version_label.setStyleSheet("color: #6c757d;")
-        info_layout.addWidget(version_label)
+        version_label.setStyleSheet("color: #6c757d; background: transparent;")
+        version_container_layout.addWidget(version_label)
+        
+        info_layout.addLayout(version_container_layout)
 
         content_layout.addLayout(info_layout)
 
@@ -481,7 +565,7 @@ def win_main(version,day):
     # 设置应用程序的样式
     app.setStyle('Fusion')
     palette = QPalette()
-    # 使用现代化的浅色主题
+    # 主题
     palette.setColor(QPalette.Window, QColor(248, 249, 250))  # 浅灰背景
     palette.setColor(QPalette.WindowText, QColor(73, 80, 87))  # 深色文字
     palette.setColor(QPalette.Base, QColor(255, 255, 255))  # 白色输入框背景
