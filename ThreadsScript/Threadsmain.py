@@ -109,13 +109,23 @@ class Crawler:
         await self.robust_update_status("啟動瀏覽器...")
         #await asyncio.sleep(random.uniform(2, 4))
         playwright = await async_playwright().start()
+        # 确保Playwright连接完全建立
+        await asyncio.sleep(1)
         self.browser = await playwright.chromium.launch(headless=False, executable_path=self.browser_path,
             ignore_default_args=[
                 '--enable-automation',
                 '--disable-popup-blocking'
             ])
+        # 确保浏览器完全启动
+        await asyncio.sleep(1)
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
+        ]
         context = await self.browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            user_agent=random.choice(user_agents)
         )
         await context.add_init_script("""
                            Object.defineProperty(navigator, 'webdriver', {
@@ -125,10 +135,13 @@ class Crawler:
                                runtime: {},
                            };
                        """)
+        # 确保上下文完全建立
+        await asyncio.sleep(1)
         # 应用cookies到上下文
         if self.cookies:
             await context.add_cookies(self.cookies)
             print("已应用cookies到浏览器上下文")
+            await asyncio.sleep(1)
         print("已确认登录状态，开始执行任务...")
         self.page = await context.new_page()
         await asyncio.sleep(1)
@@ -171,7 +184,7 @@ class Crawler:
 
                     except Exception as e:
                         print(f"执行任务 {task_index} 时出错: {str(e)}")
-                        await self.robust_update_status(f"任务执行出错: {str(e)}")
+                        await self.robust_update_status(f"任務執行出錯: {str(e)}")
                         continue
         # if self.home_Browse :
         #     #await asyncio.sleep(random.uniform(2, 4))
@@ -482,13 +495,21 @@ class Crawler:
                 '--disable-popup-blocking'
             ]
             )
-            page = await self.browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-            await page.goto(url="https://www.threads.net/login", wait_until='load')
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
+            ]
+            page = await self.browser.new_page(user_agent=random.choice(user_agents))
+            await page.goto(url="https://www.threads.net/login", wait_until='load', timeout=50000)
             await asyncio.sleep(1)
 
             # 输入凭证
             await page.locator("form input").first.fill(self.username)
+            await asyncio.sleep(random.uniform(0.5, 1.2))
             await page.locator("form input").nth(1).fill(self.password)
+            await asyncio.sleep(random.uniform(0.5, 1.2))
             await page.click("form div[role='button']")
 
             # 检查登录是否成功

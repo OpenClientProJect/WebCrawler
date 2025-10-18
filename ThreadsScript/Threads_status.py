@@ -634,7 +634,7 @@ class StatusWindow(QDialog):
             self.countdown_seconds = seconds
             minutes = seconds // 60
             remaining_seconds = seconds % 60
-            self.countdown_label.setText(f"休息倒计时:{minutes:02d}:{remaining_seconds:02d}")
+            self.countdown_label.setText(f"休息倒計時:{minutes:02d}:{remaining_seconds:02d}")
             self.countdown_label.show()
 
             # 启动或重启计时器

@@ -8,8 +8,10 @@ import os
 import winreg  # 仅适用于Windows
 import shutil  # 适用于Linux和macOS
 import sys
+import re
 import aiohttp
 import requests
+from urllib.parse import urlparse, parse_qs
 from PyQt5.QtWidgets import QApplication
 from FB_loginwin import win_main
 from playwright.async_api import async_playwright
@@ -24,7 +26,7 @@ class Crawler:
         self.delay = 25
         self.is_logged_in = False
         self.browser_path = get_chrome_path()
-        self.IsKeys = params.get('search_content', "鸡蛋#蛋糕")  # 从参数获取搜索关键词
+        self.IsKeys = params.get('search_content')  # 从参数获取搜索关键词
         self.search_results = []  # 存储搜索结果
         self.params = params  # 保存参数
         self.ui_update_lock = asyncio.Lock()  # 添加UI更新锁
@@ -82,7 +84,7 @@ class Crawler:
                 '--disable-back-forward-cache',
                 '--disable-site-isolation-trials'
             ]
-            self.browser = await playwright.chromium.launch(headless=True,args=browser_args, executable_path=self.browser_path)
+            self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
             context = await self.browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
             )
@@ -106,11 +108,14 @@ class Crawler:
                 app = QApplication.instance()
                 if not app:
                     app = QApplication(sys.argv)
-                # 创建状态窗口
-                app.setApplicationName("自動化脚本")
-                status_window = StatusWindow()
-                status_window.show()
+
+                # 创建状态窗口并保存引用
+                self.status_window = StatusWindow()
+                self.status_window.show()
+
+                # 确保窗口显示
                 QApplication.processEvents()
+                await asyncio.sleep(0.5)  # 给窗口显示一点时间
                 await self.csgetusers()
             print("任务完成")
         except Exception as e:
@@ -241,7 +246,7 @@ class Crawler:
                 print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
                 await asyncio.sleep(10)
 
-            post = 20  # 设置要获取的帖子数量
+            post = int(self.params.get('search_count')) # 设置要获取的帖子数量
             current_groups_postlist = []
             max_scroll_attempts = 10
             scroll_attempts = 0
@@ -320,11 +325,10 @@ class Crawler:
 
             # 匹配多种可能的群组URL格式
             patterns = [
-                r'/groups/(\d+)/?',  # /groups/123456789/
-                r'facebook\.com/groups/(\d+)',  # facebook.com/groups/123456789
+                r'https?://(?:www\.)?facebook\.com/groups/([^/?]+)/?',
+                r'/groups/([^/?]+)/?',
             ]
 
-            import re
             for pattern in patterns:
                 match = re.search(pattern, clean_url)
                 if match:
@@ -346,7 +350,7 @@ class Crawler:
         if addresses and addresses[0].strip():
             url = addresses[0].strip()
             print(f"开始爬取用户信息，地址: {url}")
-
+            await self.robust_update_status("开始爬取用户信息...")
             await self.page.goto(
                 url=url,
                 wait_until='load'
@@ -358,7 +362,7 @@ class Crawler:
             current_count = 0
             scroll_attempts = 0
             max_scroll_attempts = 10
-
+            users = []
             while scroll_attempts < max_scroll_attempts:
                 # 滚动到底部
                 await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -368,9 +372,25 @@ class Crawler:
                 user_links = await self.page.query_selector_all(
                     '//div[@role="list"]//a[contains(@href, "/user/") or contains(@href, "facebook.com/")]')
                 current_count = len(user_links)
-                print(user_links)
                 print(f"滚动后用户数量: {current_count}")
 
+                for i, link in enumerate(user_links):
+                    try:
+                        href = await link.get_attribute('href')
+                        text = await link.inner_text()
+
+                        if href and text.strip() and href not in users:
+                            users.append({
+                                'index': i + 1,
+                                'name': text.strip(),
+                                'user_id': await self.extract_facebook_identifier(href)
+                            })
+                            print(href,text.strip())
+                            href = await self.extract_facebook_identifier(href)
+                            await self.robust_update_status(f"{i}：{href} {text.strip()}")
+                    except Exception as e:
+                        print(f"提取第 {i + 1} 个用户信息时出错: {str(e)}")
+                        continue
                 if current_count == previous_count:
                     scroll_attempts += 1
                     print(f"用户数量未增加，尝试次数: {scroll_attempts}/{max_scroll_attempts}")
@@ -382,37 +402,38 @@ class Crawler:
                 if scroll_attempts >= 3:  # 连续3次没有新用户就停止
                     print("已加载所有用户")
                     break
+                if len(users) >= int(self.params.get('crawl_count')):
+                    print(users)
+                    break
 
-            # 获取最终的用户列表
-            users = await self._extract_user_links()
             print(f"爬取完成，共获取 {len(users)} 个用户信息")
             return users
         else:
             print("地址为空，无法爬取")
+    async def extract_facebook_identifier(self,url):
+        # 处理相对路径
+        if url.startswith('/'):
+            user_match = re.search(r'/user/(\d+)', url)
+            if user_match:
+                return user_match.group(1)
+            return None
 
-    async def _extract_user_links(self):
-        """提取用户链接的辅助方法"""
-        user_links = await self.page.query_selector_all(
-            '//div[@role="list"]//a[contains(@href, "/user/") or contains(@href, "facebook.com/")]')
+        # 解析完整URL
+        parsed = urlparse(url)
 
-        users = []
-        for i, link in enumerate(user_links):
-            try:
-                href = await link.get_attribute('href')
-                text = await link.inner_text()
+        # 处理profile.php情况
+        if parsed.path == '/profile.php':
+            query_params = parse_qs(parsed.query)
+            if 'id' in query_params:
+                return query_params['id'][0]
 
-                if href and text.strip():
-                    users.append({
-                        'index': i + 1,
-                        'name': text.strip(),
-                        'profile_url': href,
-                        'user_id': href.split('/')[-1].split('?')[0] if '/' in href else href
-                    })
-            except Exception as e:
-                print(f"提取第 {i + 1} 个用户信息时出错: {str(e)}")
-                continue
+        # 处理用户名情况
+        if parsed.netloc == 'www.facebook.com':
+            path_parts = parsed.path.strip('/').split('/')
+            if path_parts and path_parts[0] != 'profile.php':
+                return path_parts[0]
 
-        return users
+        return None
 
     async def home_post(self):
         await self.page.goto(url="https://www.facebook.com/", wait_until='load')

@@ -229,7 +229,7 @@ class MyApp(QWidget):
 
         self.address_textbox = QTextEdit()
         self.address_textbox.setPlaceholderText(
-            "請輸入多條地址，每行一個...\n例：https://www.facebook.com/groups/613691032041093/members")
+            "請輸入地址，每行一個...\n例：https://www.facebook.com/groups/613691032041093/members")
         self.address_textbox.setStyleSheet("""
             QTextEdit {
                 border: 1px solid #e0e0e0;
@@ -285,7 +285,7 @@ class MyApp(QWidget):
         bottom_layout = QHBoxLayout()
 
         # 左下角版本信息
-        self.version_label = QLabel(f"版本：{versions}")
+        self.version_label = QLabel(f"版本：{versions} 剩余天数：100 天")
         self.version_label.setFont(QFont("微軟雅黑", 9))
         self.version_label.setStyleSheet("color: #999;")
 

@@ -118,12 +118,17 @@ class InstagramScraper:
                 box['y'] + box['height'] / 2
             )
             await asyncio.sleep(25)
-
+            Option_but = False
+            try :
+                Option_selector = '//input[@name="username" and contains(@aria-label, "留言")]'
+                Option_but = await self.page.wait_for_selector(Option_selector, timeout=10000)
+            except Exception as e:
+                print("登录失败")
             # 检查是否仍在登录页
             if "auth_platform/codeentry" in self.page.url:
                 await asyncio.sleep(60)
                 await self.browser.close()
-            elif "accounts/login" in self.page.url or "accounts/suspended" in self.page.url:
+            elif "accounts/login" in self.page.url or "accounts/suspended" in self.page.url or Option_but:
                 await self.browser.close()
                 raise Exception("登录失败，请检查账号密码")
 
