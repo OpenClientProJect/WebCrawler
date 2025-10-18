@@ -23,15 +23,16 @@ class MyApplog(QDialog):
 
         # 设置窗口属性
         self.setWindowTitle('Threads登錄')  # 这个标题现在只用于任务栏显示
-        self.setFixedSize(400, 500)  # 设置窗口的固定大小
+        self.setFixedSize(400, 550)  # 增加窗口高度，确保图标完全可见
 
         # 创建整体布局
         main_layout = QVBoxLayout()
         main_layout.setSpacing(0)  # 设置为0间距
         main_layout.setContentsMargins(0, 0, 0, 0)  # 设置边距为0
 
-        # 创建标题容器，设置背景色
+        # 创建标题容器，设置背景色和固定高度
         title_container = QWidget()
+        title_container.setFixedHeight(60)  # 设置标题栏固定高度为60像素
         title_container.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff8965, stop:1 #ffa07a);")
         title_container_layout = QVBoxLayout(title_container)
         title_container_layout.setContentsMargins(20, 0, 20, 0)  # 保留左右内边距
@@ -91,24 +92,25 @@ class MyApplog(QDialog):
         content_container = QWidget()
         content_container.setStyleSheet("background-color: white;")
         content_container_layout = QVBoxLayout(content_container)
-        content_container_layout.setContentsMargins(30, 30, 30, 30)  # 设置内容区域的边距
-        content_container_layout.setSpacing(20)
+        content_container_layout.setContentsMargins(30, 30, 30, 30)  # 减少顶部边距，避免被标题栏遮挡
+        content_container_layout.setSpacing(25)  # 增加间距
 
         # 添加Threads账号图标和应用名称
         icon_layout = QVBoxLayout()
         icon_layout.setAlignment(Qt.AlignCenter)
+        icon_layout.setSpacing(10)  # 设置图标和文本之间的间距
 
         # 添加Threads账号图标
         threads_icon = QLabel()
-        threads_icon.setPixmap(QIcon(resource_path("iamge/Threads账号.png")).pixmap(60, 60))
+        threads_icon.setPixmap(QIcon(resource_path("iamge/Threads账号.png")).pixmap(80, 80))  # 增大图标尺寸
         threads_icon.setAlignment(Qt.AlignCenter)
-        threads_icon.setStyleSheet("margin-bottom: 10px; background: transparent; border: none;")
+        threads_icon.setStyleSheet("background: transparent; border: none; margin: 0; padding: 0;")
 
         # 添加应用名称
         app_name = QLabel("Threads", self)
-        app_name.setFont(QFont("微軟雅黑", 18, QFont.Bold))
+        app_name.setFont(QFont("微軟雅黑", 20, QFont.Bold))  # 增大字体
         app_name.setAlignment(Qt.AlignCenter)
-        app_name.setStyleSheet("color: #ff8965; margin-bottom: 20px; background: transparent; border: none;")
+        app_name.setStyleSheet("color: #ff8965; background: transparent; border: none; margin: 0; padding: 0;")
 
         icon_layout.addWidget(threads_icon)
         icon_layout.addWidget(app_name)
