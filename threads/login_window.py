@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, \
     QComboBox, QMessageBox, QDialog
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from qasync import QEventLoop
 
 class MyApplog(QDialog):
@@ -22,37 +22,98 @@ class MyApplog(QDialog):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # 设置窗口属性
-        self.setWindowTitle('賬號登錄')  # 这个标题现在只用于任务栏显示
+        self.setWindowTitle('Threads登錄')  # 这个标题现在只用于任务栏显示
+        self.setFixedSize(400, 500)  # 设置窗口的固定大小
+
         # 创建整体布局
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(0)  # 设置为0间距
+        main_layout.setContentsMargins(0, 0, 0, 0)  # 设置边距为0
+
+        # 创建标题容器，设置背景色
+        title_container = QWidget()
+        title_container.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff8965, stop:1 #ffa07a);")
+        title_container_layout = QVBoxLayout(title_container)
+        title_container_layout.setContentsMargins(20, 0, 20, 0)  # 保留左右内边距
 
         # 创建自定义标题栏
         title_bar = QHBoxLayout()
-        self.title_label = QLabel("Theads登錄", self)  # 自定义标题文本
+        title_bar.setContentsMargins(25, 5, 0, 0)
+        self.title_label = QLabel("Threads登錄", self)  # 自定义标题文本
         self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        self.setFixedSize(350, 0)  # 设置窗口的固定大小
+        self.title_label.setStyleSheet('background: transparent; border: none; color: white;')
         title_bar.addWidget(self.title_label)
         title_bar.addStretch(1)
 
+        # 添加最小化按钮到标题栏
+        minimize_button = QPushButton("")  # 改变按钮文本为减号表示最小化
+        minimize_button.setFont(QFont("微軟雅黑", 12))
+        minimize_button.setFixedSize(24, 24)
+        minimize_button.setStyleSheet("""
+                    QPushButton {
+                        background-color: transparent;
+                        border: 1px solid #ddd;
+                        border-radius: 12px;
+                        color: white;
+                    }
+                    QPushButton:hover {
+                        background-color: #01bcae;
+                    }
+                """)
+        minimize_button.clicked.connect(self.showMinimized)  # 连接到最小化方法
+        title_bar.addWidget(minimize_button)
+
         # 添加关闭按钮到标题栏
-        close_button = QPushButton("-")  # 改变按钮文本为减号表示最小化
-        close_button.setFont(QFont("微軟雅黑", 12))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.showMinimized)  # 连接到最小化方法
-        title_bar.addWidget(close_button)
-        # 添加关闭按钮到标题栏
-        close_button = QPushButton("×")
+        close_button = QPushButton("")
         close_button.setFont(QFont("微軟雅黑", 12))
         close_button.setFixedSize(24, 24)
         close_button.clicked.connect(self.close)
-        title_bar.addWidget(close_button)
         close_button.setStyleSheet("""
-                   QPushButton:hover {
-                       background-color: red;
-                   }
-               """)
-        # 将标题栏添加到主布局
-        main_layout.addLayout(title_bar)
+                    QPushButton {
+                        background-color: transparent;
+                        border: 1px solid #ddd;
+                        border-radius: 12px;
+                        color: white;
+                    }
+                    QPushButton:hover {
+                        background-color: #ff4d4f;
+                    }
+                """)
+        title_bar.addWidget(close_button)
+
+        # 将标题栏添加到标题容器
+        title_container_layout.addLayout(title_bar)
+
+        # 将标题容器添加到主布局
+        main_layout.addWidget(title_container)
+
+        # 创建内容容器，用于放置其他控件并保留边距
+        content_container = QWidget()
+        content_container.setStyleSheet("background-color: white;")
+        content_container_layout = QVBoxLayout(content_container)
+        content_container_layout.setContentsMargins(30, 30, 30, 30)  # 设置内容区域的边距
+        content_container_layout.setSpacing(20)
+
+        # 添加Threads账号图标和应用名称
+        icon_layout = QVBoxLayout()
+        icon_layout.setAlignment(Qt.AlignCenter)
+
+        # 添加Threads账号图标
+        threads_icon = QLabel()
+        threads_icon.setPixmap(QIcon(resource_path("iamge/Threads账号.png")).pixmap(60, 60))
+        threads_icon.setAlignment(Qt.AlignCenter)
+        threads_icon.setStyleSheet("margin-bottom: 10px; background: transparent; border: none;")
+
+        # 添加应用名称
+        app_name = QLabel("Threads", self)
+        app_name.setFont(QFont("微軟雅黑", 18, QFont.Bold))
+        app_name.setAlignment(Qt.AlignCenter)
+        app_name.setStyleSheet("color: #ff8965; margin-bottom: 20px; background: transparent; border: none;")
+
+        icon_layout.addWidget(threads_icon)
+        icon_layout.addWidget(app_name)
+        content_container_layout.addLayout(icon_layout)
+
         login_name = ''
         login_pass = ''
         if os.path.exists('Threadslogin.txt'):
@@ -62,45 +123,124 @@ class MyApplog(QDialog):
                 login_pass = login[1].strip('')
         print(login_name,login_pass)
 
-        # 创建三个输入框
+        # 创建输入框
         self.txt_username = QLineEdit(self)
         self.txt_username.setText(login_name)
-        self.txt_username.setPlaceholderText("請輸入賬號...")
+        self.txt_username.setPlaceholderText("請輸入您的賬號")
+        self.txt_username.setStyleSheet("""
+                    QLineEdit {
+                        padding: 12px;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        background-color: white;
+                        color: #333;
+                    }
+                    QLineEdit:focus {
+                        border: 1px solid #01bdae;
+                        box-shadow: 0 0 8px rgba(1, 189, 174, 0.3);
+                    }
+                """)
+
         self.txt_password = QLineEdit(self)
         self.txt_password.setText(login_pass)
-        self.txt_password.setPlaceholderText("請輸入密碼...")
-        main_layout.addWidget(QLabel("Threads賬號:"))
-        main_layout.addWidget(self.txt_username)
-        main_layout.addWidget(QLabel("Threads密碼:"))
-        main_layout.addWidget(self.txt_password)
+        self.txt_password.setPlaceholderText("請輸入您的密碼")
+        self.txt_password.setEchoMode(QLineEdit.Password)
+        self.txt_password.setStyleSheet("""
+                    QLineEdit {
+                        padding: 12px;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        background-color: white;
+                        color: #333;
+                    }
+                    QLineEdit:focus {
+                        border: 1px solid #01bdae;
+                        box-shadow: 0 0 8px rgba(1, 189, 174, 0.3);
+                    }
+                """)
 
-        # 创建水平布局用于放置按钮并居中
-        button_layout = QHBoxLayout()
-        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
-        self.button = QPushButton('確定', self)
-        self.button.setFixedSize(60, 35)  # 设置按钮大小
+        # 账号输入框和图标
+        account_layout = QHBoxLayout()
+        account_icon = QLabel()
+        account_icon.setPixmap(QIcon(resource_path("iamge/jurassic_user.png")).pixmap(20, 20))
+        account_label = QLabel("Threads賬號:")
+        account_label.setStyleSheet("color: #666; font-weight: bold; font-size: 14px;")
+        account_layout.addWidget(account_icon)
+        account_layout.addWidget(account_label)
+        account_layout.addStretch()
+        content_container_layout.addLayout(account_layout)
+        content_container_layout.addWidget(self.txt_username)
+
+        # 密码输入框和图标
+        password_layout = QHBoxLayout()
+        password_icon = QLabel()
+        password_icon.setPixmap(QIcon(resource_path("iamge/tianchongxing-.png")).pixmap(20, 20))
+        password_icon.setStyleSheet("margin-right: 8px;")
+        password_label = QLabel("Threads密碼:")
+        password_label.setStyleSheet("color: #666; font-weight: bold; font-size: 14px;")
+        password_layout.addWidget(password_icon)
+        password_layout.addWidget(password_label)
+        password_layout.addStretch()
+        content_container_layout.addLayout(password_layout)
+        content_container_layout.addWidget(self.txt_password)
+
+        # 创建登录按钮
+        self.button = QPushButton('確定登錄', self)
+        self.button.setFixedSize(350, 45)  # 设置按钮大小
+
+        # 创建按钮图标
+        login_icon = QIcon(resource_path("iamge/login-full.png"))
+        self.button.setIcon(login_icon)
+        self.button.setIconSize(login_icon.actualSize(login_icon.availableSizes()[0]))
+        self.button.setIconSize(QSize(20,20))
+
         self.button.setStyleSheet("""
             QPushButton {
-                border-radius: 15px;
-                background-color: #90EE90;
+                border-radius: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #01bdae, stop:1 #7FFFD4);
                 font-size: 16px;
                 font-weight: bold;
+                color: white;
+                border: none;
+                padding: 12px;
+                text-align: center;
             }
             QPushButton:hover {
-                background-color: #7FFFD4;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00a896, stop:1 #6bddd4);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(1, 189, 174, 0.3);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #008b7a, stop:1 #5bc4b8);
             }
         """)
+
+        # 创建按钮布局并居中
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
         button_layout.addWidget(self.button)
         button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
 
-        # 将按钮布局添加到主布局
-        main_layout.addLayout(button_layout)
+        content_container_layout.addLayout(button_layout)
+
+        # 将内容容器添加到主布局
+        main_layout.addWidget(content_container)
 
         # 连接按钮点击事件到处理函数
         self.button.clicked.connect(self.on_click)
 
         # 设置布局
         self.setLayout(main_layout)
+
+        # 设置窗口样式
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+                border-radius: 10px;
+            }
+        """)
 
         # 显示窗口
         self.show()
@@ -177,19 +317,19 @@ def win_main():
     # 设置应用程序的样式
     app.setStyle('Fusion')
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.WindowText, Qt.white)
-    palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(QPalette.Window, QColor(247, 248, 249))
+    palette.setColor(QPalette.WindowText, Qt.black)
+    palette.setColor(QPalette.Base, QColor(255, 255, 255))
+    palette.setColor(QPalette.AlternateBase, QColor(240, 240, 240))
     palette.setColor(QPalette.ToolTipBase, Qt.white)
-    palette.setColor(QPalette.ToolTipText, Qt.white)
-    palette.setColor(QPalette.Text, Qt.white)
-    palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.ButtonText, Qt.white)
+    palette.setColor(QPalette.ToolTipText, Qt.black)
+    palette.setColor(QPalette.Text, Qt.black)
+    palette.setColor(QPalette.Button, QColor(240, 240, 240))
+    palette.setColor(QPalette.ButtonText, Qt.black)
     palette.setColor(QPalette.BrightText, Qt.red)
-    palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.HighlightedText, Qt.black)
+    palette.setColor(QPalette.Link, QColor(1, 189, 174))
+    palette.setColor(QPalette.Highlight, QColor(1, 189, 174))
+    palette.setColor(QPalette.HighlightedText, Qt.white)
     app.setPalette(palette)
     app.setFont(QFont("微軟雅黑", 10))
     loop = QEventLoop(app)
