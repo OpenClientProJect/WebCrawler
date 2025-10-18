@@ -326,11 +326,13 @@ class ProgressWindow(QDialog):
             event.accept()
 
     def closeEvent(self, event):
+        """重写关闭事件，发出关闭信号"""
         reply = QMessageBox.question(
-            self, "關閉確認", "確認要關閉爬取程序嗎？",
+            self, "關閉確認", "確認要關閉腳本程序嗎？",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
+            self.close_app_signal.emit()  # 发出关闭应用程序信号
             super().closeEvent(event)
         else:
             event.ignore()

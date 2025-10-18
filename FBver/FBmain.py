@@ -59,8 +59,9 @@ class Crawler:
             '--disable-site-isolation-trials'
         ]
         self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
+
         context = await self.browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            user_agent=
         )
         await context.add_init_script("""
                Object.defineProperty(navigator, 'webdriver', {
@@ -110,7 +111,7 @@ class Crawler:
                 headless=False,
                 executable_path=self.browser_path
             )
-            page = await self.browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+            page = await self.browser.new_page(user_agent=)
             await page.goto(url="https://www.facebook.com/login", wait_until='load')
 
             await asyncio.sleep(random.uniform(1.5, 3.5))
