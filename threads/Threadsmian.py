@@ -86,6 +86,12 @@ class MyApp(QWidget):
         title_text_layout.setAlignment(Qt.AlignCenter)
         title_text_layout.setContentsMargins(0, 10, 0, 10)  # 添加上下内边距
 
+        # 添加Threads账号图标
+        threads_icon = QLabel()
+        threads_icon.setPixmap(QIcon(resource_path("iamge/Threads账号.png")).pixmap(60, 60))
+        threads_icon.setAlignment(Qt.AlignCenter)
+        threads_icon.setStyleSheet("margin-bottom: 5px;background: transparent; border: none;")
+
         main_title = QLabel("Threads用戶獲取", self)
         main_title.setFont(QFont("微軟雅黑", 16, QFont.Bold))
         main_title.setAlignment(Qt.AlignCenter)
@@ -96,6 +102,7 @@ class MyApp(QWidget):
         sub_title.setAlignment(Qt.AlignCenter)
         sub_title.setStyleSheet("color: white; margin-bottom: 10px;border: none;")
 
+        title_text_layout.addWidget(threads_icon)
         title_text_layout.addWidget(main_title)
         title_text_layout.addWidget(sub_title)
 
@@ -284,7 +291,7 @@ class MyApp(QWidget):
         content_container_layout.addWidget(self.input4)
 
         # 创建任务类型分组框
-        task_group = QGroupBox("任務類型:")
+        task_group = QGroupBox()
         task_group.setStyleSheet("""
                     QGroupBox {
                         font-weight: bold;
@@ -294,12 +301,22 @@ class MyApp(QWidget):
                         padding-top: 20px;
                         color: #a6acb2;
                     }
-                    QGroupBox::title {
-                        subcontrol-origin: margin;
-                        left: 10px;
-                        padding: 0 5px 0 5px;
-                    }
                 """)
+
+        # 创建任务类型标题布局
+        task_title_layout = QHBoxLayout()
+        task_icon = QLabel()
+        task_icon.setPixmap(QIcon(resource_path("iamge/liebiao.png")).pixmap(20, 20))
+        task_icon.setStyleSheet("margin-right: 8px;")
+        task_title_label = QLabel("任務類型:")
+        task_title_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        task_title_layout.addWidget(task_icon)
+        task_title_layout.addWidget(task_title_label)
+        task_title_layout.addStretch()
+
+        # 创建任务类型内容布局
+        task_content_layout = QVBoxLayout()
+        task_content_layout.addLayout(task_title_layout)
         task_layout = QHBoxLayout()
 
         self.check_search = QCheckBox("關鍵詞", self)
@@ -316,7 +333,8 @@ class MyApp(QWidget):
         task_layout.addWidget(self.check_userpost)
         task_layout.addWidget(self.check_follower)
 
-        task_group.setLayout(task_layout)
+        task_content_layout.addLayout(task_layout)
+        task_group.setLayout(task_content_layout)
         content_container_layout.addWidget(task_group)
 
         # 创建水平布局用于放置按钮并居中
@@ -344,20 +362,32 @@ class MyApp(QWidget):
         # 创建底部信息栏
         footer_layout = QHBoxLayout()
 
-        # 左下角的标签
+        # 左下角的时间标签和图标
+        time_layout = QHBoxLayout()
+        time_icon = QLabel()
+        time_icon.setPixmap(QIcon(resource_path("iamge/shijian_o.png")).pixmap(16, 16))
+        time_icon.setStyleSheet("margin-right: 5px;")
         self.days_label = QLabel(f"時間：{days}天", self)
         self.days_label.setFont(QFont("微軟雅黑", 10))
         self.days_label.setStyleSheet("color: gray;")
+        time_layout.addWidget(time_icon)
+        time_layout.addWidget(self.days_label)
+        time_layout.addStretch()
 
-        # 右下角的版本标签
+        # 右下角的版本标签和图标
+        version_layout = QHBoxLayout()
+        version_icon = QLabel()
+        version_icon.setPixmap(QIcon(resource_path("iamge/git-branch-line.png")).pixmap(16, 16))
+        version_icon.setStyleSheet("margin-right: 5px;")
         self.version_label = QLabel(f"版本：{versions}", self)
         self.version_label.setFont(QFont("微軟雅黑", 10))
         self.version_label.setStyleSheet("color: gray;")
-        self.version_label.setAlignment(Qt.AlignRight)
+        version_layout.addWidget(version_icon)
+        version_layout.addWidget(self.version_label)
 
-        footer_layout.addWidget(self.days_label)
+        footer_layout.addLayout(time_layout)
         footer_layout.addStretch(1)  # 添加弹性空间
-        footer_layout.addWidget(self.version_label)
+        footer_layout.addLayout(version_layout)
 
         content_container_layout.addLayout(footer_layout)
 
