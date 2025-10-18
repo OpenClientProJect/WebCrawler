@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+import webview
 from main import main
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, \
     QComboBox, QMessageBox, QCheckBox, QGroupBox
@@ -217,15 +218,69 @@ class MyApp(QWidget):
                         color: black;
                     }
                         """)
-        content_container_layout.addWidget(QLabel("設備號:"))
+        # 设备号输入框和图标
+        device_layout = QHBoxLayout()
+        device_icon = QLabel()
+        device_icon.setPixmap(QIcon(resource_path("iamge/shebeihao-.png")).pixmap(20, 20))
+        device_icon.setStyleSheet("margin-right: 3px;")
+        device_label = QLabel("設備號:")
+        device_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        device_layout.addWidget(device_icon)
+        device_layout.addWidget(device_label)
+        device_layout.addStretch()
+        content_container_layout.addLayout(device_layout)
         content_container_layout.addWidget(self.input0)
-        content_container_layout.addWidget(QLabel("指定關鍵詞:"))
+
+        # 关键词输入框和图标
+        keyword_layout = QHBoxLayout()
+        keyword_icon = QLabel()
+        keyword_icon.setPixmap(QIcon(resource_path("iamge/yuechi.png")).pixmap(20, 20))
+        keyword_icon.setStyleSheet("margin-right: 3px;")
+        keyword_label = QLabel("指定關鍵詞:")
+        keyword_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        keyword_layout.addWidget(keyword_icon)
+        keyword_layout.addWidget(keyword_label)
+        keyword_layout.addStretch()
+        content_container_layout.addLayout(keyword_layout)
         content_container_layout.addWidget(self.input1)
-        content_container_layout.addWidget(QLabel("獲取的人數:"))
+
+        # 获取人数输入框和图标
+        people_layout = QHBoxLayout()
+        people_icon = QLabel()
+        people_icon.setPixmap(QIcon(resource_path("iamge/renqun.png")).pixmap(20, 20))
+        people_icon.setStyleSheet("margin-right: 3px;")
+        people_label = QLabel("獲取的人數:")
+        people_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        people_layout.addWidget(people_icon)
+        people_layout.addWidget(people_label)
+        people_layout.addStretch()
+        content_container_layout.addLayout(people_layout)
         content_container_layout.addWidget(self.input2)
-        content_container_layout.addWidget(QLabel("獲取的貼文的評論數:"))
+
+        # 贴文数输入框和图标
+        post_layout = QHBoxLayout()
+        post_icon = QLabel()
+        post_icon.setPixmap(QIcon(resource_path("iamge/wenjian.png")).pixmap(20, 20))
+        post_icon.setStyleSheet("margin-right: 3px;")
+        post_label = QLabel("獲取的貼文的評論數:")
+        post_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        post_layout.addWidget(post_icon)
+        post_layout.addWidget(post_label)
+        post_layout.addStretch()
+        content_container_layout.addLayout(post_layout)
         content_container_layout.addWidget(self.input3)
-        content_container_layout.addWidget(QLabel("獲取幾個用戶的粉絲:"))
+
+        # 粉丝数输入框和图标
+        follower_layout = QHBoxLayout()
+        follower_icon = QLabel()
+        follower_icon.setPixmap(QIcon(resource_path("iamge/shequn.png")).pixmap(20, 20))
+        follower_icon.setStyleSheet("margin-right: 3px;")
+        follower_label = QLabel("獲取幾個用戶的粉絲:")
+        follower_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
+        follower_layout.addWidget(follower_icon)
+        follower_layout.addWidget(follower_label)
+        follower_layout.addStretch()
+        content_container_layout.addLayout(follower_layout)
         content_container_layout.addWidget(self.input4)
 
         # 创建任务类型分组框
@@ -277,6 +332,8 @@ class MyApp(QWidget):
                 border: none;
             }
             QPushButton:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
                 background-color: #7FFFD4;
             }
         """)
