@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QTextEdit, QFrame, QApplication, QPushButton, QDialog,
                              QScrollArea, QSizePolicy, QMessageBox)
 from PyQt5.QtGui import QFont, QColor, QPalette, QIcon
-from PyQt5.QtCore import Qt, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, pyqtSignal, QObject, QSize
 
 
 class MonitorSignals(QObject):
@@ -40,164 +40,214 @@ class MonitorWindow(QDialog):
     def init_ui(self):
         # 设置窗口属性
         self.setWindowTitle('Threads爬取數據監控')
-        self.setFixedSize(800, 600)
+        self.setFixedSize(900, 700)
 
-        # 设置样式
+        # 设置样式 - 白色背景
         palette = QPalette()
-        palette.setColor(QPalette.Window, QColor(40, 44, 52))
-        palette.setColor(QPalette.WindowText, Qt.white)
-        palette.setColor(QPalette.Base, QColor(30, 34, 42))
-        palette.setColor(QPalette.Text, Qt.white)
+        palette.setColor(QPalette.Window, QColor(255, 255, 255))
+        palette.setColor(QPalette.WindowText, Qt.black)
+        palette.setColor(QPalette.Base, QColor(255, 255, 255))
+        palette.setColor(QPalette.Text, Qt.black)
         self.setPalette(palette)
 
-        # 主布局
+        # 主布局 - 直接使用白色背景
         main_layout = QVBoxLayout()
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 自定义标题栏
+        # 设置窗口背景为白色
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+                border-radius: 0px;
+            }
+        """)
+
+        # 标题栏 - 渐变背景
         title_bar = QFrame()
-        title_bar.setFixedHeight(40)
-        title_bar.setStyleSheet("background-color: #282c34;")
+        title_bar.setFixedHeight(80)
+        title_bar.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff8965, stop:1 #ffa07a);
+                border-radius: 0px;
+            }
+        """)
         title_layout = QHBoxLayout(title_bar)
-        title_layout.setContentsMargins(15, 0, 10, 0)
+        title_layout.setContentsMargins(25, 0, 15, 0)
 
-        # 标题
+        # 左侧占位符，用于平衡布局
+        left_spacer = QWidget()
+        left_spacer.setFixedSize(48, 24) 
+        title_layout.addWidget(left_spacer)
+
+        # 标题 
         title_label = QLabel("Threads爬取數據監控")
-        title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        title_label.setStyleSheet("color: #61afef;")
-        title_layout.addWidget(title_label)
+        title_label.setFont(QFont("微軟雅黑", 16, QFont.Bold))
+        title_label.setStyleSheet("color: white; background: transparent; border: none;")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_layout.addWidget(title_label, 1)  
 
-        title_layout.addStretch(1)
+        # 按钮容器 - 右对齐
+        button_container = QHBoxLayout()
+        button_container.setSpacing(8)
 
         # 最小化按钮
-        min_button = QPushButton("-")
-        min_button.setFixedSize(30, 30)
+        min_button = QPushButton("")
+        min_button.setFixedSize(24, 24)
         min_button.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
+                border: 1px solid #ddd;
+                border-radius: 12px;
                 color: white;
-                border-radius: 4px;
-                font-size: 16px;
             }
             QPushButton:hover {
-                background-color: #4b5263;
+                background-color: #01bcae;
             }
         """)
         min_button.clicked.connect(self.showMinimized)
-        title_layout.addWidget(min_button)
+        button_container.addWidget(min_button)
 
         # 关闭按钮
-        close_button = QPushButton("×")
-        close_button.setFixedSize(30, 30)
+        close_button = QPushButton("")
+        close_button.setFixedSize(24, 24)
         close_button.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
+                border: 1px solid #ddd;
+                border-radius: 12px;
                 color: white;
-                border-radius: 4px;
-                font-size: 16px;
             }
             QPushButton:hover {
-                background-color: #e06c75;
+                background-color: #ff4d4f;
             }
         """)
         close_button.clicked.connect(self.close)
-        title_layout.addWidget(close_button)
+        button_container.addWidget(close_button)
+
+        # 将按钮容器添加到标题布局
+        title_layout.addLayout(button_container)
 
         main_layout.addWidget(title_bar)
 
+        # 添加渐变分割线
+        separator_line = QFrame()
+        separator_line.setFixedHeight(6)
+        separator_line.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #01bdae, stop:1 #01bdae);
+                border: none;
+            }
+        """)
+        main_layout.addWidget(separator_line)
+
         # 内容区域
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(15, 15, 15, 15)
-        content_layout.setSpacing(10)
+        content_layout.setContentsMargins(30, 30, 30, 30)
+        content_layout.setSpacing(25)
 
-        # 计数器区域
-        counter_frame = QFrame()
-        counter_frame.setStyleSheet("background-color: #282c34; border-radius: 8px;")
-        counter_layout = QHBoxLayout(counter_frame)
-        counter_layout.setContentsMargins(10, 10, 10, 10)
-        counter_layout.setSpacing(15)
+        # 统计卡片区域
+        stats_layout = QHBoxLayout()
+        stats_layout.setSpacing(25)
 
         # 关键词搜索计数器
-        self.search_counter = self.create_counter_box("關鍵詞發現用戶", "#e06c75")
-        counter_layout.addWidget(self.search_counter)
+        self.search_counter = self.create_counter_box("關鍵詞發現用戶", "947", "#ff8965", "#ff6b6b")
+        stats_layout.addWidget(self.search_counter)
 
         # 用户帖子计数器
-        self.userpost_counter = self.create_counter_box("用戶帖子採集", "#98c379")
-        counter_layout.addWidget(self.userpost_counter)
+        self.userpost_counter = self.create_counter_box("用戶帖子採集", "470", "#51cf66", "#01bdae")
+        stats_layout.addWidget(self.userpost_counter)
 
         # 粉丝列表计数器
-        self.follower_counter = self.create_counter_box("粉絲用戶採集", "#61afef")
-        counter_layout.addWidget(self.follower_counter)
+        self.follower_counter = self.create_counter_box("粉絲用戶採集", "298", "#339af0", "#01bdae")
+        stats_layout.addWidget(self.follower_counter)
 
-        content_layout.addWidget(counter_frame)
+        content_layout.addLayout(stats_layout)
 
         # 日志区域标题
         log_title_layout = QHBoxLayout()
-        log_title_layout.addWidget(QLabel("爬取過程:"))
-        log_title_layout.addStretch()
 
-        # 添加清空按钮
-        clear_btn = QPushButton("清空數據")
-        clear_btn.setFixedSize(80, 25)
-        clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #5c6370;
-                color: white;
-                border-radius: 4px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #4b5263;
-            }
-        """)
-        clear_btn.clicked.connect(self.clear_logs)
-        log_title_layout.addWidget(clear_btn)
+        # 添加greater-than图标
+        greater_than_icon = QLabel()
+        greater_than_icon.setPixmap(QIcon(resource_path("iamge/greater-than.png")).pixmap(16, 16))
+        greater_than_icon.setStyleSheet(" background: transparent; border: none;")
+        log_title_layout.addWidget(greater_than_icon)
+
+        log_title_label = QLabel("爬取過程:")
+        log_title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
+        log_title_label.setStyleSheet("color: #ff8965; background: transparent; border: none;")
+        log_title_layout.addWidget(log_title_label)
+        log_title_layout.addStretch()
 
         content_layout.addLayout(log_title_layout)
 
-        # 日志区域 - 使用滚动区域确保滚动条可见
-        log_frame = QFrame()
-        log_layout = QVBoxLayout(log_frame)
-
+        # 日志区域
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setFont(QFont("微軟雅黑", 10))
+        self.log_text.setFont(QFont("微軟雅黑", 11))
         self.log_text.setStyleSheet("""
-            background-color: #282c34;
-            color: #abb2bf;
-            border-radius: 8px;
-            padding: 10px;
-            border: 1px solid #5c6370;  # 添加边框以便看到滚动区域
-        """)
-
-        # 确保滚动区域设置正确：
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.log_text)
-        scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: 1px solid #5c6370;
-                border-radius: 8px;
+            QTextEdit {
+                background-color: white;
+                color: #333;
+                border-radius: 10px;
+                padding: 15px;
+                border: 1px solid #e0e0e0;
+                font-size: 12px;
             }
             QScrollBar:vertical {
-                border: 1px solid #5c6370;
-                background: #282c34;
-                width: 14px;
-                margin: 0px;
+                border: none;
+                background: #f0f0f0;
+                width: 12px;
+                border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background: #5c6370;
+                background: #01bdae;
                 min-height: 20px;
-                border-radius: 5px;
+                border-radius: 6px;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
             }
         """)
 
-        log_layout.addWidget(scroll_area)
-        content_layout.addWidget(log_frame, 1)  # 设置拉伸因子为1
+        content_layout.addWidget(self.log_text, 1)  # 设置拉伸因子为1
+
+        # 清空按钮
+        clear_btn = QPushButton("清空數據")
+        clear_btn.setFixedSize(200, 45)
+        clear_btn.setStyleSheet("""
+            QPushButton {
+                border-radius: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff8965, stop:1 #ffa07a);
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+                border: none;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff7a5a, stop:1 #ff9a7a);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(255, 137, 101, 0.3);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff6b4a, stop:1 #ff8a6a);
+            }
+        """)
+
+        # 添加删除图标
+        delete_icon = QIcon(resource_path("iamge/shanchu.png"))
+        clear_btn.setIcon(delete_icon)
+        clear_btn.setIconSize(QSize(20, 20))
+        clear_btn.clicked.connect(self.clear_logs)
+
+        # 按钮布局
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(clear_btn)
+        button_layout.addStretch(1)
+
+        content_layout.addLayout(button_layout)
 
         main_layout.addLayout(content_layout)
 
@@ -221,24 +271,34 @@ class MonitorWindow(QDialog):
             super().closeEvent(event)
         else:
             event.ignore()
-    def create_counter_box(self, title, color):
+    def create_counter_box(self, title, initial_value, color1, color2):
         frame = QFrame()
-        frame.setStyleSheet(f"background-color: {color}; border-radius: 8px;")
+        frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: #f8f9fa;
+                border-radius: 12px;
+                border: none;
+                border-left: 2px solid {color1};
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                padding-left: 0px;
+            }}
+        """)
         layout = QVBoxLayout(frame)
-        layout.setContentsMargins(15, 10, 15, 10)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(12)
 
         # 标题
         title_label = QLabel(title)
-        title_label.setFont(QFont("微軟雅黑", 11, QFont.Bold))
-        title_label.setStyleSheet("color: white;")
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setFont(QFont("微軟雅黑", 13))
+        title_label.setStyleSheet("color: #333; background: transparent; border: none; font-weight: normal;")
+        title_label.setAlignment(Qt.AlignLeft)
         layout.addWidget(title_label)
 
         # 计数器
-        count_label = QLabel("0")
-        count_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
-        count_label.setStyleSheet("color: white;")
-        count_label.setAlignment(Qt.AlignCenter)
+        count_label = QLabel(initial_value)
+        count_label.setFont(QFont("微軟雅黑", 32, QFont.Bold))
+        count_label.setStyleSheet("color: #333; background: transparent; border: none;")
+        count_label.setAlignment(Qt.AlignLeft)
 
         # 根据标题存储对应的计数器
         if title == "關鍵詞發現用戶":
@@ -261,20 +321,20 @@ class MonitorWindow(QDialog):
             log_num = self.log_counters[log_type]
             self.log_counters[log_type] += 1
 
-            # 创建带颜色的类型标签
-            type_label = ""
+            # 创建带颜色的圆点和类型标签
+            dot_color = ""
             if log_type == "search":
-                type_label = f'<span style="color:#e06c75; font-weight:bold;">[關鍵詞{log_num}]</span>'
+                dot_color = "#ff8965"
             elif log_type == "userpost":
-                type_label = f'<span style="color:#98c379; font-weight:bold;">[用戶貼{log_num}]</span>'
+                dot_color = "#51cf66"
             elif log_type == "follower":
-                type_label = f'<span style="color:#61afef; font-weight:bold;">[粉絲{log_num}]</span>'
+                dot_color = "#339af0"
 
-            # 添加带序号的新日志
-            log_entry = f"{type_label} {message}"
+            # 添加带彩色圆点的日志
+            log_entry = f'<div style="margin: 8px 0; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;"><span style="color: {dot_color}; font-size: 16px;">●</span> <span style="color: #333; margin-left: 8px;">{message}</span></div>'
         else:
             # 普通日志不加序号
-            log_entry = f"<span style='color:#abb2bf;'>{message}</span>"
+            log_entry = f'<div style="margin: 8px 0; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;"><span style="color: #666;">{message}</span></div>'
 
         self.log_text.append(log_entry)
 

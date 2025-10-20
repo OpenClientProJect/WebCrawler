@@ -288,6 +288,7 @@ class MyApp(QWidget):
         follower_layout.addWidget(follower_label)
         follower_layout.addStretch()
         content_container_layout.addLayout(follower_layout)
+
         content_container_layout.addWidget(self.input4)
 
         # 创建任务类型分组框

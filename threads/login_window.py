@@ -108,7 +108,7 @@ class MyApplog(QDialog):
 
         # 添加应用名称
         app_name = QLabel("Threads", self)
-        app_name.setFont(QFont("微軟雅黑", 20, QFont.Bold))  # 增大字体
+        app_name.setFont(QFont("微軟雅黑", 20, QFont.Bold))
         app_name.setAlignment(Qt.AlignCenter)
         app_name.setStyleSheet("color: #ff8965; background: transparent; border: none; margin: 0; padding: 0;")
 
@@ -179,7 +179,6 @@ class MyApplog(QDialog):
         password_layout = QHBoxLayout()
         password_icon = QLabel()
         password_icon.setPixmap(QIcon(resource_path("iamge/tianchongxing-.png")).pixmap(20, 20))
-        password_icon.setStyleSheet("margin-right: 8px;")
         password_label = QLabel("Threads密碼:")
         password_label.setStyleSheet("color: #666; font-weight: bold; font-size: 14px;")
         password_layout.addWidget(password_icon)
