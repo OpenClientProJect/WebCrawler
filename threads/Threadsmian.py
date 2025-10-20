@@ -1,7 +1,6 @@
 import os
 import sys
 import asyncio
-import webview
 from main import main
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, \
     QComboBox, QMessageBox, QCheckBox, QGroupBox

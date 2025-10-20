@@ -346,23 +346,23 @@ class Crawler:
             print("没有提供地址列表")
             return
 
-        # 使用第一个地址进行爬取（可以根据需要修改为处理所有地址）
+        # 使用第一个地址进行爬取
         if addresses and addresses[0].strip():
             url = addresses[0].strip()
             print(f"开始爬取用户信息，地址: {url}")
-            await self.robust_update_status("开始爬取用户信息...")
-            await self.page.goto(
-                url=url,
-                wait_until='load'
-            )
+            await self.robust_update_status(f"社團地址:{url}")
+            await self.page.goto(url=url, wait_until='load')
             await asyncio.sleep(5)
-
+            await self.robust_update_status("开始爬取用户信息...")
             # 滚动加载更多用户
             previous_count = 0
             current_count = 0
             scroll_attempts = 0
             max_scroll_attempts = 10
             users = []
+            seen_user_ids = set()  # 用于跟踪已处理的用户ID
+            user_counter = 0  # 新增：独立计数器
+
             while scroll_attempts < max_scroll_attempts:
                 # 滚动到底部
                 await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -370,27 +370,45 @@ class Crawler:
 
                 # 获取当前用户数量
                 user_links = await self.page.query_selector_all(
-                    '//div[@role="list"]//a[contains(@href, "/user/") or contains(@href, "facebook.com/")]')
+                    '//div[@role="list"]//a[@role="link" and @tabindex="-1" and contains(@href, "/user/") or @role="link" and @tabindex="-1" and contains(@href, "facebook.com/")]')
                 current_count = len(user_links)
                 print(f"滚动后用户数量: {current_count}")
 
                 for i, link in enumerate(user_links):
                     try:
                         href = await link.get_attribute('href')
-                        text = await link.inner_text()
+                        text = await link.get_attribute('aria-label')
 
-                        if href and text.strip() and href not in users:
+                        if not href or not text or not text.strip():
+                            continue
+
+                        user_id = await self.extract_facebook_identifier(href)
+
+                        # 检查用户ID是否已存在
+                        if user_id and user_id not in seen_user_ids:
+                            seen_user_ids.add(user_id)  # 添加到已见集合
+                            user_counter += 1  # 只有在添加新用户时才增加计数器
                             users.append({
-                                'index': i + 1,
+                                'index': user_counter,  # 使用独立计数器
                                 'name': text.strip(),
-                                'user_id': await self.extract_facebook_identifier(href)
+                                'user_id': user_id
                             })
-                            print(href,text.strip())
-                            href = await self.extract_facebook_identifier(href)
-                            await self.robust_update_status(f"{i}：{href} {text.strip()}")
+                            print(f"{user_counter}：{user_id} {text.strip()}")
+                            await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
+
+                            # 检查是否达到目标数量
+                            if user_counter >= int(self.params.get('crawl_count')):
+                                print(f"达到目标数量 {user_counter}，停止爬取")
+                                break
+
                     except Exception as e:
-                        print(f"提取第 {i + 1} 个用户信息时出错: {str(e)}")
+                        print(f"提取用户信息时出错: {str(e)}")
                         continue
+
+                # 如果已达到目标数量，跳出外层循环
+                if user_counter >= int(self.params.get('crawl_count')):
+                    break
+
                 if current_count == previous_count:
                     scroll_attempts += 1
                     print(f"用户数量未增加，尝试次数: {scroll_attempts}/{max_scroll_attempts}")
@@ -402,11 +420,8 @@ class Crawler:
                 if scroll_attempts >= 3:  # 连续3次没有新用户就停止
                     print("已加载所有用户")
                     break
-                if len(users) >= int(self.params.get('crawl_count')):
-                    print(users)
-                    break
 
-            print(f"爬取完成，共获取 {len(users)} 个用户信息")
+            print(f"爬取完成，共获取 {user_counter} 个用户信息")
             return users
         else:
             print("地址为空，无法爬取")

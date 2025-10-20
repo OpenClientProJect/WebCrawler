@@ -7,10 +7,13 @@ import platform
 import os
 import winreg  # 仅适用于Windows
 import shutil  # 适用于Linux和macOS
+from idlelib.rpc import response_queue
 
 import aiohttp
 import requests
 from PyQt5.QtWidgets import QApplication
+from async_timeout import timeout
+
 from FB_loginwin import win_main
 from playwright.async_api import async_playwright
 
@@ -24,9 +27,59 @@ class Crawler:
         self.delay = 25
         self.is_logged_in = False
         self.browser_path = get_chrome_path()
-        # """全局设定"""
+        # """全局配置"""
+        str(data["AppConfigData"]["GlobalConfig"]["DeviceNumber"])#设备编号
+        int(data["AppConfigData"]["GlobalConfig"]["EveryBrowserInterval"])#每个浏览器间隔
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPosting"])#启动循环发文
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPush"])#启动循环推文
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopJoinGroup"])#启动循环加社团
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableAccountDevelop"])#启动养号
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableFanPages"])#启动粉丝专页
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["IsSwitchIP"])#是否換IP
+        parse_bool(data["AppConfigData"]["GlobalConfig"]["Isprefix"])#是否有前缀
+        # """贴文、推文"""
+        int(data["AppConfigData"]["PostsConfig"]["EveryGroupInterval"])#每个社团间隔
+        int(data["AppConfigData"]["PostsConfig"]["EveryIntervalHowManyGroup"])#每间隔多少条
+        int(data["AppConfigData"]["PostsConfig"]["GroupRestInterval"])#社团休息间隔
+        int(data["AppConfigData"]["PostsConfig"]["GetPostsNumber"])#获取贴文数量
+        self.Count1 = int(data["AppConfigData"]["PostsConfig"]["Count1"])#Count1
+        self.Count2 = int(data["AppConfigData"]["PostsConfig"]["Count2"])#Count2
+        int(data["AppConfigData"]["PostsConfig"]["EachTimeInterval"])#每条时间间隔
+        int(data["AppConfigData"]["PostsConfig"]["EveryIntervalHowManyPosts"])#每间隔多少条
+        int(data["AppConfigData"]["PostsConfig"]["RestTimeInterval"])#休息时间间隔
+        parse_bool(data["AppConfigData"]["PostsConfig"]["EnablePostsLike"])#启用貼文讚
+        int(data["AppConfigData"]["PostsConfig"]["LikeType"])#點讚
+        # """加社团"""
+        int(data["AppConfigData"]["JoinGroupConfig"]["EveryGroupInterval"])#每个社团间隔
+        int(data["AppConfigData"]["JoinGroupConfig"]["EveryIntervalHowManyGroup"])# 每间隔多少条
+        int(data["AppConfigData"]["JoinGroupConfig"]["GroupRestInterval"])#社团休息间隔
+        # """养号"""
+        int(data["AppConfigData"]["AccountDevelopConfig"]["EachTimeInterval"])#每条时间间隔
+        int(data["AppConfigData"]["AccountDevelopConfig"]["EveryIntervalHowManyAccount"])#每间隔多少条
+        int(data["AppConfigData"]["AccountDevelopConfig"]["RestTimeInterval"])#休息时间间隔
+        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsConfirmFriendInvite"])#是否确认好友邀请
+        int(data["AppConfigData"]["AccountDevelopConfig"]["ConfirmHowManyFriendInvite"])#确认多少个好友邀请
+        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["SendPersonalUpdates"])#发个人动态
+        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsHomeLike"])#养号是否首页点赞
+        int(data["AppConfigData"]["AccountDevelopConfig"]["LikeType"])#點讚
+        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsAddFriend"])#是否添加朋友
+        int(data["AppConfigData"]["AccountDevelopConfig"]["AddHowManyFriend"])#添加多少个朋友
+        int(data["AppConfigData"]["AccountDevelopConfig"]["SponsorCount"])#赞助的次数
+        # """粉专"""
+        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnableHomeLike"])#是否启用页首
+        int(data["AppConfigData"]["FanPagesConfig"]["EveryFanPagesInterval"])#每个粉丝专页间隔
+        int(data["AppConfigData"]["FanPagesConfig"]["EveryIntervalHowManyFanPages"])#每间隔多少条
+        int(data["AppConfigData"]["FanPagesConfig"]["FanPagesRestInterval"])#粉丝专页休息间隔
+        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnablePush"])#是否启用推文
+        int(data["AppConfigData"]["FanPagesConfig"]["LikeType"])#點讚
+        int(data["AppConfigData"]["FanPagesConfig"]["EachTimeInterval"])#每条时间间隔
+        int(data["AppConfigData"]["FanPagesConfig"]["EveryIntervalHowManyFanPages2"])#每间隔多少条
+        int(data["AppConfigData"]["FanPagesConfig"]["RestTimeInterval"])#休息时间间隔
+        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelHomeLike"])#是否取消首页点赞
+        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelPostsLike"])#是否取消贴文点赞
 
         self.status_window = None  # 状态窗口引用
+        self.username = content1
 
     def update_status(self, text):
         """更新状态窗口"""
@@ -59,9 +112,14 @@ class Crawler:
             '--disable-site-isolation-trials'
         ]
         self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
-
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
+        ]
         context = await self.browser.new_context(
-            user_agent=
+            user_agent=random.choice(user_agents)
         )
         await context.add_init_script("""
                Object.defineProperty(navigator, 'webdriver', {
@@ -76,6 +134,7 @@ class Crawler:
 
         self.page = await context.new_page()
         # await self.home_post() # FB首页留言
+        await self.tweet_post() # """贴文、推文"""
         print("任务完成")
 
 
@@ -111,7 +170,13 @@ class Crawler:
                 headless=False,
                 executable_path=self.browser_path
             )
-            page = await self.browser.new_page(user_agent=)
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
+            ]
+            page = await self.browser.new_page(user_agent=random.choice(user_agents))
             await page.goto(url="https://www.facebook.com/login", wait_until='load')
 
             await asyncio.sleep(random.uniform(1.5, 3.5))
@@ -173,32 +238,86 @@ class Crawler:
         await self.page.goto(url="https://www.facebook.com/", wait_until='load')
         await asyncio.sleep(10)
 
-        # num_posts = 6
-        # print(f"准备与 {num_posts} 个帖子互动")
-        #
-        # for i in range(1, num_posts + 1):
-        #
-        #     selector = f'//div[@class="x1hc1fzr x1unhpq9 x6o7n8i"]/div/div/div[{i}]'
-        #     element = await self.page.wait_for_selector(selector, timeout=10000)
-        #     if element:
-        #         await element.scroll_into_view_if_needed()
-        #         print(f"第 {i} 个帖子")
-        #     try:
-        #         # 点赞
-        #         # if await self.like_post(i):
-        #         #     print(f"第 {i} 个帖子点赞成功")
-        #         #
-        #         # a = True
-        #         # if a:
-        #         #     comments = self.leavetext_messags
-        #         #     if await self.comment_post(i, random.choice(comments)):
-        #         #         print(f"第 {i} 个帖子留言成功")
-        #
-        #         await asyncio.sleep(random.uniform(5, 10))
-        #
-        #     except Exception as e:
-        #         print(f"处理第 {i} 个帖子时出错: {str(e)}")
+        num_posts = 6
+        print(f"准备与 {num_posts} 个帖子互动")
 
+        for i in range(1, num_posts + 1):
+
+            selector = f'//div[@class="x1hc1fzr x1unhpq9 x6o7n8i"]/div//div[@aria-posinset={i}]'
+            element = await self.page.wait_for_selector(selector, timeout=10000)
+            if element:
+                await element.scroll_into_view_if_needed()
+                print(f"第 {i} 个帖子")
+            try:
+
+                await asyncio.sleep(random.uniform(5, 10))
+
+            except Exception as e:
+                print(f"处理第 {i} 个帖子时出错: {str(e)}")
+    # """發文、推文"""
+    async def tweet_post(self):
+        tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
+        response_url = tweet.split("|+|")
+        post_url = response_url[0].split("{}")
+        # 發文內容設置
+        print(post_url)  # 發文網址
+        print(response_url[5])  # 客戶代號
+        print(response_url[1])  # 分享的網址
+        print(response_url[2])  # 廣告的文案
+        for i in range(len(post_url)):
+            await self.page.goto(url=post_url[i]+"/buy_sell_discussion", wait_until='load',timeout=50000)
+            await self.join_groups()#加社团
+            try:
+                option_selector ='//span[contains(text(), "留個言吧……") or contains(text(), "...") or contains(text(), "分享心情...")]/..'
+                option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
+                if option_but:
+                    await option_but.scroll_into_view_if_needed()
+                    await option_but.click()
+                    # await self.personal_release(response_url[1],response_url[2])
+                    response = response_url[1]+" "+response_url[2]
+                    print(response)
+                    await self.personal_release(response)
+            except Exception as e:
+                print(f"没有找到可发布贴文位置: {str(e)}")
+            await asyncio.sleep(5)
+    #加社團
+    async def join_groups(self):
+        try:
+            option_selector = '//div[@class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w x1icxu4v x25sj25 x1yrsyyn x17upfok xdl72j9 x1iyjqo2 x1l90r2v x13a6bvl"]//div[@aria-label="加入社團" or @aria-label="加入小组"]'
+            option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
+            if option_but:
+                await option_but.scroll_into_view_if_needed()
+                await asyncio.sleep(1)
+                print("加社团")
+                # await option_but.click()
+                await asyncio.sleep(random.uniform(5, 8))
+        except Exception as e:
+            print(f"没有找到加入社團,可能已經申請過: {str(e)}")
+
+    async def personal_release(self,comment_text=None):
+
+        try:
+            input_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-placeholder,"建立公開貼文……") or @role="textbox" and contains(@aria-placeholder, "...") or @role="textbox" and contains(@aria-placeholder, "发布公开帖…")]'
+            input_but = await self.page.wait_for_selector(input_selector, timeout=10000)
+            if input_but:
+                await input_but.scroll_into_view_if_needed()
+                await input_but.click()
+                await input_but.fill(comment_text)
+                await asyncio.sleep(5)
+                await self.personal_release_but()
+        except Exception as e:
+            print(f"没有找到输入框: {str(e)}")
+
+    async def personal_release_but(self):
+        try:
+            but_selector = '//div[@role="dialog"]//div[@tabindex="0" and contains(@aria-label,"發佈") or @tabindex="0" and contains(@aria-label, "发布")]'
+            but_but = await self.page.wait_for_selector(but_selector, timeout=15000)
+            if but_but:
+                await but_but.scroll_into_view_if_needed()
+                # await but_but.click()
+                print("发布")
+        except Exception as e:
+            print(f"没有找到发布按钮: {str(e)}")
     async def class_fb_set(self):
         try:
             Option_selector = '//div[@data-visualcompletion="ignore-dynamic"]//div[@role="button" and contains(@aria-label, "選項")]'
@@ -218,6 +337,16 @@ class Crawler:
                 await Option_but.click()
         except Exception as e:
             print(f"没有找到: {str(e)}")
+
+    async def fetch_data(self,url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=30) as response:
+                return await response.text()
+
+    async def fetch_data2(self,url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=30) as response:
+                return await response.json()
     # 添加新的辅助方法
     def minimize_browser_window(self):
         """最小化浏览器窗口（平台特定实现）"""
