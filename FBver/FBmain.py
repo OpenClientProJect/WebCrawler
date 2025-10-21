@@ -41,14 +41,14 @@ class Crawler:
         int(data["AppConfigData"]["PostsConfig"]["EveryGroupInterval"])#每个社团间隔
         int(data["AppConfigData"]["PostsConfig"]["EveryIntervalHowManyGroup"])#每间隔多少条
         int(data["AppConfigData"]["PostsConfig"]["GroupRestInterval"])#社团休息间隔
-        int(data["AppConfigData"]["PostsConfig"]["GetPostsNumber"])#获取贴文数量
+        self.Count_num = int(data["AppConfigData"]["PostsConfig"]["GetPostsNumber"])#获取贴文数量
         self.Count1 = int(data["AppConfigData"]["PostsConfig"]["Count1"])#Count1
         self.Count2 = int(data["AppConfigData"]["PostsConfig"]["Count2"])#Count2
         int(data["AppConfigData"]["PostsConfig"]["EachTimeInterval"])#每条时间间隔
         int(data["AppConfigData"]["PostsConfig"]["EveryIntervalHowManyPosts"])#每间隔多少条
         int(data["AppConfigData"]["PostsConfig"]["RestTimeInterval"])#休息时间间隔
-        parse_bool(data["AppConfigData"]["PostsConfig"]["EnablePostsLike"])#启用貼文讚
-        int(data["AppConfigData"]["PostsConfig"]["LikeType"])#點讚
+        self.Is_post_like = parse_bool(data["AppConfigData"]["PostsConfig"]["EnablePostsLike"])#启用貼文讚
+        self.LikeType = int(data["AppConfigData"]["PostsConfig"]["LikeType"])#點讚
         # """加社团"""
         int(data["AppConfigData"]["JoinGroupConfig"]["EveryGroupInterval"])#每个社团间隔
         int(data["AppConfigData"]["JoinGroupConfig"]["EveryIntervalHowManyGroup"])# 每间隔多少条
@@ -134,7 +134,8 @@ class Crawler:
 
         self.page = await context.new_page()
         # await self.home_post() # FB首页留言
-        await self.tweet_post() # """贴文、推文"""
+        # await self.tweet_comment() # """贴文、推文"""
+        await self.post_comment() # """推文"""
         print("任务完成")
 
 
@@ -255,7 +256,7 @@ class Crawler:
             except Exception as e:
                 print(f"处理第 {i} 个帖子时出错: {str(e)}")
     # """發文、推文"""
-    async def tweet_post(self):
+    async def tweet_comment(self):
         tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = tweet.split("|+|")
         post_url = response_url[0].split("{}")
@@ -266,20 +267,36 @@ class Crawler:
         print(response_url[2])  # 廣告的文案
         for i in range(len(post_url)):
             await self.page.goto(url=post_url[i]+"/buy_sell_discussion", wait_until='load',timeout=50000)
-            await self.join_groups()#加社团
-            try:
-                option_selector ='//span[contains(text(), "留個言吧……") or contains(text(), "...") or contains(text(), "分享心情...")]/..'
-                option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
-                if option_but:
-                    await option_but.scroll_into_view_if_needed()
-                    await option_but.click()
-                    # await self.personal_release(response_url[1],response_url[2])
-                    response = response_url[1]+" "+response_url[2]
-                    print(response)
-                    await self.personal_release(response)
-            except Exception as e:
-                print(f"没有找到可发布贴文位置: {str(e)}")
-            await asyncio.sleep(5)
+            isno_groups = await self.join_groups()#加社团
+            if not isno_groups:
+                try:
+                    option_selector ='//span[contains(text(), "留個言吧……") or contains(text(), "...") or contains(text(), "分享心情...")]/..'
+                    option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
+                    if option_but:
+                        await option_but.scroll_into_view_if_needed()
+                        await option_but.click()
+                        # await self.personal_release(response_url[1],response_url[2])
+                        response = response_url[1]+" "+response_url[2]
+                        print(response)
+                        await self.personal_release(response)
+                except Exception as e:
+                    print(f"没有找到可发布贴文位置: {str(e)}")
+                await asyncio.sleep(5)
+    #推文
+    async def post_comment(self):
+        post = await self.fetch_data(
+            f"http://aj.ry188.vip/api/GetPostUrlList.aspx?Account={self.username}&UrlCount={self.Count_num}&Count1={self.Count1}&Count2={self.Count2}")
+        response_url = post.split("|+|")
+        post_url = response_url[0].split("{}")
+        print(post_url)  # 推文留言網址
+        comment_text = response_url[1].split("{}")
+        print(comment_text)  # 推文內容
+        for i in range(len(post_url)):
+            await self.page.goto(url=post_url[i], wait_until='load', timeout=50000)
+            if self.Is_post_like:
+                await self.post_nei_like()#点赞
+            await self.post_nei_comment(random.choice(comment_text))#留言
+
     #加社團
     async def join_groups(self):
         try:
@@ -289,10 +306,12 @@ class Crawler:
                 await option_but.scroll_into_view_if_needed()
                 await asyncio.sleep(1)
                 print("加社团")
-                # await option_but.click()
+                await option_but.click()
                 await asyncio.sleep(random.uniform(5, 8))
+                return True
         except Exception as e:
             print(f"没有找到加入社團,可能已經申請過: {str(e)}")
+            return False
 
     async def personal_release(self,comment_text=None):
 
@@ -314,10 +333,63 @@ class Crawler:
             but_but = await self.page.wait_for_selector(but_selector, timeout=15000)
             if but_but:
                 await but_but.scroll_into_view_if_needed()
-                # await but_but.click()
+                await but_but.click()
                 print("发布")
         except Exception as e:
             print(f"没有找到发布按钮: {str(e)}")
+
+    async def post_nei_like(self):
+
+        already_like = '//div[@aria-label="讚" or @aria-label="赞"]'
+        cancel_like = '//div[contains(@aria-label, "取消") or contains(@aria-label, "移除")]'
+        try:
+            but_selector = '//div[@role="dialog"]//div[@class="xbmvrgn x1diwwjn"]'+ already_like
+            but_but = await self.page.wait_for_selector(but_selector, timeout=15000)
+            if but_but:
+                await but_but.scroll_into_view_if_needed()
+                await asyncio.sleep(3)
+                await but_but.hover()
+                await asyncio.sleep(3)
+                target_emotion = self.LikeType - 1
+                target_emotion_list = ["赞", "大心", "加油", "哈", "哇", "嗚", "怒"]
+                emotion_selector = f'//div[@role="button" and @aria-label="{target_emotion_list[target_emotion]}"]'
+                try:
+                    emotion_button = await self.page.wait_for_selector(emotion_selector, timeout=5000)
+                    if emotion_button:
+                        await emotion_button.click()
+                        print(f"点击了表情: {target_emotion_list[target_emotion]}")
+                    else:
+                        print("未找到表情按钮，执行默认点赞")
+                        await but_but.click()
+                except Exception as e:
+                    print(f"表情点击失败: {str(e)}")
+                    await but_but.click()
+            return True
+        except Exception as e:
+            print(f"点赞失败: {str(e)}")
+            try:
+                but_selector = '//div[@role="dialog"]//div[@class="xbmvrgn x1diwwjn"]'+ cancel_like
+                element = await self.page.wait_for_selector(but_selector , timeout=10000)
+                if element:
+                    print("已經點過讃")
+                return False
+            except Exception as e:
+                print(f"点赞失败找不到可點讚位置: {str(e)}")
+
+    async def post_nei_comment(self,comment_text):
+
+        try:
+            but_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-label, "留言") or @role="textbox" and contains(@aria-label, "回答")]'
+            input_element = await self.page.wait_for_selector(but_selector, timeout=10000)
+            if input_element:
+                await input_element.scroll_into_view_if_needed()
+                aria_label = await input_element.get_attribute('aria-label')
+                print(f"获取到的 aria-label 为: {aria_label}")
+
+            return False
+        except Exception as e:
+            print(f"点赞失败找不到可點讚位置: {str(e)}")
+
     async def class_fb_set(self):
         try:
             Option_selector = '//div[@data-visualcompletion="ignore-dynamic"]//div[@role="button" and contains(@aria-label, "選項")]'

@@ -31,6 +31,8 @@ class Crawler:
         self.params = params  # 保存参数
         self.ui_update_lock = asyncio.Lock()  # 添加UI更新锁
         self.status_window = None  # 状态窗口引用
+        self.groups_name = ""
+        self.groups_num = ""
     async def safe_update_status(self, text):
         """安全的异步状态更新"""
         async with self.ui_update_lock:
@@ -353,6 +355,16 @@ class Crawler:
             await self.robust_update_status(f"社團地址:{url}")
             await self.page.goto(url=url, wait_until='load')
             await asyncio.sleep(5)
+            try:
+                groups_name_selector = '//h1[@dir="auto"]//a[@role="link"]'
+                groups_name_function = await self.page.wait_for_selector(groups_name_selector, timeout=10000)
+                self.groups_name = await groups_name_function.inner_text()
+                groups_num_selector = '//span[@dir="auto"]/div//a[@role="link"]'
+                groups_num_function = await self.page.wait_for_selector(groups_num_selector, timeout=10000)
+                self.groups_num = await groups_num_function.inner_text()
+                await self.robust_update_status(f"社團名:{self.groups_name} 社團人數：{self.groups_num}")
+            except Exception as e:
+                print(f"提取社团信息时出错: {str(e)}")
             await self.robust_update_status("开始爬取用户信息...")
             # 滚动加载更多用户
             previous_count = 0

@@ -8,7 +8,7 @@ from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
 from PyQt5.QtCore import Qt
 from qasync import QEventLoop, asyncClose, asyncSlot
 from FB_middle import main
-
+from database_manager import db_manager
 class MyApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -420,14 +420,14 @@ class MyApp(QWidget):
 
     @asyncSlot()
     async def on_confirm(self):
-        """确定按钮：执行csgetusers"""
+        """确定按钮：执行csgetusers，先检查地址是否重复"""
         if self.is_searching:
             QMessageBox.warning(self, "警告", "请等待搜索完成！")
             return
 
         # 获取地址列表
-        addresses = self.address_textbox.toPlainText()
-        if not addresses.strip():
+        addresses = self.address_textbox.toPlainText().strip()
+        if not addresses:
             QMessageBox.warning(self, "警告", "地址列表为空，请先进行搜索！")
             return
 
@@ -435,12 +435,74 @@ class MyApp(QWidget):
             QMessageBox.warning(self, "警告", "请输入爬取数量！")
             return
 
+        # 处理地址列表
+        address_list = [addr.strip() for addr in addresses.split('\n') if addr.strip()]
+
+        # 检查重复地址
+        try:
+            result = db_manager.check_duplicate_addresses(address_list)
+            duplicate_addresses = result['duplicate']
+            unique_addresses = result['unique']
+            failed_addresses = result['failed']
+
+            # 如果有解析失败的地址，提示用户
+            if failed_addresses:
+                failed_text = "\n".join(failed_addresses[:5])  # 最多显示5个
+                if len(failed_addresses) > 5:
+                    failed_text += f"\n... 还有 {len(failed_addresses) - 5} 个地址格式错误"
+
+                reply = QMessageBox.question(
+                    self,
+                    "地址格式错误",
+                    f"以下地址格式不正确，无法提取群组ID：\n\n{failed_text}\n\n是否继续处理其他有效地址？",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes
+                )
+
+                if reply == QMessageBox.No:
+                    return
+
+            # 如果有重复地址，提示用户
+            if duplicate_addresses:
+                duplicate_text = "\n".join(duplicate_addresses[:5])  # 最多显示5个
+                if len(duplicate_addresses) > 5:
+                    duplicate_text += f"\n... 还有 {len(duplicate_addresses) - 5} 个重复地址"
+
+                reply = QMessageBox.question(
+                    self,
+                    "发现重复地址",
+                    f"发现 {len(duplicate_addresses)} 个重复地址：\n\n{duplicate_text}\n\n是否自动删除重复地址，只保留新地址？",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes
+                )
+
+                if reply == QMessageBox.Yes:
+                    # 删除重复地址，只保留唯一地址
+                    remaining_addresses = unique_addresses + failed_addresses  # 保留格式错误的地址让用户决定
+                    self.address_textbox.setPlainText("\n".join(remaining_addresses))
+                    if not unique_addresses:
+                        QMessageBox.warning(self, "警告", "所有有效地址都已存在数据库中，没有新地址可处理！")
+                        return
+
+            # 如果没有唯一地址且没有格式错误的地址，则返回
+            if not unique_addresses and not failed_addresses:
+                QMessageBox.warning(self, "警告", "没有有效的地址可处理！")
+                return
+
+        except Exception as e:
+            QMessageBox.warning(self, "数据库连接错误", f"无法连接数据库检查重复地址：{str(e)}\n将继续处理所有地址。")
+            unique_addresses = address_list
+
         # 获取所有输入内容
         search_content = self.search_input.text()
         search_count = self.search_count_input.text()
         crawl_count = self.crawl_count_input.text()
         device_id = self.device_input.text()
         combo_value = self.combo_box.currentText()
+        print("下拉框：", combo_value)
+
+        # 使用处理后的地址列表
+        final_addresses = unique_addresses + failed_addresses  # 包含格式错误的地址，让爬虫尝试处理
 
         params = {
             'search_content': search_content,
@@ -448,7 +510,7 @@ class MyApp(QWidget):
             'crawl_count': crawl_count,
             'device_id': device_id,
             'combo_value': combo_value,
-            'addresses': addresses.split('\n') if addresses else [],
+            'addresses': final_addresses,
             'action': 'confirm'
         }
 
@@ -502,8 +564,14 @@ def win_main(version, day):
     ex = MyApp()
     ex.show()
 
-    with loop:
-        sys.exit(loop.run_forever())
+    try:
+        with loop:
+            sys.exit(loop.run_forever())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # 确保清理资源
+        db_manager.close_connection()
 
 
 def resource_path(relative_path):

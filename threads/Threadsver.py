@@ -183,7 +183,7 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
 
 def version_ver():
     global version
-    version = '1.0.0.1'
+    version = '1.0.0.2'
     print(version)
     remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=Threadsgetusers'
     response = requests.get(remote_version_url,headers=headers)

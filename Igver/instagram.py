@@ -602,10 +602,9 @@ class InstagramScraper:
                 if not variable or variable == None:
                     max_id = ''
                     hasNextPage = False
-            if hasNextPage!=False:
+            if hasNextPage != False:
                 try:
                     data['variables'] = json.dumps(variables)
-                    # response = requests.post(url, headers=headers, data=data, proxies=self.proxies, timeout=10)
                     response = requests.post(url, headers=headers, data=data, timeout=10)
                     response.raise_for_status()
 
@@ -616,36 +615,47 @@ class InstagramScraper:
                     res = json.loads(response.text)
                     items = res['data'][
                         '1$xdt_api__v1__friendships__followers(_request_data:$request_data,include_friendship_status:true,include_global_blacklist_sample:false,max_id:$max_id,query:$query,search_surface:$search_surface,user_id:$user_id)']
-                    if "next_max_id" in items and items['next_max_id'] != '':
-                        max_id = items['next_max_id']
-                    else:
-                        max_id = ''
-                        hasNextPage = False
-                    print(len(items['users']))
-                    for user in items['users']:
+
+                    users = items['users']
+                    print(f"本页获取用户数量: {len(users)}")
+
+                    for user in users:
                         user_in_bool, user_list = duplicates_and_add(user_list, user['id'])
-                        if statistics <= self.getinput_num and user_in_bool or self.getinput_num == 0 and user_in_bool:
+
+                        # 只有在新用户且未达到数量限制时才处理
+                        if user_in_bool and (self.getinput_num == 0 or statistics <= self.getinput_num):
+                            # 插入数据库
                             self.log.info(
                                 f"粉丝用户: ID:{user['id']} / Name: {user['username']} / Full Name: {user['full_name']}")
-                            self.db.insert_data(user_id=user['id'], user_name=user['username'], user_fullname=user['full_name'],instagram_id=self.current_url,types=types)
-                            # self.db.insert_count(self.current_url, 1, types)
-                            statistics = statistics + 1
-                    users = res['data'][
-                        '1$xdt_api__v1__friendships__followers(_request_data:$request_data,include_friendship_status:true,include_global_blacklist_sample:false,max_id:$max_id,query:$query,search_surface:$search_surface,user_id:$user_id)']['users']
-                    print(len(users))
-                    for user in users:
-                        user_in_bool, show_user_list = duplicates_and_add(show_user_list, user['id'])
-                        if statistics_show <= self.getinput_num and user_in_bool or self.getinput_num == 0 and user_in_bool:
+                            self.db.insert_data(
+                                user_id=user['id'],
+                                user_name=user['username'],
+                                user_fullname=user['full_name'],
+                                instagram_id=self.current_url,
+                                types=types
+                            )
+
+                            # 更新进度显示 - 确保在插入数据库后立即调用
                             if self.progress_callback:
                                 self.progress_callback('follower', url, {
                                     'id': user['id'],
                                     'username': user['username'],
                                     'full_name': user['full_name']
                                 })
-                                statistics_show = statistics_show + 1
-                        else:
-                            max_id = ''
+
+                            statistics = statistics + 1
+
+                        # 检查是否达到目标数量
+                        if self.getinput_num > 0 and statistics > self.getinput_num:
                             hasNextPage = False
+                            break  # 达到目标数量，跳出内层循环
+
+                    # 检查分页是否还有数据
+                    if "next_max_id" in items and items['next_max_id'] and items['next_max_id'] != '':
+                        max_id = items['next_max_id']
+                    else:
+                        max_id = ''
+                        hasNextPage = False
 
                 except requests.exceptions.RequestException as e:
                     raise Exception(f"获取作者粉丝用户列表的请求失败({e})")
