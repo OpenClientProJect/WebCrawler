@@ -1,6 +1,6 @@
-import {app, shell, BrowserWindow, ipcMain} from 'electron'
-import {join} from 'path'
-import {electronApp, optimizer, is} from '@electron-toolkit/utils'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { join } from 'path'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
   createPuppeteerBrowser,
@@ -17,7 +17,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    ...(process.platform === 'linux' ? {icon} : {}),
+    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -30,7 +30,7 @@ function createWindow() {
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
-    return {action: 'deny'}
+    return { action: 'deny' }
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -65,8 +65,13 @@ app.whenReady().then(() => {
     }
   })
 
-// Puppeteer 浏览器控制
+  // Puppeteer 浏览器控制
   ipcMain.handle('open-puppeteer-browser', async (event, credentials) => {
+    //隐藏窗口
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      windows[0].hide()
+    }
     try {
       console.log('主进程接收到数据', credentials)
       //创建浏览器实例
@@ -76,7 +81,7 @@ app.whenReady().then(() => {
       const page = await browser.newPage()
 
       //设置用户代理
-      await page.setUserAgent({userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'})
+      await page.setUserAgent({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36' })
 
       //打开 Facebook 登录页
       await page.goto('https://www.facebook.com')
@@ -84,30 +89,12 @@ app.whenReady().then(() => {
       //等待待登录表单加载
       const loginForm = await page.waitForSelector('#email')
       if (loginForm) {
+        // 重新显示窗口
+        if (windows.length > 0) {
+          windows[0].show()
+          windows[0].webContents.send('switch-to-login')
+        }
 
-        // 清空并输入邮箱输入框
-        await page.evaluate(() => {
-          const emailInput = document.querySelector('#email')
-          if (emailInput) {
-            emailInput.value = ''
-          }
-        })
-        await page.type('#email', credentials.username, {delay: 500})
-
-        // 清空并输入密码
-        await page.evaluate(() => {
-          const passInput = document.querySelector('#pass')
-          if (passInput) {
-            passInput.value = ''
-            passInput.focus()
-          }
-        })
-        await page.type('#pass', credentials.password, {delay: 500})
-
-        // 等待1秒
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // await page.click('#loginbutton')
-        console.log('点击登录')
       }
       console.log('完成')
       return true
@@ -115,6 +102,35 @@ app.whenReady().then(() => {
       console.error(error)
       return false
     }
+  })
+
+  //登录
+  ipcMain.handle('login', async (event, credentials) => {
+// 清空并输入邮箱输入框
+    // await page.evaluate(() => {
+    //   const emailInput = document.querySelector('#email')
+    //   if (emailInput) {
+    //     emailInput.value = ''
+    //   }
+    // })
+    // await page.type('#email', credentials.username, { delay: 500 })
+    //
+    // // 清空并输入密码
+    // await page.evaluate(() => {
+    //   const passInput = document.querySelector('#pass')
+    //   if (passInput) {
+    //     passInput.value = ''
+    //     passInput.focus()
+    //   }
+    // })
+    // await page.type('#pass', credentials.password, { delay: 500 })
+    //
+    // // 等待1秒
+    // await new Promise(resolve => setTimeout(resolve, 1000))
+    // // await page.click('#loginbutton')
+    // console.log('点击登录')
+    console.log("登录中...", credentials)
+    return true
   })
 
   ipcMain.handle('close-puppeteer-browser', async () => {

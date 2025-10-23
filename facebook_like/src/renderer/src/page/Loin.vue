@@ -5,7 +5,7 @@
       <p class="login-subtitle">请输入您的登录信息</p>
     </div>
 
-    <form @submit.prevent="handleLogin" class="login-form">
+    <form class="login-form">
       <div class="form-group">
         <label for="username" class="form-label">用户名</label>
         <input
@@ -34,6 +34,7 @@
         type="button"
         class="login-button"
         :disabled="isLoading"
+        @click="handleLogin"
       >
         <span v-if="isLoading">登录中...</span>
         <span v-else>登录</span>
@@ -65,7 +66,7 @@ const handleLogin = async () => {
       password: password.value
     }
     // 打开 Puppeteer 浏览器
-    const success = await window.electronAPI?.openPuppeteerBrowser(credentials)
+    const success = await window.electronAPI?.login(credentials)
     console.log('openPuppeteerBrowser 返回结果:', success)
   } catch (error) {
     console.error('登录失败:', error)

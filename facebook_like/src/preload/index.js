@@ -12,7 +12,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Puppeteer 浏览器控制
   openPuppeteerBrowser: (credentials) => ipcRenderer.invoke('open-puppeteer-browser',credentials),
-  closePuppeteerBrowser: () => ipcRenderer.invoke('close-puppeteer-browser'),
+
+  //登录
+  login: (credentials) => ipcRenderer.invoke('login', credentials),
+
+  // 监听主进程消息
+  onSwitchToLogin: (callback) => ipcRenderer.on('switch-to-login', callback),
 })
 
 // Use `contextBridge` APIs to expose Electron APIs to
