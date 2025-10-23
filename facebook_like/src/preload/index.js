@@ -4,7 +4,6 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const api = {}
 
-
 contextBridge.exposeInMainWorld('electronAPI', {
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
@@ -15,8 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
 
   // Puppeteer 浏览器控制
-  openPuppeteerBrowser: (credentials) => ipcRenderer.invoke('open-puppeteer-browser',credentials),
-  closePuppeteerBrowser: () => ipcRenderer.invoke('close-puppeteer-browser'),
+  openPuppeteerBrowser: (credentials) => ipcRenderer.invoke('open-puppeteer-browser', credentials),
 
   //登录
   login: (credentials) => ipcRenderer.invoke('login', credentials),

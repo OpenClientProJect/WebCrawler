@@ -1,6 +1,5 @@
 import fs from 'fs'
 import { join } from 'path'
-import { app } from 'electron'
 
 // 设置文件路径 - 使用当前应用目录
 const settingsPath = join(process.cwd(), 'settings.json')
@@ -10,26 +9,6 @@ let appSettings = {
   deviceId: '',
   refreshCount: null,
   collectCount: null
-}
-
-/**
- * 加载设置从文件
- * @returns {Object} 设置对象
- */
-const loadSettings = () => {
-  try {
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf8')
-      const fileSettings = JSON.parse(data)
-      appSettings = { ...appSettings, ...fileSettings }
-      console.log('设置已从文件加载:', appSettings)
-    } else {
-      console.log('设置文件不存在，等待用户设置')
-    }
-  } catch (error) {
-    console.error('加载设置失败:', error)
-  }
-  return appSettings
 }
 
 /**
@@ -117,4 +96,4 @@ const validateSettings = (settings) => {
 }
 
 // 导出所有函数
-export { loadSettings, saveSettings, getSettings, updateSettings, validateSettings }
+export { saveSettings, getSettings, updateSettings, validateSettings }
