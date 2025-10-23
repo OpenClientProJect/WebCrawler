@@ -1,17 +1,17 @@
 import {app, shell, BrowserWindow, ipcMain} from 'electron'
 import {join} from 'path'
 import {electronApp, optimizer, is} from '@electron-toolkit/utils'
-import puppeteer from 'puppeteer-core'
 import icon from '../../resources/icon.png?asset'
-
-let mainWindow = null
-let puppeteerBrowser = null
+import {
+  createPuppeteerBrowser,
+  closePuppeteerBrowser,
+} from './PuppeteerBrowser.js'
 
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 500,
-    height: 600,
+    width: 350,
+    height: 500,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -42,47 +42,6 @@ function createWindow() {
   }
 }
 
-// Puppeteer 浏览器管理
-async function createPuppeteerBrowser() {
-  if (puppeteerBrowser) {
-    return puppeteerBrowser
-  }
-
-  // 尝试多个 Chrome 路径
-  const chromePaths = [
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Users\\Administrator\\AppData\\Local\\Chromium\\Application\\chrome.exe'
-  ]
-
-  for (const chromePath of chromePaths) {
-    try {
-      console.log(`尝试使用 Chrome 路径: ${chromePath}`)
-
-      puppeteerBrowser = await puppeteer.launch({
-        headless: false,// 显示浏览器窗口
-        executablePath: chromePath,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor',
-          '--user-data-dir=./chrome-user-data'
-        ]
-      })
-
-      console.log('Puppeteer 浏览器启动成功')
-      return puppeteerBrowser
-    } catch (error) {
-      console.error(`使用路径 ${chromePath} 启动失败:`, error.message)
-      continue
-    }
-  }
-
-  throw new Error('所有 Chrome 路径都启动失败')
-}
-
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -107,28 +66,59 @@ app.whenReady().then(() => {
   })
 
 // Puppeteer 浏览器控制
-  ipcMain.handle('open-puppeteer-browser', async () => {
+  ipcMain.handle('open-puppeteer-browser', async (event, credentials) => {
     try {
+      console.log('主进程接收到数据', credentials)
+      //创建浏览器实例
       const browser = await createPuppeteerBrowser()
 
+      //新建页面实例
       const page = await browser.newPage()
-      console.log('页面创建成功，正在导航到 Facebook...')
 
+      //设置用户代理
+      await page.setUserAgent({userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'})
+
+      //打开 Facebook 登录页
       await page.goto('https://www.facebook.com')
-      console.log('成功导航到 Facebook')
 
+      //等待待登录表单加载
+      const loginForm = await page.waitForSelector('#email')
+      if (loginForm) {
+
+        // 清空并输入邮箱输入框
+        await page.evaluate(() => {
+          const emailInput = document.querySelector('#email')
+          if (emailInput) {
+            emailInput.value = ''
+          }
+        })
+        await page.type('#email', credentials.username, {delay: 500})
+
+        // 清空并输入密码
+        await page.evaluate(() => {
+          const passInput = document.querySelector('#pass')
+          if (passInput) {
+            passInput.value = ''
+            passInput.focus()
+          }
+        })
+        await page.type('#pass', credentials.password, {delay: 500})
+
+        // 等待1秒
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // await page.click('#loginbutton')
+        console.log('点击登录')
+      }
+      console.log('完成')
       return true
     } catch (error) {
-      console.error('打开浏览器失败:', error)
+      console.error(error)
       return false
     }
   })
 
   ipcMain.handle('close-puppeteer-browser', async () => {
-    if (puppeteerBrowser) {
-      await puppeteerBrowser.close()
-      puppeteerBrowser = null
-    }
+    return await closePuppeteerBrowser()
   })
 
   // Default open or close DevTools by F12 in development
@@ -158,9 +148,7 @@ app.on('window-all-closed', () => {
 
 // 清理 Puppeteer 浏览器
 app.on('before-quit', async () => {
-  if (puppeteerBrowser) {
-    await puppeteerBrowser.close()
-  }
+  await closePuppeteerBrowser()
 })
 
 // In this file you can include the rest of your app"s specific main process

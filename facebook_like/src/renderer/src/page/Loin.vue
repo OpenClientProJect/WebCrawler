@@ -31,19 +31,14 @@
       </div>
 
       <button
-        type="submit"
+        type="button"
         class="login-button"
         :disabled="isLoading"
       >
         <span v-if="isLoading">登录中...</span>
-        <span v-else>登录并打开浏览器</span>
+        <span v-else>登录</span>
       </button>
     </form>
-
-    <div class="login-footer">
-      <a href="#" class="forgot-password">忘记密码？</a>
-      <a href="#" class="register-link">注册新账户</a>
-    </div>
   </div>
 </template>
 
@@ -64,26 +59,16 @@ const handleLogin = async () => {
 
   try {
     console.log('开始登录流程...')
-    
-    // 模拟登录验证
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('登录验证完成')
-    
-    // 打开 Puppeteer 浏览器
-    console.log('正在调用 openPuppeteerBrowser...')
-    const success = await window.electronAPI?.openPuppeteerBrowser()
-    console.log('openPuppeteerBrowser 返回结果:', success)
-    
-    if (success) {
-      console.log('浏览器打开成功')
-      alert(`欢迎 ${username.value}！浏览器已打开，可以开始爬虫操作`)
-    } else {
-      console.log('浏览器打开失败')
-      alert('打开浏览器失败，请检查 Chrome 是否已安装')
+
+    const credentials = {
+      username: username.value,
+      password: password.value
     }
+    // 打开 Puppeteer 浏览器
+    const success = await window.electronAPI?.openPuppeteerBrowser(credentials)
+    console.log('openPuppeteerBrowser 返回结果:', success)
   } catch (error) {
     console.error('登录失败:', error)
-    alert('登录失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -91,5 +76,110 @@ const handleLogin = async () => {
 </script>
 
 <style scoped lang="less">
-@import '../assets/css/styles.less';
+.login-box {
+  background: #ffffff;
+  border-radius: 15px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-title {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin: 0;
+  font-weight: 400;
+}
+
+.login-form {
+  border-radius: 8px;
+  padding: 30px;
+  width: 100%;
+  max-width: 350px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+  background: #fff;
+  color: #2c3e50;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: #3498db;
+  }
+
+  &::placeholder {
+    color: #95a5a6;
+  }
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px 24px;
+  background: #3498db;
+  color: white;
+  border: none;
+  margin-top: 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 20px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    background: #2980b9;
+  }
+}
+
+.forgot-password,
+.register-link {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #2980b9;
+    text-decoration: none;
+  }
+}
 </style>

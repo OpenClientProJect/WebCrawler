@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.invoke('close-window'),
 
   // Puppeteer 浏览器控制
-  openPuppeteerBrowser: () => ipcRenderer.invoke('open-puppeteer-browser'),
+  openPuppeteerBrowser: (credentials) => ipcRenderer.invoke('open-puppeteer-browser',credentials),
   closePuppeteerBrowser: () => ipcRenderer.invoke('close-puppeteer-browser'),
 })
 
