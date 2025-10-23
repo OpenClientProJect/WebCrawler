@@ -36,7 +36,7 @@
         :disabled="isLoading"
       >
         <span v-if="isLoading">登录中...</span>
-        <span v-else>登录</span>
+        <span v-else>登录并打开浏览器</span>
       </button>
     </form>
 
@@ -47,7 +47,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 
 const username = ref('')
@@ -62,15 +62,33 @@ const handleLogin = async () => {
 
   isLoading.value = true
 
-  // 模拟登录请求
-  setTimeout(() => {
+  try {
+    console.log('开始登录流程...')
+    
+    // 模拟登录验证
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log('登录验证完成')
+    
+    // 打开 Puppeteer 浏览器
+    console.log('正在调用 openPuppeteerBrowser...')
+    const success = await window.electronAPI?.openPuppeteerBrowser()
+    console.log('openPuppeteerBrowser 返回结果:', success)
+    
+    if (success) {
+      console.log('浏览器打开成功')
+      alert(`欢迎 ${username.value}！浏览器已打开，可以开始爬虫操作`)
+    } else {
+      console.log('浏览器打开失败')
+      alert('打开浏览器失败，请检查 Chrome 是否已安装')
+    }
+  } catch (error) {
+    console.error('登录失败:', error)
+    alert('登录失败，请重试')
+  } finally {
     isLoading.value = false
-    alert(`欢迎 ${username.value}！`)
-  }, 1500)
+  }
 }
-
 </script>
-
 
 <style scoped lang="less">
 @import '../assets/css/styles.less';

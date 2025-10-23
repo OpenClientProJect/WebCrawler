@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
   closeWindow: () => ipcRenderer.invoke('close-window'),
+
+  // Puppeteer 浏览器控制
+  openPuppeteerBrowser: () => ipcRenderer.invoke('open-puppeteer-browser'),
+  closePuppeteerBrowser: () => ipcRenderer.invoke('close-puppeteer-browser'),
 })
 
 // Use `contextBridge` APIs to expose Electron APIs to

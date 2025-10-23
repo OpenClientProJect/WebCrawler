@@ -1,7 +1,11 @@
-import { app, shell, BrowserWindow,ipcMain } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import {app, shell, BrowserWindow, ipcMain} from 'electron'
+import {join} from 'path'
+import {electronApp, optimizer, is} from '@electron-toolkit/utils'
+import puppeteer from 'puppeteer-core'
 import icon from '../../resources/icon.png?asset'
+
+let mainWindow = null
+let puppeteerBrowser = null
 
 function createWindow() {
   // Create the browser window.
@@ -13,7 +17,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    ...(process.platform === 'linux' ? {icon} : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -26,7 +30,7 @@ function createWindow() {
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
-    return { action: 'deny' }
+    return {action: 'deny'}
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -37,6 +41,48 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
+
+// Puppeteer 浏览器管理
+async function createPuppeteerBrowser() {
+  if (puppeteerBrowser) {
+    return puppeteerBrowser
+  }
+
+  // 尝试多个 Chrome 路径
+  const chromePaths = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Users\\Administrator\\AppData\\Local\\Chromium\\Application\\chrome.exe'
+  ]
+
+  for (const chromePath of chromePaths) {
+    try {
+      console.log(`尝试使用 Chrome 路径: ${chromePath}`)
+
+      puppeteerBrowser = await puppeteer.launch({
+        headless: false,// 显示浏览器窗口
+        executablePath: chromePath,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--user-data-dir=./chrome-user-data'
+        ]
+      })
+
+      console.log('Puppeteer 浏览器启动成功')
+      return puppeteerBrowser
+    } catch (error) {
+      console.error(`使用路径 ${chromePath} 启动失败:`, error.message)
+      continue
+    }
+  }
+
+  throw new Error('所有 Chrome 路径都启动失败')
+}
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -57,6 +103,31 @@ app.whenReady().then(() => {
     const windows = BrowserWindow.getAllWindows()
     if (windows.length > 0) {
       windows[0].close()
+    }
+  })
+
+// Puppeteer 浏览器控制
+  ipcMain.handle('open-puppeteer-browser', async () => {
+    try {
+      const browser = await createPuppeteerBrowser()
+
+      const page = await browser.newPage()
+      console.log('页面创建成功，正在导航到 Facebook...')
+
+      await page.goto('https://www.facebook.com')
+      console.log('成功导航到 Facebook')
+
+      return true
+    } catch (error) {
+      console.error('打开浏览器失败:', error)
+      return false
+    }
+  })
+
+  ipcMain.handle('close-puppeteer-browser', async () => {
+    if (puppeteerBrowser) {
+      await puppeteerBrowser.close()
+      puppeteerBrowser = null
     }
   })
 
@@ -82,6 +153,13 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+// 清理 Puppeteer 浏览器
+app.on('before-quit', async () => {
+  if (puppeteerBrowser) {
+    await puppeteerBrowser.close()
   }
 })
 
