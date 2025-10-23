@@ -10,14 +10,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
   closeWindow: () => ipcRenderer.invoke('close-window'),
 
+  // 设置管理
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+
   // Puppeteer 浏览器控制
   openPuppeteerBrowser: (credentials) => ipcRenderer.invoke('open-puppeteer-browser',credentials),
+  closePuppeteerBrowser: () => ipcRenderer.invoke('close-puppeteer-browser'),
 
   //登录
   login: (credentials) => ipcRenderer.invoke('login', credentials),
 
   // 监听主进程消息
   onSwitchToLogin: (callback) => ipcRenderer.on('switch-to-login', callback),
+  removeSwitchToLoginListener: (callback) => ipcRenderer.removeListener('switch-to-login', callback)
 })
 
 // Use `contextBridge` APIs to expose Electron APIs to

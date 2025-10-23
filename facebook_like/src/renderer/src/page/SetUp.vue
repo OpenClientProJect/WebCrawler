@@ -5,7 +5,7 @@
         <h1 class="setup-title">系统设置</h1>
       </div>
 
-      <form @submit.prevent="saveSettings" class="setup-form">
+      <form class="setup-form" @submit.prevent="saveSettings">
         <!-- 设备号设置 -->
         <div class="form-group">
           <label for="deviceId" class="form-label">
@@ -62,17 +62,13 @@
         <div class="form-actions">
           <button
             type="button"
-            @click="resetSettings"
             class="action-button reset-button"
             :disabled="isLoading"
+            @click="resetSettings"
           >
             重置设置
           </button>
-          <button
-            type="submit"
-            class="action-button save-button"
-            :disabled="isLoading"
-          >
+          <button type="submit" class="action-button save-button" :disabled="isLoading">
             <span v-if="isLoading">保存中...</span>
             <span v-else>保存设置</span>
           </button>
@@ -83,12 +79,12 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
+import { ref, onMounted } from 'vue'
 
 // 设置数据
 const deviceId = ref('')
-const refreshCount = ref(10)
-const collectCount = ref(50)
+const refreshCount = ref(null)
+const collectCount = ref(null)
 const isLoading = ref(false)
 
 // 保存设置
@@ -98,13 +94,13 @@ const saveSettings = async () => {
     return
   }
 
-  if (refreshCount.value < 1 || refreshCount.value > 1000) {
-    alert('刷新数必须在1-1000之间')
+  if (!refreshCount.value || refreshCount.value < 1 || refreshCount.value > 1000) {
+    alert('请输入有效的刷新数(1-1000)')
     return
   }
 
-  if (collectCount.value < 1 || collectCount.value > 10000) {
-    alert('采集数必须在1-10000之间')
+  if (!collectCount.value || collectCount.value < 1 || collectCount.value > 10000) {
+    alert('请输入有效的采集数(1-10000)')
     return
   }
 
@@ -116,7 +112,17 @@ const saveSettings = async () => {
       refreshCount: refreshCount.value,
       collectCount: collectCount.value
     }
-    const success = await window.electronAPI?.openPuppeteerBrowser(settings)
+
+    // 先保存设置到主进程
+    const saveResult = await window.electronAPI?.saveSettings(settings)
+
+    if (saveResult && saveResult.success) {
+      // 保存成功后可以继续其他操作，比如打开浏览器
+      const browserSuccess = await window.electronAPI?.openPuppeteerBrowser(settings)
+    } else {
+      const errors = saveResult?.errors || ['保存失败']
+      alert('设置保存失败：' + errors.join(', '))
+    }
   } catch (error) {
     console.error('保存设置失败:', error)
     alert('保存设置失败，请重试')
@@ -128,22 +134,33 @@ const saveSettings = async () => {
 // 重置设置
 const resetSettings = () => {
   deviceId.value = ''
-  refreshCount.value = 10
-  collectCount.value = 50
+  refreshCount.value = null
+  collectCount.value = null
 }
 
 // 加载设置
-const loadSettings = () => {
-  // 这里可以从本地存储或主进程加载设置
-  const savedSettings = localStorage.getItem('appSettings')
-  if (savedSettings) {
-    try {
-      const settings = JSON.parse(savedSettings)
+const loadSettings = async () => {
+  try {
+    // 从主进程获取设置
+    const settings = await window.electronAPI?.getSettings()
+    if (settings) {
       deviceId.value = settings.deviceId || ''
-      refreshCount.value = settings.refreshCount || 10
-      collectCount.value = settings.collectCount || 50
-    } catch (error) {
-      console.error('加载设置失败:', error)
+      refreshCount.value = settings.refreshCount || null
+      collectCount.value = settings.collectCount || null
+    }
+  } catch (error) {
+    console.error('加载设置失败:', error)
+    // 如果从主进程加载失败，尝试从本地存储加载
+    const savedSettings = localStorage.getItem('appSettings')
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings)
+        deviceId.value = settings.deviceId || ''
+        refreshCount.value = settings.refreshCount || null
+        collectCount.value = settings.collectCount || null
+      } catch (parseError) {
+        console.error('解析本地设置失败:', parseError)
+      }
     }
   }
 }
@@ -263,7 +280,6 @@ onMounted(() => {
   }
 }
 
-
 .action-button:disabled span {
   animation: pulse 1.5s infinite;
 }
@@ -280,5 +296,4 @@ onMounted(() => {
     opacity: 1;
   }
 }
-
 </style>

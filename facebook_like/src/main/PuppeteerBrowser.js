@@ -1,7 +1,7 @@
 // Puppeteer 浏览器管理
 
-import puppeteer from "puppeteer-core";
-import {edgePaths} from "./browserPath";
+import puppeteer from 'puppeteer-core'
+import { edgePaths } from './browserPath'
 
 let puppeteerBrowser = null
 
@@ -16,14 +16,16 @@ export async function createPuppeteerBrowser() {
       console.log(`尝试使用 Chrome 路径: ${browserPath}`)
 
       puppeteerBrowser = await puppeteer.launch({
-        headless: false,// 显示浏览器窗口
+        headless: false, // 显示浏览器窗口
         executablePath: browserPath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-web-security',
           '--disable-features=VizDisplayCompositor',
-          '--user-data-dir=./chrome-user-data'
+          '--user-data-dir=./chrome-user-data',
+          '--window-size=800,800', // 设置窗口大小
+          '--window-position=0,0' // 设置窗口位置（左上角）
         ]
       })
 
@@ -32,6 +34,8 @@ export async function createPuppeteerBrowser() {
         console.log('Puppeteer 浏览器已断开连接，清理资源...')
         puppeteerBrowser = null
       })
+
+      // 设置窗口位置和大小
 
       console.log('Puppeteer 浏览器启动成功')
       return puppeteerBrowser

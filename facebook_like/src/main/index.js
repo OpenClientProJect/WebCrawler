@@ -2,10 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import {
-  createPuppeteerBrowser,
-  closePuppeteerBrowser,
-} from './PuppeteerBrowser.js'
+import { createPuppeteerBrowser, closePuppeteerBrowser } from './PuppeteerBrowser.js'
+import { getSettings, updateSettings, validateSettings } from './settings.js'
 
 function createWindow() {
   // Create the browser window.
@@ -42,13 +40,30 @@ function createWindow() {
   }
 }
 
-
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  // 设置管理 IPC 处理
+  ipcMain.handle('save-settings', (event, settings) => {
+    // 验证设置
+    const validation = validateSettings(settings)
+    if (!validation.valid) {
+      console.error('设置验证失败:', validation.errors)
+      return { success: false, errors: validation.errors }
+    }
+
+    // 保存设置
+    const success = updateSettings(settings)
+    return { success, errors: [] }
+  })
+
+  ipcMain.handle('get-settings', () => {
+    return getSettings()
+  })
 
   // 窗口控制IPC处理
   ipcMain.handle('minimize-window', () => {
@@ -81,7 +96,10 @@ app.whenReady().then(() => {
       const page = await browser.newPage()
 
       //设置用户代理
-      await page.setUserAgent({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36' })
+      await page.setUserAgent({
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'
+      })
 
       //打开 Facebook 登录页
       await page.goto('https://www.facebook.com')
@@ -89,12 +107,13 @@ app.whenReady().then(() => {
       //等待待登录表单加载
       const loginForm = await page.waitForSelector('#email')
       if (loginForm) {
+        //关闭浏览器
+        await closePuppeteerBrowser()
         // 重新显示窗口
         if (windows.length > 0) {
           windows[0].show()
           windows[0].webContents.send('switch-to-login')
         }
-
       }
       console.log('完成')
       return true
@@ -106,31 +125,58 @@ app.whenReady().then(() => {
 
   //登录
   ipcMain.handle('login', async (event, credentials) => {
-// 清空并输入邮箱输入框
-    // await page.evaluate(() => {
-    //   const emailInput = document.querySelector('#email')
-    //   if (emailInput) {
-    //     emailInput.value = ''
-    //   }
-    // })
-    // await page.type('#email', credentials.username, { delay: 500 })
-    //
-    // // 清空并输入密码
-    // await page.evaluate(() => {
-    //   const passInput = document.querySelector('#pass')
-    //   if (passInput) {
-    //     passInput.value = ''
-    //     passInput.focus()
-    //   }
-    // })
-    // await page.type('#pass', credentials.password, { delay: 500 })
-    //
-    // // 等待1秒
-    // await new Promise(resolve => setTimeout(resolve, 1000))
-    // // await page.click('#loginbutton')
-    // console.log('点击登录')
-    console.log("登录中...", credentials)
-    return true
+    try {
+      console.log('登录参数:', credentials)
+      const currentSettings = getSettings()
+
+      const browser = await createPuppeteerBrowser()
+      //新建页面实例
+      const page = await browser.newPage()
+
+      //设置用户代理
+      await page.setUserAgent({
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'
+      })
+
+      //打开 Facebook 登录页
+      await page.goto('https://www.facebook.com')
+
+      // 清空并输入邮箱输入框
+      await page.evaluate(() => {
+        const emailInput = document.querySelector('#email')
+        if (emailInput) {
+          emailInput.value = ''
+        }
+      })
+      await page.type('#email', credentials.username, { delay: 500 })
+
+      // 清空并输入密码
+      await page.evaluate(() => {
+        const passInput = document.querySelector('#pass')
+        if (passInput) {
+          passInput.value = ''
+          passInput.focus()
+        }
+      })
+      await page.type('#pass', credentials.password, { delay: 500 })
+
+      // 等待1秒
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      //点击登录
+      await page.click('form button')
+
+      // 使用持久化的设置参数进行后续操作
+      console.log('使用设备号:', currentSettings.deviceId)
+      console.log('使用刷新数:', currentSettings.refreshCount)
+      console.log('使用采集数:', currentSettings.collectCount)
+
+      console.log('登录中...', credentials)
+      return true
+    } catch (error) {
+      console.error('登录失败:', error)
+      return false
+    }
   })
 
   ipcMain.handle('close-puppeteer-browser', async () => {
