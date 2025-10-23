@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow,ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -6,10 +6,13 @@ import icon from '../../resources/icon.png?asset'
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 500,
+    height: 600,
     show: false,
     autoHideMenuBar: true,
+    frame: false,
+    transparent: true,
+    resizable: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -41,6 +44,21 @@ function createWindow() {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  // 窗口控制IPC处理
+  ipcMain.handle('minimize-window', () => {
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      windows[0].minimize()
+    }
+  })
+
+  ipcMain.handle('close-window', () => {
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      windows[0].close()
+    }
+  })
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

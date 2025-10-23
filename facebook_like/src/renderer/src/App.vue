@@ -1,97 +1,148 @@
-<script setup>
-import Versions from './components/Versions.vue'
-</script>
-
 <template>
-  <Versions></Versions>
-
-  <svg class="hero-logo" viewBox="0 0 900 300">
-    <use xlink:href="./assets/icons.svg#electron" />
-  </svg>
-  <h2 class="hero-text">You've successfully created an Electron project with Vue</h2>
-  <p class="hero-tagline">Please try pressing <code>F12</code> to open the devTool</p>
-
-  <div class="links">
-    <div class="link-item">
-      <a target="_blank" href="https://electron-vite.org">Documentation</a>
-    </div>
-    <div class="link-item link-dot">•</div>
-    <div class="link-item">
-      <a target="_blank" href="https://github.com/alex8088/electron-vite">Getting Help</a>
-    </div>
-    <div class="link-item link-dot">•</div>
-    <div class="link-item">
-      <a
-        target="_blank"
-        href="https://github.com/alex8088/quick-start/tree/master/packages/create-electron"
-      >
-        create-electron
-      </a>
-    </div>
-  </div>
-
-  <div class="features">
-    <div class="feature-item">
-      <article>
-        <h2 class="title">Configuring</h2>
-        <p class="detail">
-          Config with <span>electron.vite.config.js</span> and refer to the
-          <a target="_blank" href="https://electron-vite.org/config">config guide</a>.
-        </p>
-      </article>
-    </div>
-    <div class="feature-item">
-      <article>
-        <h2 class="title">HMR</h2>
-        <p class="detail">
-          Edit <span>src/renderer</span> files to test HMR. See
-          <a target="_blank" href="https://electron-vite.org/guide/hmr.html">docs</a>.
-        </p>
-      </article>
-    </div>
-    <div class="feature-item">
-      <article>
-        <h2 class="title">Hot Reloading</h2>
-        <p class="detail">
-          Run <span>'electron-vite dev --watch'</span> to enable. See
-          <a target="_blank" href="https://electron-vite.org/guide/hot-reloading.html">docs</a>.
-        </p>
-      </article>
-    </div>
-    <div class="feature-item">
-      <article>
-        <h2 class="title">Debugging</h2>
-        <p class="detail">
-          Check out <span>.vscode/launch.json</span>. See
-          <a target="_blank" href="https://electron-vite.org/guide/debugging.html">docs</a>.
-        </p>
-      </article>
-    </div>
-    <div class="feature-item">
-      <article>
-        <h2 class="title">Source Code Protection</h2>
-        <p class="detail">
-          Supported via built-in plugin <span>bytecodePlugin</span>. See
-          <a target="_blank" href="https://electron-vite.org/guide/source-code-protection.html">
-            docs
-          </a>
-          .
-        </p>
-      </article>
-    </div>
-    <div class="feature-item">
-      <article>
-        <h2 class="title">Packaging</h2>
-        <p class="detail">
-          Use
-          <a target="_blank" href="https://www.electron.build">electron-builder</a>
-          and pre-configured to pack your app.
-        </p>
-      </article>
+  <div class="app-container">
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+      <div class="login-wrapper">
+        <!-- 自定义标题栏覆盖在登录组件上 -->
+        <div class="title-bar" id="title-bar">
+          <div class="title-bar-content">
+            <div class="title-bar-title">登录应用</div>
+            <div class="title-bar-controls">
+              <button class="title-bar-button minimize" @click="minimizeWindow">−</button>
+              <button class="title-bar-button close" @click="closeWindow">×</button>
+            </div>
+          </div>
+        </div>
+        <Login/>
+      </div>
     </div>
   </div>
 </template>
 
+<script setup>
+import Login from './page/Loin.vue'
+
+// 窗口控制函数
+const minimizeWindow = () => {
+  window.electronAPI?.minimizeWindow()
+}
+
+const closeWindow = () => {
+  window.electronAPI?.closeWindow()
+}
+</script>
+
 <style lang="less">
-@import './assets/css/styles.less';
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* 禁止滚动 */
+}
+
+body {
+  overflow: hidden; /* 禁止滚动 */
+}
+
+.app-container {
+  height: 100vh;
+  position: relative;
+  overflow: hidden; /* 禁止滚动 */
+}
+
+.title-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(248, 249, 250, 0); /* 半透明背景 */
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
+  border-bottom: 1px solid rgba(233, 236, 239, 0.3);
+  display: flex;
+  align-items: center;
+  z-index: 1000; /* 确保在最顶层 */
+  -webkit-app-region: drag; /* 允许拖拽 */
+  user-select: none;
+}
+
+.title-bar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.title-bar-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag; /* 按钮区域不允许拖拽 */
+}
+
+.title-bar-button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #6c757d;
+  transition: all 0.2s;
+}
+
+.title-bar-button:hover {
+  background: rgba(233, 236, 239, 0.8);
+}
+
+.title-bar-button.close:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.main-content {
+  height: 100vh;
+  overflow: hidden; /* 禁止滚动 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.title-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(248, 249, 250, 0.9); /* 半透明背景 */
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
+  border-bottom: 1px solid rgba(233, 236, 239, 0.3);
+  display: flex;
+  align-items: center;
+  z-index: 1000; /* 确保在登录组件之上 */
+  -webkit-app-region: drag; /* 允许拖拽 */
+  user-select: none;
+  border-radius: 16px 16px 0 0; /* 顶部圆角 */
+}
 </style>
