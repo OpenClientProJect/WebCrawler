@@ -2,8 +2,8 @@ import fs from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
 
-// 设置文件路径
-const settingsPath = join(app.getPath('userData'), 'settings.json')
+// 设置文件路径 - 使用当前应用目录
+const settingsPath = join(process.cwd(), 'settings.json')
 
 // 当前设置
 let appSettings = {
@@ -43,8 +43,8 @@ const saveSettings = (settings = null) => {
       appSettings = { ...appSettings, ...settings }
     }
 
-    // 确保目录存在
-    const dir = join(app.getPath('userData'))
+    // 确保目录存在（当前应用目录）
+    const dir = process.cwd()
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
     }
