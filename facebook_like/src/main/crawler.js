@@ -70,12 +70,11 @@ export async function crawler(page) {
             console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text);
             console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`);
 
-            // 如果需要点击该元素，取消注释以下代码
-            // const clicked = await clickElementByXPath(page, xpath);
-            // if (clicked) {
-            //   console.log('成功点击赞助元素');
-            //   await new Promise((resolve) => setTimeout(resolve, 1000));
-            // }
+            const like = `${posts} span[role="toolbar"]`
+            const likeButton = await page.waitForSelector(like)
+            likeButton.click()
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await page.keyboard.press('Escape')
           } else {
             console.log(`第${i}个帖子中未找到包含"助"的元素`);
           }
