@@ -1,9 +1,10 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import {app, shell, BrowserWindow, ipcMain} from 'electron'
+import {join} from 'path'
+import {electronApp, optimizer, is} from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { createPuppeteerBrowser, closePuppeteerBrowser } from './PuppeteerBrowser.js'
-import { getSettings, updateSettings, validateSettings } from './settings.js'
+import {createPuppeteerBrowser, closePuppeteerBrowser} from './PuppeteerBrowser.js'
+import {getSettings, updateSettings, validateSettings} from './settings.js'
+import {crawler} from "./crawler";
 
 function createWindow() {
   // Create the browser window.
@@ -15,7 +16,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    ...(process.platform === 'linux' ? {icon} : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -28,7 +29,7 @@ function createWindow() {
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
-    return { action: 'deny' }
+    return {action: 'deny'}
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -43,7 +44,7 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(viewportSize => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -53,12 +54,12 @@ app.whenReady().then(() => {
     const validation = validateSettings(settings)
     if (!validation.valid) {
       console.error('设置验证失败:', validation.errors)
-      return { success: false, errors: validation.errors }
+      return {success: false, errors: validation.errors}
     }
 
     // 保存设置
     const success = updateSettings(settings)
-    return { success, errors: [] }
+    return {success, errors: []}
   })
 
   ipcMain.handle('get-settings', () => {
@@ -94,7 +95,6 @@ app.whenReady().then(() => {
 
       //新建页面实例
       const page = await browser.newPage()
-
       //设置用户代理
       await page.setUserAgent({
         userAgent:
@@ -105,17 +105,20 @@ app.whenReady().then(() => {
       await page.goto('https://www.facebook.com')
 
       //等待待登录表单加载
-      const loginForm = await page.waitForSelector('#email')
-      if (loginForm) {
-        //关闭浏览器
-        await closePuppeteerBrowser()
-        // 重新显示窗口
-        if (windows.length > 0) {
-          windows[0].show()
-          windows[0].webContents.send('switch-to-login')
+      try {
+        const loginForm = await page.waitForSelector('#email', {timeout: 5000})
+        if (loginForm) {
+          //关闭浏览器
+          await closePuppeteerBrowser()
+          // 重新显示窗口
+          if (windows.length > 0) {
+            windows[0].show()
+            windows[0].webContents.send('switch-to-login')
+          }
         }
+      } catch (error) {
+        await crawler(page)
       }
-      console.log('完成')
       return true
     } catch (error) {
       console.error(error)
@@ -149,7 +152,7 @@ app.whenReady().then(() => {
           emailInput.value = ''
         }
       })
-      await page.type('#email', credentials.username, { delay: 500 })
+      await page.type('#email', credentials.username, {delay: 500})
 
       // 清空并输入密码
       await page.evaluate(() => {
@@ -159,7 +162,7 @@ app.whenReady().then(() => {
           passInput.focus()
         }
       })
-      await page.type('#pass', credentials.password, { delay: 500 })
+      await page.type('#pass', credentials.password, {delay: 500})
 
       // 等待1秒
       await new Promise((resolve) => setTimeout(resolve, 1000))
