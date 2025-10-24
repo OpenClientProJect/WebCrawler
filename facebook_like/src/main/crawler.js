@@ -74,6 +74,20 @@ export async function crawler(page) {
             const likeButton = await page.waitForSelector(like)
             likeButton.click()
             await new Promise((resolve) => setTimeout(resolve, 1000))
+
+            const window = "div[role='dialog' ] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
+            const users = await page.$$(window)
+            console.log(`找到${users.length}个用户`)
+            for (const user of users) {
+              try {
+                const href = await user.getProperty('href');
+                const hrefValue = await href.jsonValue();
+                console.log('用户链接:', hrefValue);
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+              } catch (error) {
+                console.log('用户采集跳过')
+              }
+            }
             await page.keyboard.press('Escape')
           } else {
             console.log(`第${i}个帖子中未找到包含"助"的元素`);
