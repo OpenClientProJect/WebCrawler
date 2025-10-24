@@ -1,4 +1,5 @@
 import asyncio
+import csv
 import random
 import time
 import json
@@ -105,7 +106,10 @@ class Crawler:
             # 根据action参数执行不同的操作
             action = self.params.get('action', 'search')
             if action == 'search':
-                await self.key_groups()
+                if self.params.get('combo_value', 'combo_value') in "社團":
+                    await self.key_groups()
+                else:
+                    await self.key_fans()
             elif action == 'confirm':
                 app = QApplication.instance()
                 if not app:
@@ -118,7 +122,7 @@ class Crawler:
                 # 确保窗口显示
                 QApplication.processEvents()
                 await asyncio.sleep(0.5)  # 给窗口显示一点时间
-                await self.csgetusers()
+                await self.getusers()
             print("任务完成")
         except Exception as e:
             print(f"任务执行出错: {str(e)}")
@@ -133,7 +137,7 @@ class Crawler:
     async def start_confirm_action(self, params):
         """执行确认操作"""
         self.params = params
-        await self.csgetusers()
+        await self.getusers()
     async def check_cookies_valid(self):
         """检查cookies是否有效"""
         try:
@@ -259,7 +263,7 @@ class Crawler:
                 while len(current_groups_postlist) < post and scroll_attempts < max_scroll_attempts:
                     # 获取当前页面所有群组链接
                     group_elements = await self.page.query_selector_all(
-                        '//div[@aria-label="搜尋結果" or @aria-label="搜索结果"]//div[@role="feed"]//a[contains(@href, "/groups/")]'
+                        '//div[@aria-label="搜尋結果" or @aria-label="搜索结果"]//div[@role="feed"]//a[contains(@href, "/groups/") or contains(@href, "/profile.php")]'
                     )
 
                     current_count = len(group_elements)
@@ -341,16 +345,138 @@ class Crawler:
             print(f"提取群组ID时出错: {str(e)}")
             return None
 
-    async def csgetusers(self):
+    async def key_fans(self):
+        """关键字搜索群组并返回地址列表 - 优化版"""
+        print("關鍵字社團地址")
+        key = self.IsKeys.split('#')
+
+        # 处理所有关键字
+        for key_index in range(len(key)):
+            current_keyword = key[key_index]
+            print(f"處理關鍵字 {key_index + 1}/{len(key)}: {current_keyword}")
+
+            await self.page.goto(
+                url="https://www.facebook.com/search/pages/?q=" + current_keyword ,
+                wait_until='load',
+                timeout=50000
+            )
+            # 等待页面加载
+            title = await self.page.title()
+            if "Facebook" in title:
+                await asyncio.sleep(3)
+            else:
+                print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+                await asyncio.sleep(10)
+
+            post = int(self.params.get('search_count')) # 设置要获取的帖子数量
+            current_groups_postlist = []
+            max_scroll_attempts = 10
+            scroll_attempts = 0
+            previous_count = 0
+
+            try:
+                # 批量处理方式：滚动并收集所有可见的群组链接
+                while len(current_groups_postlist) < post and scroll_attempts < max_scroll_attempts:
+                    # 获取当前页面所有群组链接
+                    group_elements = await self.page.query_selector_all(
+                        '//div[@aria-label="搜尋結果" or @aria-label="搜索结果"]//div[@role="feed"]//a[contains(@href, "/www.facebook.com/") or contains(@href, "/profile.php")]'
+                    )
+
+                    current_count = len(group_elements)
+                    print(f"当前找到 {current_count} 个群组链接")
+
+                    # 批量处理所有找到的链接
+                    for element in group_elements[len(current_groups_postlist):]:  # 只处理新找到的链接
+                        try:
+                            post_url_before = await element.get_attribute('href')
+
+                            if post_url_before and len(current_groups_postlist) < post:
+                                # 提取群组ID并构建成员页面URL
+                                print(post_url_before)
+                                group_id = self.extract_fans_id(post_url_before)
+                                if group_id:
+                                    members_url = f"https://www.facebook.com/profile.php?id={group_id}&sk=followers"
+                                    if members_url not in current_groups_postlist:
+                                        current_groups_postlist.append(members_url)
+                                        print(f"找到群组 {len(current_groups_postlist)}: {members_url}")
+
+                                        # 如果已经达到目标数量，跳出循环
+                                        if len(current_groups_postlist) >= post:
+                                            break
+                        except Exception as e:
+                            print(f"处理群组链接时出错: {str(e)}")
+                            continue
+
+                    # 检查是否达到目标数量
+                    if len(current_groups_postlist) >= post:
+                        break
+
+                    # 检查是否有新内容加载
+                    if current_count == previous_count:
+                        scroll_attempts += 1
+                        print(f"没有新内容加载，尝试次数: {scroll_attempts}/{max_scroll_attempts}")
+                    else:
+                        scroll_attempts = 0
+
+                    previous_count = current_count
+
+                    # 滚动加载更多内容
+                    if len(current_groups_postlist) < post:
+                        await self.page.evaluate("""
+                            window.scrollTo({
+                                top: document.body.scrollHeight,
+                                behavior: 'smooth'
+                            });
+                        """)
+                        await asyncio.sleep(2)  # 等待新内容加载
+
+            except Exception as e:
+                print(f"搜索过程中出错: {str(e)}")
+
+            # 将当前关键字的搜索结果添加到总结果中
+            self.search_results.extend(current_groups_postlist)
+            print(f"关键字 '{current_keyword}' 完成，找到 {len(current_groups_postlist)} 个群组")
+
+        print(f"搜索完成，共找到 {len(self.search_results)} 个地址")
+        return self.search_results
+
+    def extract_fans_id(self,url):
+        # 处理相对路径
+        if url.startswith('/'):
+            user_match = re.search(r'/user/(\d+)', url)
+            if user_match:
+                return user_match.group(1)
+            return None
+
+        # 解析完整URL
+        parsed = urlparse(url)
+
+        # 处理profile.php情况
+        if parsed.path == '/profile.php':
+            query_params = parse_qs(parsed.query)
+            if 'id' in query_params:
+                return query_params['id'][0]
+
+        # 处理用户名情况
+        if parsed.netloc == 'www.facebook.com':
+            path_parts = parsed.path.strip('/').split('/')
+            if path_parts and path_parts[0] != 'profile.php':
+                return path_parts[0]
+
+        return None
+
+    async def getusers(self):
         """爬取用户信息"""
         addresses = self.params.get('addresses', [])
         if not addresses:
             print("没有提供地址列表")
             return
 
-        # 使用第一个地址进行爬取
-        if addresses and addresses[0].strip():
-            url = addresses[0].strip()
+        for i in range(len(addresses)):
+            url = addresses[i].strip()
+            # 创建一个新的CSV文件名
+            csv_filename = f'data_{i}.csv'
+            in_csv_data = []
             print(f"开始爬取用户信息，地址: {url}")
             await self.robust_update_status(f"社團地址:{url}")
             await self.page.goto(url=url, wait_until='load')
@@ -386,7 +512,8 @@ class Crawler:
                 current_count = len(user_links)
                 print(f"滚动后用户数量: {current_count}")
 
-                for i, link in enumerate(user_links):
+                for n, link in enumerate(user_links):
+
                     try:
                         href = await link.get_attribute('href')
                         text = await link.get_attribute('aria-label')
@@ -407,17 +534,16 @@ class Crawler:
                             })
                             print(f"{user_counter}：{user_id} {text.strip()}")
                             await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
+                            in_csv_data.append([user_id,text.strip(),self.extract_group_id(url)])
 
                             # 检查是否达到目标数量
                             if user_counter >= int(self.params.get('crawl_count')):
                                 print(f"达到目标数量 {user_counter}，停止爬取")
                                 break
-
                     except Exception as e:
                         print(f"提取用户信息时出错: {str(e)}")
                         continue
-
-                # 如果已达到目标数量，跳出外层循环
+                # 如果已达到目标数量，跳出循环
                 if user_counter >= int(self.params.get('crawl_count')):
                     break
 
@@ -432,11 +558,14 @@ class Crawler:
                 if scroll_attempts >= 3:  # 连续3次没有新用户就停止
                     print("已加载所有用户")
                     break
-
+            # 将数据写入CSV文件
+            with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                csv_writer.writerows(in_csv_data)  # 写入数据
             print(f"爬取完成，共获取 {user_counter} 个用户信息")
-            return users
-        else:
-            print("地址为空，无法爬取")
+            # return users
+
     async def extract_facebook_identifier(self,url):
         # 处理相对路径
         if url.startswith('/'):
