@@ -1,5 +1,6 @@
 // 使用XPath查找包含特定文本的元素
 import {getSettings} from "./settings";
+import {batchInsertUsers} from "./database";
 
 async function findElementByXPath(page, xpath) {
   return await page.evaluate((xpathSelector) => {
@@ -39,6 +40,16 @@ function splitUserId(href) {
     return href.split('user')[1].split('/')[0];
   }
   if (!href.includes('user')) {
+    return href.split('https://www.facebook.com/')[1].split('?')[0];
+  }
+  return href;
+}
+
+//截取帖子id
+function splitPostId(href) {
+  if (href.includes('profile.php?id=')) {
+    return href.split('profile.php?id=')[1].split('&')[0];
+  } else if (href.includes('https://www.facebook.com/')) {
     return href.split('https://www.facebook.com/')[1].split('?')[0];
   }
   return href;
@@ -85,9 +96,18 @@ export async function crawler(page) {
             console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`);
 
             //帖子标题
-            const title = `${posts}  b > span`
-            const titleText = await page.$(title).then(async (titleElement) => {
+            const postTitle = `${posts}  b > span`
+            const titleText = await page.$(postTitle).then(async (titleElement) => {
               return await titleElement.evaluate(el => el.textContent);
+            });
+
+            //帖子id
+            const postSelector = `${posts} span > a`
+            const postIdElements = await page.$$(postSelector)
+            const postIdValue = await postIdElements[0]
+            const postId = await postIdValue.getProperty('href').then(async (href) => {
+              const postIdHref = await href.jsonValue();
+              return splitPostId(postIdHref);
             });
 
             const like = `${posts} span[role="toolbar"]`
@@ -118,14 +138,10 @@ export async function crawler(page) {
                     const hrefValue = await href.jsonValue();
                     const userId = splitUserId(hrefValue)
 
-                    console.log(`帖子标题: ${titleText}`)
-                    console.log('用户名:', textValue);
-                    console.log('用户id:', userId)
-
                     userMap.set(userId, {
-                      id: userId,
-                      name: textValue,
-                      title: titleText
+                      userId: userId,
+                      userName: textValue,
+                      Supportid: postId,
                     })
                     userCount++
                     if (userCount >= currentSettings.collectCount) {
@@ -142,12 +158,19 @@ export async function crawler(page) {
                 console.log('结束', userCount)
                 break
               }
-              console.log('用户数据', userMap)
-              //TODO 删除数据
-              userMap.clear()
             }
 
             await page.keyboard.press('Escape')
+            console.log('用户数据', userMap)
+            if (userMap.size > 0) {
+              const SupportInf = {
+                Supportid: postId,
+                title: titleText,
+                SupportCount: userMap.size,
+              }
+              await batchInsertUsers(userMap,SupportInf)
+            }
+            userMap.clear()
           } else {
             console.log(`第${i}个帖子中未找到包含"助"的元素`);
           }
@@ -161,40 +184,6 @@ export async function crawler(page) {
       } finally {
         i++
       }
-
-
-      // for (const like of likes) {
-      //   try {
-      //
-      //     await like.click()
-      //     await new Promise((resolve) => setTimeout(resolve, 1000))
-      //
-      //     try {
-      //       const u = "div[role='dialog' ] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
-      //       const users = await page.$$(u)
-      //       console.log(`找到${users.length}个用户`)
-      //       if (users.length > 5) {
-      //         for (const user of users) {
-      //           try {
-      //             const href = await user.getProperty('href');
-      //             const hrefValue = await href.jsonValue();
-      //             console.log('用户链接:', hrefValue);
-      //             await new Promise((resolve) => setTimeout(resolve, 1000))
-      //           } catch (error) {
-      //             console.log('用户采集跳过')
-      //           }
-      //         }
-      //       }
-      //       //输入esc键
-      //       await page.keyboard.press('Escape')
-      //     } catch (error) {
-      //       console.log('跳过')
-      //     }
-      //   } catch (error) {
-      //     console.log('点击点赞按钮时出错:', error)
-      //   }
-      // }
-      //等待
       await new Promise((resolve) => setTimeout(resolve, 1000))
     } catch (error) {
       //向下滚动
