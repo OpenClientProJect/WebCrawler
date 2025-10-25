@@ -175,6 +175,7 @@ app.whenReady().then(viewportSize => {
       console.log('使用采集数:', currentSettings.collectCount)
 
       console.log('登录中...', credentials)
+      await crawler(page)
       return true
     } catch (error) {
       console.error('登录失败:', error)

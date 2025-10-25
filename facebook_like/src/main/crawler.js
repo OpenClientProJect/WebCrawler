@@ -1,4 +1,6 @@
 // 使用XPath查找包含特定文本的元素
+import {getSettings} from "./settings";
+
 async function findElementByXPath(page, xpath) {
   return await page.evaluate((xpathSelector) => {
     const result = document.evaluate(xpathSelector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
@@ -12,7 +14,7 @@ async function findElementByXPath(page, xpath) {
         found: true
       };
     }
-    return { found: false };
+    return {found: false};
   }, xpath);
 }
 
@@ -30,10 +32,22 @@ async function clickElementByXPath(page, xpath) {
   }, xpath);
 }
 
+//切割用户id
+function splitUserId(href) {
+  //判断href中是否包含user
+  if (href.includes('user')) {
+    return href.split('user')[1].split('/')[0];
+  }
+  if (!href.includes('user')) {
+    return href.split('https://www.facebook.com/')[1].split('?')[0];
+  }
+  return href;
+}
+
 export async function crawler(page) {
   console.log('开始爬取')
   try {
-    const home = await page.waitForSe1lector(`div[role = banner] ul > li:first-child > span`)
+    const home = await page.$(`div[role = banner] ul > li:first-child > span`)
     await home.click()
   } catch (error) {
     console.log('没有找到首页按钮，不做任何操作')
@@ -70,24 +84,69 @@ export async function crawler(page) {
             console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text);
             console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`);
 
+            //帖子标题
+            const title = `${posts}  b > span`
+            const titleText = await page.$(title).then(async (titleElement) => {
+              return await titleElement.evaluate(el => el.textContent);
+            });
+
             const like = `${posts} span[role="toolbar"]`
             const likeButton = await page.waitForSelector(like)
             likeButton.click()
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await new Promise((resolve) => setTimeout(resolve, 3000))
 
             const window = "div[role='dialog' ] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
-            const users = await page.$$(window)
-            console.log(`找到${users.length}个用户`)
-            for (const user of users) {
-              try {
-                const href = await user.getProperty('href');
-                const hrefValue = await href.jsonValue();
-                console.log('用户链接:', hrefValue);
-                await new Promise((resolve) => setTimeout(resolve, 1000))
-              } catch (error) {
-                console.log('用户采集跳过')
+
+            const currentSettings = getSettings()
+            let userCount = 0
+
+            const userMap = new Map()
+            for (let j = 0; j < currentSettings.collectCount; j++) {
+              const users = await page.$$(window, {delay: 5000})
+              console.log(`找到${users.length}个用户`)
+              if (users.length > 5) {
+                for (const user of users) {
+                  try {
+
+                    await user.evaluate((user) => {
+                      user.scrollIntoView()
+                    })
+                    //获取a标签的内容
+                    const textValue = await user.evaluate(el => el.textContent);
+
+                    const href = await user.getProperty('href');
+                    const hrefValue = await href.jsonValue();
+                    const userId = splitUserId(hrefValue)
+
+                    console.log(`帖子标题: ${titleText}`)
+                    console.log('用户名:', textValue);
+                    console.log('用户id:', userId)
+
+                    userMap.set(userId, {
+                      id: userId,
+                      name: textValue,
+                      title: titleText
+                    })
+                    userCount++
+                    if (userCount >= currentSettings.collectCount) {
+                      console.log('结束', userCount)
+                      break
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 2000))
+                  } catch (error) {
+                    console.log('用户采集跳过')
+                  }
+                }
               }
+              if (userCount >= currentSettings.collectCount) {
+                console.log('结束', userCount)
+                break
+              }
+              console.log('用户数据', userMap)
+              //TODO 删除数据
+              userMap.clear()
             }
+
             await page.keyboard.press('Escape')
           } else {
             console.log(`第${i}个帖子中未找到包含"助"的元素`);
@@ -97,7 +156,7 @@ export async function crawler(page) {
         }
 
         console.log(`处理完第${i}个帖子`);
-      }catch ( error) {
+      } catch (error) {
         console.log(error)
       } finally {
         i++

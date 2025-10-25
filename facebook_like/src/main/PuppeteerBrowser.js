@@ -1,5 +1,4 @@
 // Puppeteer 浏览器管理
-
 import puppeteer from 'puppeteer-core'
 import { edgePaths } from './browserPath'
 
@@ -24,7 +23,7 @@ export async function createPuppeteerBrowser() {
           '--disable-web-security',
           '--disable-features=VizDisplayCompositor',
           '--user-data-dir=./chrome-user-data',
-          '--window-size=800,1000', // 设置窗口大小
+          '--window-size=800,1200', // 设置窗口大小
           '--window-position=0,0' // 设置窗口位置（左上角）
         ]
       })
