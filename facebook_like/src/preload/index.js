@@ -21,7 +21,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 监听主进程消息
   onSwitchToLogin: (callback) => ipcRenderer.on('switch-to-login', callback),
-  removeSwitchToLoginListener: (callback) => ipcRenderer.removeListener('switch-to-login', callback)
+  removeSwitchToLoginListener: (callback) => ipcRenderer.removeListener('switch-to-login', callback),
+  onLoginSuccess: (callback) => ipcRenderer.on('login-success', callback),
+  removeLoginSuccessListener: (callback) => ipcRenderer.removeListener('login-success', callback),
+  onLogMessage: (callback) => ipcRenderer.on('log-message', callback),
+  removeLogMessageListener: (callback) => ipcRenderer.removeListener('log-message', callback),
 })
 
 // Use `contextBridge` APIs to expose Electron APIs to

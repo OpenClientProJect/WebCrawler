@@ -6,11 +6,62 @@ import {createPuppeteerBrowser, closePuppeteerBrowser} from './PuppeteerBrowser.
 import {getSettings, updateSettings, validateSettings} from './settings.js'
 import {crawler} from "./crawler";
 
+// 保存窗口实例用于发送日志
+let mainWindow = null;
+
+// 拦截所有console.log并转发到渲染进程
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+  originalConsoleLog.apply(console, args);
+
+  // 将日志发送到渲染进程
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      const message = args.map(arg => {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' ');
+
+      mainWindow.webContents.send('log-message', {
+        type: 'log',
+        message: message,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    } catch (error) {
+      // 避免发送日志时出错导致程序崩溃
+    }
+  }
+};
+
+const originalConsoleError = console.error;
+console.error = function(...args) {
+  originalConsoleError.apply(console, args);
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      const message = args.map(arg => String(arg)).join(' ');
+      mainWindow.webContents.send('log-message', {
+        type: 'error',
+        message: message,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    } catch (error) {
+      // 避免发送日志时出错导致程序崩溃
+    }
+  }
+};
+
 function createWindow() {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 350,
-    height: 500,
+    height:680,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -117,10 +168,27 @@ app.whenReady().then(viewportSize => {
           }
         }
       } catch (error) {
+        //打开渲染进程运行页面
+        if (windows.length > 0) {
+          // 先发送登录成功事件，让渲染进程切换到Running页面
+          windows[0].webContents.send('login-success')
+          // 保持窗口显示，让用户看到运行状态
+          windows[0].show()
+          // 设置窗口在最前，但可以移动到旁边
+          windows[0].setAlwaysOnTop(false)
+        }
         await crawler(page)
       }
       return true
     } catch (error) {
+      if (windows.length > 0) {
+        // 先发送登录成功事件，让渲染进程切换到Running页面
+        windows[0].webContents.send('login-success')
+        // 保持窗口显示，让用户看到运行状态
+        windows[0].show()
+        // 设置窗口在最前，但可以移动到旁边
+        windows[0].setAlwaysOnTop(false)
+      }
       console.error(error)
       return false
     }
@@ -175,6 +243,19 @@ app.whenReady().then(viewportSize => {
       console.log('使用采集数:', currentSettings.collectCount)
 
       console.log('登录中...', credentials)
+
+      //发送事件切换渲染进程页面
+      const windows = BrowserWindow.getAllWindows()
+      if (windows.length > 0) {
+        // 先发送登录成功事件，让渲染进程切换到Running页面
+        windows[0].webContents.send('login-success')
+        // 保持窗口显示，让用户看到运行状态
+        windows[0].show()
+        // 设置窗口在最前，但可以移动到旁边
+        windows[0].setAlwaysOnTop(false)
+      }
+
+      // 开始爬虫
       await crawler(page)
       return true
     } catch (error) {

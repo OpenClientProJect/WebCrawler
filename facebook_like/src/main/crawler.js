@@ -57,6 +57,10 @@ function splitPostId(href) {
 
 export async function crawler(page) {
   console.log('开始爬取')
+  const currentSettings = getSettings()
+  if (currentSettings.urlList.length >= 1) {
+
+  }
   try {
     const home = await page.$(`div[role = banner] ul > li:first-child > span`)
     await home.click()
@@ -115,9 +119,8 @@ export async function crawler(page) {
             likeButton.click()
             await new Promise((resolve) => setTimeout(resolve, 3000))
 
-            const window = "div[role='dialog' ] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
+            const window = "div[role='dialog'] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
 
-            const currentSettings = getSettings()
             let userCount = 0
 
             const userMap = new Map()
@@ -148,6 +151,9 @@ export async function crawler(page) {
                       console.log('结束', userCount)
                       break
                     }
+                    if (userMap.size < currentSettings.constructor + 1) {
+
+                    }
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                   } catch (error) {
                     console.log('用户采集跳过')
@@ -168,7 +174,7 @@ export async function crawler(page) {
                 title: titleText,
                 SupportCount: userMap.size,
               }
-              await batchInsertUsers(userMap,SupportInf)
+              await batchInsertUsers(userMap, SupportInf)
             }
             userMap.clear()
           } else {
@@ -192,4 +198,9 @@ export async function crawler(page) {
       })
     }
   }
+}
+
+//无限爬虫
+async function infiniteScroll() {
+
 }

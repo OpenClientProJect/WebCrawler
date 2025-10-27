@@ -58,6 +58,38 @@
           />
         </div>
 
+        <!-- URL输入框列表 -->
+        <div class="form-group">
+          <label class="form-label">
+            <span style="font-weight: bold" class="label-text">采集链接<span style="font-size: 11px; margin-left: 2px">(回车确认)</span></span>
+          </label>
+          <div class="url-input-list-container">
+            <div class="url-input-list">
+            <div
+              v-for="(url, index) in urlList"
+              :key="index"
+              class="url-input-item"
+            >
+              <input
+                v-model="urlList[index]"
+                type="text"
+                class="form-input url-input"
+                :placeholder="`请输入链接 ${index + 1}`"
+                @keydown.enter="handleUrlEnter(index, $event)"
+              />
+              <button
+                v-if="urlList.length > 1"
+                type="button"
+                class="delete-button"
+                @click="removeUrl(index)"
+              >
+                删除
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+
         <!-- 操作按钮 -->
         <div class="form-actions">
           <button
@@ -86,6 +118,30 @@ const deviceId = ref('')
 const refreshCount = ref(null)
 const collectCount = ref(null)
 const isLoading = ref(false)
+const urlList = ref(['']) // 初始一个空输入框
+
+// 处理URL输入框回车事件
+const handleUrlEnter = (index, event) => {
+  event.preventDefault()
+  // 如果当前输入框有内容，添加新输入框
+  if (urlList.value[index].trim() && index === urlList.value.length - 1) {
+    urlList.value.push('')
+  }
+  // 如果不是最后一个输入框，移动到下一个
+  if (index < urlList.value.length - 1) {
+    const nextInput = document.querySelectorAll('.url-input')[index + 1]
+    if (nextInput) {
+      nextInput.focus()
+    }
+  }
+}
+
+// 删除URL输入框
+const removeUrl = (index) => {
+  if (urlList.value.length > 1) {
+    urlList.value.splice(index, 1)
+  }
+}
 
 // 保存设置
 const saveSettings = async () => {
@@ -110,7 +166,8 @@ const saveSettings = async () => {
     const settings = {
       deviceId: deviceId.value.trim(),
       refreshCount: refreshCount.value,
-      collectCount: collectCount.value
+      collectCount: collectCount.value,
+      urlList: urlList.value.filter(url => url.trim()) // 只保存非空URL
     }
 
     // 先保存设置到主进程
@@ -136,6 +193,7 @@ const resetSettings = () => {
   deviceId.value = ''
   refreshCount.value = null
   collectCount.value = null
+  urlList.value = [''] // 重置为单个空输入框
 }
 
 // 加载设置
@@ -147,6 +205,9 @@ const loadSettings = async () => {
       deviceId.value = settings.deviceId || ''
       refreshCount.value = settings.refreshCount || null
       collectCount.value = settings.collectCount || null
+      urlList.value = settings.urlList && settings.urlList.length > 0
+        ? settings.urlList
+        : ['']
     }
   } catch (error) {
     console.error('加载设置失败:', error)
@@ -184,7 +245,7 @@ onMounted(() => {
 
 .setup-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 8px;
 }
 
 .setup-title {
@@ -203,7 +264,7 @@ onMounted(() => {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
 .form-label {
@@ -282,6 +343,66 @@ onMounted(() => {
 
 .action-button:disabled span {
   animation: pulse 1.5s infinite;
+}
+
+// URL输入框样式
+.url-input-list-container {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px;
+  background: #f8f9fa;
+
+  // 自定义滚动条
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+.url-input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.url-input-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.url-input {
+  flex: 1;
+}
+
+.delete-button {
+  padding: 8px 16px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #c0392b;
+  }
 }
 
 // 加载动画
