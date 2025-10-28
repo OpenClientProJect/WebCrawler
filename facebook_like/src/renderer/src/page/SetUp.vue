@@ -23,22 +23,22 @@
         </div>
 
         <!-- 刷新数设置 -->
-        <div class="form-group">
-          <label for="refreshCount" class="form-label">
-            <span class="label-text">刷新数</span>
-            <span class="label-required">*</span>
-          </label>
-          <input
-            id="refreshCount"
-            v-model.number="refreshCount"
-            type="number"
-            class="form-input"
-            placeholder="10"
-            min="1"
-            max="1000"
-            required
-          />
-        </div>
+<!--        <div class="form-group">-->
+<!--          <label for="refreshCount" class="form-label">-->
+<!--            <span class="label-text">刷新数</span>-->
+<!--            <span class="label-required">*</span>-->
+<!--          </label>-->
+<!--          <input-->
+<!--            id="refreshCount"-->
+<!--            v-model.number="refreshCount"-->
+<!--            type="number"-->
+<!--            class="form-input"-->
+<!--            placeholder="10"-->
+<!--            min="1"-->
+<!--            max="1000"-->
+<!--            required-->
+<!--          />-->
+<!--        </div>-->
 
         <div class="form-group">
           <label for="collectCount" class="form-label">
@@ -270,7 +270,7 @@ onMounted(() => {
 
 .setup-title {
   color: #2c3e50;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   margin: 0;
 }
@@ -278,10 +278,11 @@ onMounted(() => {
 .setup-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 10px;
 }
 
 .form-group {
+  width: 280px;
   display: flex;
   flex-direction: column;
   gap: 2px;
