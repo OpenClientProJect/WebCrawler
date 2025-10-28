@@ -90,7 +90,6 @@ async function crawlerPost(currentSettings, page) {
     while (userCount < maxAttempts) {
       const users = await page.$$(userList)
       console.log(`找到${users.length}个用户`)
-
       // 处理新发现的用户
       for (const user of users) {
         try {
@@ -101,9 +100,6 @@ async function crawlerPost(currentSettings, page) {
           // await user.evaluate((user) => {
           //   user.scrollIntoView({behavior: "smooth", block: "center"})
           // })
-          await page.evaluate(() => {
-            window.scrollBy(0, 1000); // 向下滚动1000像素
-          });
 
 
           // 获取用户信息
@@ -124,11 +120,18 @@ async function crawlerPost(currentSettings, page) {
           }
 
           // 添加延迟以确保页面响应
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+          await new Promise((resolve) => setTimeout(resolve, 200))
         } catch (error) {
           console.log('获取用户数失败', error)
         }
       }
+      const lastUser = users[users.length - 1]
+      if (users.length > 0) {
+        await lastUser.evaluate((lastUser) => {
+          lastUser.scrollIntoView({behavior: "smooth", block: "center"})
+        })
+      }
+
       if (userCount >= maxAttempts) {
         break
       }
@@ -136,7 +139,7 @@ async function crawlerPost(currentSettings, page) {
 
       if (attempts === end) {
         f++
-        if (f > 3) {
+        if (f >= 3) {
           break
         }
       }
