@@ -59,8 +59,98 @@ export async function crawler(page) {
   console.log('开始爬取')
   const currentSettings = getSettings()
   if (currentSettings.urlList.length >= 1) {
+    await crawlerPost(currentSettings, page)
+  } else
+    await infiniteScroll(currentSettings, page)
+}
 
+//指定帖子爬取
+async function crawlerPost(currentSettings, page) {
+  for (const url of currentSettings.urlList) {
+    //打开网页
+    await page.goto(url)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    //打开点赞列表
+    const like = 'div[role="dialog"] span[role="toolbar"] + *'
+    const likeButton = await page.$(like)
+    likeButton.click()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    //获取用户数
+    const userMap = new Map()
+    //获取用户数
+    const userList = 'div[role="dialog"] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a'
+
+    let userCount = 0
+    const maxAttempts = currentSettings.collectCount
+    let attempts = 0
+    let end = 0
+    let f = 0
+
+    while (userCount < maxAttempts) {
+      const users = await page.$$(userList)
+      console.log(`找到${users.length}个用户`)
+
+      // 处理新发现的用户
+      for (const user of users) {
+        try {
+          // 检查是否已经收集了足够的用户
+          if (userCount >= maxAttempts) {
+            break
+          }
+          // await user.evaluate((user) => {
+          //   user.scrollIntoView({behavior: "smooth", block: "center"})
+          // })
+          await page.evaluate(() => {
+            window.scrollBy(0, 1000); // 向下滚动1000像素
+          });
+
+
+          // 获取用户信息
+          const textValue = await user.evaluate(el => el.textContent)
+          const href = await user.getProperty('href')
+          const hrefValue = await href.jsonValue()
+          const userId = splitUserId(hrefValue)
+
+          // 只有当用户尚未被添加时才添加
+          if (!userMap.has(userId)) {
+            userMap.set(userId, {
+              userId: userId,
+              userName: textValue,
+              Supportid: url, // 使用帖子URL作为Supportid
+            })
+            userCount++
+            console.log(`已收集${userCount}个用户`)
+          }
+
+          // 添加延迟以确保页面响应
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+        } catch (error) {
+          console.log('获取用户数失败', error)
+        }
+      }
+      if (userCount >= maxAttempts) {
+        break
+      }
+      attempts = userMap.size
+
+      if (attempts === end) {
+        f++
+        if (f > 3) {
+          break
+        }
+      }
+      end = attempts
+    }
+
+    // 关闭对话框
+    await page.keyboard.press('Escape')
+    console.log('用户数据', userMap)
   }
+}
+
+//无限爬取
+async function infiniteScroll(currentSettings, page) {
   try {
     const home = await page.$(`div[role = banner] ul > li:first-child > span`)
     await home.click()
@@ -74,9 +164,6 @@ export async function crawler(page) {
       await page.evaluate(() => {
         window.scrollBy(0, 600)
       })
-      // const title = await page.$$("div[role = main] > div > div > div > div:nth-child(2) >  div > div:nth-child(4) >div >div:nth-child(3)> div:nth-child(8) span >a")
-      // const likes = await page.$$("div[role = main] > div > div > div > div:nth-child(2) >  div > div:nth-child(4) span[role='toolbar']")
-      // console.log(`找到${likes.length}个点赞按钮`)
 
       try {
         const posts = `div[role = main] div[aria-posinset="${i}"]`
@@ -198,9 +285,4 @@ export async function crawler(page) {
       })
     }
   }
-}
-
-//无限爬虫
-async function infiniteScroll() {
-
 }
