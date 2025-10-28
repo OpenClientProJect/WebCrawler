@@ -23,22 +23,22 @@
         </div>
 
         <!-- 刷新数设置 -->
-<!--        <div class="form-group">-->
-<!--          <label for="refreshCount" class="form-label">-->
-<!--            <span class="label-text">刷新数</span>-->
-<!--            <span class="label-required">*</span>-->
-<!--          </label>-->
-<!--          <input-->
-<!--            id="refreshCount"-->
-<!--            v-model.number="refreshCount"-->
-<!--            type="number"-->
-<!--            class="form-input"-->
-<!--            placeholder="10"-->
-<!--            min="1"-->
-<!--            max="1000"-->
-<!--            required-->
-<!--          />-->
-<!--        </div>-->
+        <div class="form-group">
+          <label for="refreshCount" class="form-label">
+            <span class="label-text">刷新数</span>
+            <span class="label-required">*</span>
+          </label>
+          <input
+            id="refreshCount"
+            v-model.number="refreshCount"
+            type="number"
+            class="form-input"
+            placeholder="10"
+            min="1"
+            max="1000"
+            required
+          />
+        </div>
 
         <div class="form-group">
           <label for="collectCount" class="form-label">

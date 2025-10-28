@@ -42,15 +42,16 @@ export async function batchInsertUsers(userMap,SupportInf) {
           .query(`INSERT INTO SupportUser_copy1 (userid, username, Supportid)
                   VALUES (@userid, @username, @Supportid) `)
       }
-      //插入单行数据
-      const request = new sql.Request(transaction);
-      await request
-        .input('Supportid', sql.VarChar(100), SupportInf.Supportid)
-        .input('SupportName', sql.VarChar(100), SupportInf.title)
-        .input('number', SupportInf.SupportCount)
-        .query(`INSERT INTO SupportInf_copy1 (Supportid, SupportName, number)
+      if (SupportInf != null) {
+        //插入单行数据
+        const request = new sql.Request(transaction);
+        await request
+          .input('Supportid', sql.VarChar(100), SupportInf.Supportid)
+          .input('SupportName', sql.VarChar(100), SupportInf.title)
+          .input('number', SupportInf.SupportCount)
+          .query(`INSERT INTO SupportInf_copy1 (Supportid, SupportName, number)
                 VALUES (@Supportid, @SupportName, @number) `)
-
+      }
       //提交事务
       await transaction.commit();
       console.log(`成功批量插入 ${userMap.size} 条用户数据`);

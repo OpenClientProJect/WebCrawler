@@ -1,11 +1,17 @@
 // 使用XPath查找包含特定文本的元素
-import {getSettings} from "./settings";
-import {batchInsertUsers} from "./database";
+import { getSettings } from './settings'
+import { batchInsertUsers } from './database'
 
 async function findElementByXPath(page, xpath) {
   return await page.evaluate((xpathSelector) => {
-    const result = document.evaluate(xpathSelector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-    const element = result.singleNodeValue;
+    const result = document.evaluate(
+      xpathSelector,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    )
+    const element = result.singleNodeValue
 
     if (element) {
       return {
@@ -13,55 +19,73 @@ async function findElementByXPath(page, xpath) {
         tagName: element.tagName,
         className: element.className,
         found: true
-      };
+      }
     }
-    return {found: false};
-  }, xpath);
+    return { found: false }
+  }, xpath)
 }
 
 // 点击通过XPath找到的元素
 async function clickElementByXPath(page, xpath) {
   return await page.evaluate((xpathSelector) => {
-    const result = document.evaluate(xpathSelector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-    const element = result.singleNodeValue;
+    const result = document.evaluate(
+      xpathSelector,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    )
+    const element = result.singleNodeValue
 
     if (element) {
-      element.click();
-      return true;
+      element.click()
+      return true
     }
-    return false;
-  }, xpath);
+    return false
+  }, xpath)
 }
 
 //切割用户id
 function splitUserId(href) {
   //判断href中是否包含user
   if (href.includes('user')) {
-    return href.split('user')[1].split('/')[0];
+    return href.split('user')[1].split('/')[0]
   }
   if (!href.includes('user')) {
-    return href.split('https://www.facebook.com/')[1].split('?')[0];
+    return href.split('https://www.facebook.com/')[1].split('?')[0]
   }
-  return href;
+  return href
 }
 
 //截取帖子id
 function splitPostId(href) {
   if (href.includes('profile.php?id=')) {
-    return href.split('profile.php?id=')[1].split('&')[0];
+    return href.split('profile.php?id=')[1].split('&')[0]
   } else if (href.includes('https://www.facebook.com/')) {
-    return href.split('https://www.facebook.com/')[1].split('?')[0];
+    return href.split('https://www.facebook.com/')[1].split('?')[0]
   }
-  return href;
+  return href
 }
+
+//截取帖子id
+function splitPostId1(url) {
+  if (url.includes('posts')) {
+    return url.split('posts/')[1].split('/')[0]
+  } else if (url.includes('permalink')) {
+    return url.split('permalink/')[1]
+  }else if (url.includes('https://www.facebook.com/permalink.php?')) {
+    return url.split('&id=')[1]
+  }
+  return url
+}
+
 
 export async function crawler(page) {
   console.log('开始爬取')
   const currentSettings = getSettings()
   if (currentSettings.urlList.length >= 1) {
     await crawlerPost(currentSettings, page)
-  } else
-    await infiniteScroll(currentSettings, page)
+  } else await infiniteScroll(currentSettings, page)
 }
 
 //指定帖子爬取
@@ -79,7 +103,8 @@ async function crawlerPost(currentSettings, page) {
     //获取用户数
     const userMap = new Map()
     //获取用户数
-    const userList = 'div[role="dialog"] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a'
+    const userList =
+      'div[role="dialog"] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a'
 
     let userCount = 0
     const maxAttempts = currentSettings.collectCount
@@ -101,23 +126,25 @@ async function crawlerPost(currentSettings, page) {
           //   user.scrollIntoView({behavior: "smooth", block: "center"})
           // })
 
-
           // 获取用户信息
-          const textValue = await user.evaluate(el => el.textContent)
+          const textValue = await user.evaluate((el) => el.textContent)
           const href = await user.getProperty('href')
           const hrefValue = await href.jsonValue()
           const userId = splitUserId(hrefValue)
+          // const postId = url.split('&id=')[1]
+          const postId = splitPostId1(url)
 
           // 只有当用户尚未被添加时才添加
           if (!userMap.has(userId)) {
             userMap.set(userId, {
               userId: userId,
               userName: textValue,
-              Supportid: url, // 使用帖子URL作为Supportid
+              Supportid: postId
             })
             userCount++
             console.log(`已收集${userMap.size}个用户`)
           }
+
 
           // 添加延迟以确保页面响应
           await new Promise((resolve) => setTimeout(resolve, 200))
@@ -128,7 +155,7 @@ async function crawlerPost(currentSettings, page) {
       const lastUser = users[users.length - 1]
       if (users.length > 0) {
         await lastUser.evaluate((lastUser) => {
-          lastUser.scrollIntoView({behavior: "smooth", block: "center"})
+          lastUser.scrollIntoView({ behavior: 'smooth', block: 'center' })
         })
       }
 
@@ -149,6 +176,17 @@ async function crawlerPost(currentSettings, page) {
     // 关闭对话框
     await page.keyboard.press('Escape')
     console.log('用户数据', userMap)
+
+    if (userMap.size > 0) {
+      const title = url.split('id=')[1]
+      const SupportInf = {
+        Supportid: title,
+        title: title,
+        SupportCount: userMap.size
+      }
+      await batchInsertUsers(userMap, SupportInf)
+      userMap.clear()
+    }
   }
 }
 
@@ -187,61 +225,61 @@ async function infiniteScroll(currentSettings, page) {
         // 在当前post中查找包含"助"文本的元素
         try {
           // 构建XPath选择器，查找包含"助"文本的span元素
-          const xpath = `//div[@aria-posinset="${i}"]//span[contains(text(), "助")]`;
-          const sponsorElement = await findElementByXPath(page, xpath);
+          const xpath = `//div[@aria-posinset="${i}"]//span[contains(text(), "助")]`
+          const sponsorElement = await findElementByXPath(page, xpath)
 
           if (sponsorElement.found) {
-            console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text);
-            console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`);
+            console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text)
+            console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`)
 
-            zu ++
+            zu++
 
             //帖子标题
             const postTitle = `${posts}  b > span`
             const titleText = await page.$(postTitle).then(async (titleElement) => {
-              return await titleElement.evaluate(el => el.textContent);
-            });
+              return await titleElement.evaluate((el) => el.textContent)
+            })
 
             //帖子id
             const postSelector = `${posts} span > a`
             const postIdElements = await page.$$(postSelector)
             const postIdValue = await postIdElements[0]
             const postId = await postIdValue.getProperty('href').then(async (href) => {
-              const postIdHref = await href.jsonValue();
-              return splitPostId(postIdHref);
-            });
+              const postIdHref = await href.jsonValue()
+              return splitPostId(postIdHref)
+            })
 
-            const like = `${posts} span[role="toolbar"]`
+            const like = `${posts} span[role="toolbar"] + *`
             const likeButton = await page.waitForSelector(like)
             likeButton.click()
             await new Promise((resolve) => setTimeout(resolve, 3000))
 
-            const window = "div[role='dialog'] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
+            const window =
+              "div[role='dialog'] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
 
             let userCount = 0
 
             const userMap = new Map()
             for (let j = 0; j < currentSettings.collectCount; j++) {
-              const users = await page.$$(window, {delay: 5000})
+              const users = await page.$$(window, { delay: 5000 })
               console.log(`找到${users.length}个用户`)
               if (users.length > 5) {
                 for (const user of users) {
                   try {
-
                     await user.evaluate((user) => {
                       user.scrollIntoView()
                     })
                     //获取a标签的内容
-                    const textValue = await user.evaluate(el => el.textContent);
+                    const textValue = await user.evaluate((el) => el.textContent)
 
-                    const href = await user.getProperty('href');
-                    const hrefValue = await href.jsonValue();
+                    const href = await user.getProperty('href')
+                    const hrefValue = await href.jsonValue()
                     const userId = splitUserId(hrefValue)
 
                     userMap.set(userId, {
                       userId: userId,
                       userName: textValue,
-                      Supportid: postId,
+                      Supportid: postId
                     })
                     userCount++
                     if (userCount >= currentSettings.collectCount) {
@@ -259,7 +297,6 @@ async function infiniteScroll(currentSettings, page) {
                     end = attempts
 
                     if (userMap.size < currentSettings.constructor + 1) {
-
                     }
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                   } catch (error) {
@@ -279,19 +316,19 @@ async function infiniteScroll(currentSettings, page) {
               const SupportInf = {
                 Supportid: postId,
                 title: titleText,
-                SupportCount: userMap.size,
+                SupportCount: userMap.size
               }
               await batchInsertUsers(userMap, SupportInf)
             }
             userMap.clear()
           } else {
-            console.log(`第${i}个帖子中未找到包含"助"的元素`);
+            console.log(`第${i}个帖子中未找到包含"助"的元素`)
           }
         } catch (sponsorError) {
-          console.log('查找赞助元素时出错:', sponsorError);
+          console.log('查找赞助元素时出错:', sponsorError)
         }
 
-        console.log(`处理完第${i}个帖子`);
+        console.log(`处理完第${i}个帖子`)
       } catch (error) {
         console.log(error)
       } finally {
