@@ -1,12 +1,14 @@
+import asyncio
+import datetime
 import os
 import json
 import sys
 
 import aiohttp
 from PyQt5.QtWidgets import QApplication
-# from Threads_status import StatusWindow
+from FB_status import StatusWindow
 import requests
-
+from FB_lists import show_task_order_window_async
 from FBmain import Crawler
 
 
@@ -30,45 +32,161 @@ def parse_bool(type_data):
     return type_data in ('true', '1', 'yes', 'yes')
 
 
-async def main(content1):
+async def main(content0, content1):
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
     cookies = getCookie()  # 从文件读取cookies
     data = await fetch_data(f"http://aj.ry188.vip/API/GetAppConfig.aspx?Account={content1}")
+    twitter = parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPosting"])  # 启动循环发文
+    bomb = parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPush"])  # 启动循环推文
+    join_group = parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopJoinGroup"])  # 启动循环加社团
+    traffic_farming = parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableAccountDevelop"])  # 启动养号
+    fan_page = parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableFanPages"])  # 启动粉丝专页
+    config = {
+        "twitter": twitter,
+        "bomb": bomb,
+        "join_group": join_group,
+        "traffic_farming": traffic_farming,
+        "fan_page": fan_page
+    }
+    # 显示任务顺序设置窗口
+    task_order_data = show_task_order_window_async(config)
+    if task_order_data is None:
+        print("用户取消了任务顺序设置")
+        return
 
-    crawler = Crawler(cookies,data,content1)
+    task_order = task_order_data.get('order', [])
+    rest_times = task_order_data.get('rest_times', {})
+    completion_times = task_order_data.get('completion_times', {})
+    scheduled_time = task_order_data.get('scheduled_time', "0")
+
+    print(f"任务顺序: {task_order}, 休息时间: {rest_times}, 完成时间: {completion_times}, 计划时间: {scheduled_time}")
+
+    # 创建状态窗口
+    app.setApplicationName("自動化脚本")
+    status_window = StatusWindow()
+    status_window.show()
+
+    # 处理计划时间
+    if scheduled_time != "0":
+        await handle_scheduled_execution(status_window, scheduled_time, content0, content1, cookies, data,
+                                         task_order, rest_times, completion_times)
+    else:
+        # 立即执行
+        await execute_tasks_immediately(status_window, content0, content1, cookies, data,
+                                        task_order, rest_times, completion_times)
+
+
+async def handle_scheduled_execution(status_window, scheduled_time, content0, content1, cookies, data,
+                                     task_order, rest_times, completion_times):
+    """处理计划时间执行"""
+    while True:
+        current_time = datetime.datetime.now().strftime("%H:%M")
+
+        # 修改判断条件：使用时间戳比较而不是字符串相等
+        current_timestamp = datetime.datetime.now()
+        scheduled_hour, scheduled_minute = map(int, scheduled_time.split(':'))
+        scheduled_today = current_timestamp.replace(hour=scheduled_hour, minute=scheduled_minute, second=0,
+                                                    microsecond=0)
+
+        # 如果今天的时间已经过去，就计算明天的时间
+        if current_timestamp > scheduled_today:
+            scheduled_tomorrow = scheduled_today + datetime.timedelta(days=1)
+            time_diff = scheduled_tomorrow - current_timestamp
+        else:
+            time_diff = scheduled_today - current_timestamp
+
+        wait_seconds = time_diff.total_seconds()
+
+        # 当时间差小于等于5s时开始执行
+        if wait_seconds <= 5:
+            # 隐藏倒计时显示
+            if hasattr(status_window, 'plan_countdown_signal'):
+                status_window.plan_countdown_signal.emit(0)
+
+            status_window.update_signal.emit(f"到達計劃時間 {scheduled_time}，開始執行任務...")
+            await asyncio.sleep(1)  # 给UI更新时间
+
+            await execute_tasks_immediately(status_window, content0, content1, cookies, data,
+                                            task_order, rest_times, completion_times)
+
+            # 任务完成后，等待到第二天再检查
+            status_window.update_signal.emit("任務完成，等待第二天同一時間再次執行...")
+            await asyncio.sleep(1)
+
+            # 等待一段时间确保不会立即再次触发
+            await asyncio.sleep(5)
+
+            # 重新计算下一次执行时间
+            continue
+
+        # 使用倒计时机制显示等待信息
+        if hasattr(status_window, 'plan_countdown_signal'):
+            status_window.plan_countdown_signal.emit(int(wait_seconds))
+        else:
+            # 回退到原来的显示方式
+            if wait_seconds < 60:
+                display_text = f"等待計劃時間 {scheduled_time}，剩餘 {int(wait_seconds)}秒"
+            elif wait_seconds < 3600:
+                minutes = int(wait_seconds // 60)
+                seconds = int(wait_seconds % 60)
+                display_text = f"等待計劃時間 {scheduled_time}，剩餘 {minutes}分{seconds}秒"
+            else:
+                hours = int(wait_seconds // 3600)
+                minutes = int((wait_seconds % 3600) // 60)
+                display_text = f"等待計劃時間 {scheduled_time}，剩餘 {hours}小時{minutes}分"
+            status_window.update_signal.emit(display_text)
+
+        # 使用较长的检查间隔，减少频率
+        await asyncio.sleep(5)  # 改为30秒检查一次
+
+
+async def execute_tasks_immediately(status_window, content0, content1, cookies, data,
+                                    task_order, rest_times, completion_times):
+    """立即执行任务"""
+    status_window.update_signal.emit("提前獲取用戶數據耐心等待...")
+    await asyncio.sleep(1)
+
+    start_position = 0
+
+
+    cookies = getCookie()
+    crawler = Crawler(cookies, data, start_position, content0, content1, task_order, rest_times)
+    crawler.completion_times = completion_times
 
     # 确保登录成功
     if cookies is None or not await crawler.check_cookies_valid():
         try:
-            # 尝试GUI登录
             await crawler.login_with_gui()
-            while 1:
+            while True:
                 if not crawler.is_logged_in:
                     print("登录失败，无法继续执行任务")
                     await crawler.login_with_gui()
-                    # return  # 直接返回，不再执行后续任务
                 else:
                     break
         except Exception as e:
             print(f"登录失败: {str(e)}")
-            return  # 登录失败时直接返回
+            status_window.update_signal.emit(f"登录失败: {str(e)}")
+            await asyncio.sleep(1)
+            return
     else:
-        # 如果cookies有效，标记为已登录
         crawler.is_logged_in = True
         print("使用有效cookies登录成功")
 
     try:
-        # app = QApplication.instance()
-        # if not app:
-        #     app = QApplication(sys.argv)
-        # app.setApplicationName("Threads自動化脚本")
-        # status_window = StatusWindow()
-        # status_window.show()
-        # # 关键修改：将状态窗口传递给crawler对象
-        # crawler.status_window = status_window
-
-        QApplication.processEvents()  # 确保UI更新
+        crawler.status_window = status_window
+        QApplication.processEvents()
         await crawler.start()
+
+        # 任务完成后清除进度
+        status_window.update_signal.emit("任务执行完成！")
+        await asyncio.sleep(1)
+
+    except Exception as e:
+        # status_window.update_signal.emit(f"任务执行失败: {str(e)}")
+        await asyncio.sleep(1)
+        print(f"任务执行失败: {str(e)}")
     finally:
-        # 确保关闭浏览器
+        # 确保资源清理
         pass
-    return crawler
