@@ -9,6 +9,7 @@ let appSettings = {
   deviceId: '',
   refreshCount: null,
   collectCount: null,
+  postCount: null,
   urlList: []
 }
 

@@ -40,6 +40,23 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="collectCount" class="form-label">
+            <span class="label-text">采集帖子数量</span>
+            <span class="label-required">*</span>
+          </label>
+          <input
+            id="collectCount"
+            v-model.number="postCount"
+            type="number"
+            class="form-input"
+            placeholder="50"
+            min="1"
+            max="10000"
+            required
+          />
+        </div>
+
         <!-- 采集数设置 -->
         <div class="form-group">
           <label for="collectCount" class="form-label">
@@ -117,6 +134,7 @@ import { ref, onMounted } from 'vue'
 const deviceId = ref('')
 const refreshCount = ref(null)
 const collectCount = ref(null)
+const postCount = ref(null)
 const isLoading = ref(false)
 const urlList = ref(['']) // 初始一个空输入框
 
@@ -167,6 +185,7 @@ const saveSettings = async () => {
       deviceId: deviceId.value.trim(),
       refreshCount: refreshCount.value,
       collectCount: collectCount.value,
+      postCount: postCount.value,
       urlList: urlList.value.filter(url => url.trim()) // 只保存非空URL
     }
 
@@ -193,6 +212,7 @@ const resetSettings = () => {
   deviceId.value = ''
   refreshCount.value = null
   collectCount.value = null
+  postCount.value = null
   urlList.value = [''] // 重置为单个空输入框
 }
 

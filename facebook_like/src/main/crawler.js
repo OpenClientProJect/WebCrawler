@@ -116,7 +116,7 @@ async function crawlerPost(currentSettings, page) {
               Supportid: url, // 使用帖子URL作为Supportid
             })
             userCount++
-            console.log(`已收集${userCount}个用户`)
+            console.log(`已收集${userMap.size}个用户`)
           }
 
           // 添加延迟以确保页面响应
@@ -162,6 +162,11 @@ async function infiniteScroll(currentSettings, page) {
   }
   await new Promise((resolve) => setTimeout(resolve, 1000))
   let i = 1
+  let attempts = 0
+  let end = 0
+  let f = 0
+  let zu = 0
+
   while (true) {
     try {
       await page.evaluate(() => {
@@ -188,6 +193,8 @@ async function infiniteScroll(currentSettings, page) {
           if (sponsorElement.found) {
             console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text);
             console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`);
+
+            zu ++
 
             //帖子标题
             const postTitle = `${posts}  b > span`
@@ -241,6 +248,16 @@ async function infiniteScroll(currentSettings, page) {
                       console.log('结束', userCount)
                       break
                     }
+                    attempts = userMap.size
+
+                    if (attempts === end) {
+                      f++
+                      if (f >= 3) {
+                        break
+                      }
+                    }
+                    end = attempts
+
                     if (userMap.size < currentSettings.constructor + 1) {
 
                     }
@@ -286,6 +303,9 @@ async function infiniteScroll(currentSettings, page) {
       await page.evaluate(() => {
         window.scrollBy(0, 1000)
       })
+    }
+    if (zu >= currentSettings.postCount) {
+      break
     }
   }
 }
