@@ -1,7 +1,7 @@
 <template>
   <div class="login-box">
     <div class="login-header">
-      <h1 class="login-title">用户登录</h1>
+      <h1 class="login-title">facebook登錄</h1>
       <p class="login-subtitle">请输入您的登录信息</p>
     </div>
 

@@ -1,6 +1,6 @@
 // 使用XPath查找包含特定文本的元素
-import { getSettings } from './settings'
-import { batchInsertUsers } from './database'
+import {getSettings} from './settings'
+import {batchInsertUsers} from './database'
 
 async function findElementByXPath(page, xpath) {
   return await page.evaluate((xpathSelector) => {
@@ -21,7 +21,7 @@ async function findElementByXPath(page, xpath) {
         found: true
       }
     }
-    return { found: false }
+    return {found: false}
   }, xpath)
 }
 
@@ -73,7 +73,7 @@ function splitPostId1(url) {
     return url.split('posts/')[1].split('/')[0]
   } else if (url.includes('permalink')) {
     return url.split('permalink/')[1]
-  }else if (url.includes('https://www.facebook.com/permalink.php?')) {
+  } else if (url.includes('https://www.facebook.com/permalink.php?')) {
     return url.split('&id=')[1]
   }
   return url
@@ -157,7 +157,7 @@ async function crawlerPost(currentSettings, page) {
       const lastUser = users[users.length - 1]
       if (users.length > 0) {
         await lastUser.evaluate((lastUser) => {
-          lastUser.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          lastUser.scrollIntoView({behavior: 'smooth', block: 'center'})
         })
       }
 
@@ -263,8 +263,8 @@ async function infiniteScroll(currentSettings, page) {
             let userCount = 0
 
             const userMap = new Map()
-            for (let j = 0; j < currentSettings.collectCount; j++) {
-              const users = await page.$$(window, { delay: 5000 })
+            while (true) {
+              const users = await page.$$(window, {delay: 5000})
               console.log(`找到${users.length}个用户`)
               if (users.length > 5) {
                 for (const user of users) {
@@ -279,45 +279,70 @@ async function infiniteScroll(currentSettings, page) {
                     const hrefValue = await href.jsonValue()
                     const userId = splitUserId(hrefValue)
 
-                    userMap.set(userId, {
-                      userId: userId,
-                      userName: textValue,
-                      Supportid: postId
-                    })
+                    if (!userMap.has(userId)) {
+                      userMap.set(userId, {
+                        userId: userId,
+                        userName: textValue,
+                        Supportid: postId
+                      })
 
-                    console.log('用户加一')
-                    userCount++
-                    if (userCount >= currentSettings.collectCount) {
-                      console.log('结束', userCount)
-                      break
+                      console.log('用户加一')
+                      userCount++
+                    } else {
+                      console.log('用户已存在')
                     }
-                    attempts = userMap.size
-
-                    if (attempts === end) {
-                      f++
-                      if (f >= 3) {
-                        break
-                      }
-                    }
-                    end = attempts
-
-                    if (userMap.size < currentSettings.constructor + 1) {
-                    }
+                    //
+                    // if (userCount >= currentSettings.collectCount) {
+                    //   console.log('结束', userCount)
+                    //   break
+                    // }
+                    // attempts = userMap.size
+                    //
+                    // if (attempts === end) {
+                    //   f++
+                    //   if (f >= 3) {
+                    //     break
+                    //   }
+                    // }
+                    // end = attempts
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                   } catch (error) {
                     console.log('用户采集跳过')
                   }
-                  const lastUser = users[users.length - 1]
-                  if (users.length > 0) {
-                    await lastUser.evaluate((lastUser) => {
-                      lastUser.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    })
-                  }
+                  // const lastUser = users[users.length - 1]
+                  // if (users.length > 0) {
+                  //   await lastUser.evaluate((lastUser) => {
+                  //     lastUser.scrollIntoView({behavior: 'smooth', block: 'center'})
+                  //   })
+                  // }
                 }
+                if (userCount >= currentSettings.collectCount) {
+                  console.log('结束', userCount)
+                  break
+                }
+              } else {
+                break
               }
+
               if (userCount >= currentSettings.collectCount) {
                 console.log('结束', userCount)
                 break
+              }
+              attempts = userMap.size
+
+              if (attempts === end) {
+                f++
+                if (f >= 3) {
+                  break
+                }
+              }
+              end = attempts
+              const lastUser = users[users.length - 1]
+              console.log(`集合长度${users.length},最后一位${lastUser.evaluate}`)
+              if (users.length > 0) {
+                await lastUser.evaluate((lastUser) => {
+                  lastUser.scrollIntoView({behavior: 'smooth', block: 'center'})
+                })
               }
             }
 

@@ -8,7 +8,7 @@ const settingsPath = join(process.cwd(), 'settings.json')
 let appSettings = {
   deviceId: '',
   refreshCount: null,
-  collectCount: null,
+  collectCount: null, //采集数
   postCount: null,
   urlList: []
 }
