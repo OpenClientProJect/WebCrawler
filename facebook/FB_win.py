@@ -5,11 +5,13 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,
                              QMessageBox, QFrame, QSizePolicy)
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import QEventLoop, asyncClose, asyncSlot
 from FB_middle import main
 from database_manager import db_manager
 class MyApp(QWidget):
+    # 嵌入模式下请求隐藏主窗口
+    hideMainRequested = pyqtSignal()
     def __init__(self, embedded=False, version=None, day=None):
         super().__init__()
         self.embedded = embedded
@@ -461,6 +463,10 @@ class MyApp(QWidget):
             if not self.embedded:
                 self.hide()
             self.confirm_button.setEnabled(False)
+
+            # 通知主窗口隐藏（当作为子页面嵌入时）
+            if self.embedded:
+                self.hideMainRequested.emit()
 
             # 总是创建新的crawler实例，避免资源冲突
             await main(params)

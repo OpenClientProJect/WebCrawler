@@ -118,6 +118,8 @@ class MainLayout(QWidget):
 
         # 页面：Facebook（嵌入式，不使用其窗口框架）
         self.fb_page = FBWidget(embedded=True, version=self.version, day=self.day)
+        # 连接子页面发出的隐藏主窗口请求
+        self.fb_page.hideMainRequested.connect(self.hide)
 
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.fb_page)
