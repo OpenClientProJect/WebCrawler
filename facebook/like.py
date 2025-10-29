@@ -23,7 +23,7 @@ class likePage(QWidget):
 
     def _init_ui(self):
         root = QVBoxLayout()
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(10, 15, 10, 15)
         root.setSpacing(14)
 
         # title = QLabel("系统设置")
@@ -62,16 +62,20 @@ class likePage(QWidget):
 
         self.links_text = QTextEdit()
         self.links_text.setPlaceholderText("请输入链接 1")
-        self.links_text.setMinimumHeight(220)
+        self.links_text.setMinimumHeight(150)
+        self.links_text.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.links_text.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.links_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         add_row("设备号 *", self.device_input)
         add_row("刷新数", self.refresh_input)
         add_row("采集帖子数量 *", self.post_count)
         add_row("采集数 *", self.collect_count)
-        add_row("采集链接 (回车确认)", self.links_text)
+        add_row("采集链接", self.links_text)
 
         form_container = QFrame()
         form_container.setLayout(form)
+        form_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         root.addWidget(form_container)
 
