@@ -33,66 +33,6 @@ class MyApp(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 创建自定义标题栏
-        title_bar = QHBoxLayout()
-        title_bar.setContentsMargins(10, 5, 5, 5)
-        title_bar.setSpacing(0)
-
-        self.title_label = QLabel("爬虫脚本")
-        self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
-        self.title_label.setStyleSheet("color: #333;")
-        title_bar.addWidget(self.title_label)
-        title_bar.addStretch(1)
-
-        # 添加最小化按钮
-        min_button = QPushButton("-")
-        min_button.setFont(QFont("微軟雅黑", 10))
-        min_button.setFixedSize(24, 24)
-        min_button.clicked.connect(self.showMinimized)
-        min_button.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #ddd;
-                border-radius: 12px;
-            }
-            QPushButton:hover {
-                background-color: #f0f0f0;
-            }
-        """)
-        title_bar.addWidget(min_button)
-
-        # 添加关闭按钮
-        close_button = QPushButton("×")
-        close_button.setFont(QFont("微軟雅黑", 10))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.close)
-        close_button.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #ddd;
-                border-radius: 12px;
-            }
-            QPushButton:hover {
-                background-color: #ff4d4f;
-                color: white;
-            }
-        """)
-        title_bar.addWidget(close_button)
-
-        # 创建标题栏容器
-        title_container = QFrame()
-        title_container.setLayout(title_bar)
-        title_container.setStyleSheet("""
-            QFrame {
-                background-color: #f5f5f5;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
-                border-bottom: 1px solid #e0e0e0;
-            }
-        """)
-        title_container.setFixedHeight(40)
-        main_layout.addWidget(title_container)
-
         # 创建内容区域
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(20, 20, 20, 20)
@@ -289,13 +229,6 @@ class MyApp(QWidget):
         # 底部布局
         bottom_layout = QHBoxLayout()
 
-        # 左下角版本信息
-        resolved_version = self.version if self.version is not None else globals().get('versions', '1.0.0')
-        resolved_day = self.day if self.day is not None else globals().get('days', 0)
-        self.version_label = QLabel(f"版本：{resolved_version} 剩余天数：{resolved_day} 天")
-        self.version_label.setFont(QFont("微軟雅黑", 9))
-        self.version_label.setStyleSheet("color: #999;")
-
         # 右下角确定按钮
         self.confirm_button = QPushButton("確定")
         self.confirm_button.setFixedSize(100, 35)
@@ -316,7 +249,8 @@ class MyApp(QWidget):
             }
         """)
 
-        bottom_layout.addWidget(self.version_label)
+        if not self.embedded:
+            bottom_layout.addWidget(self.version_label)
         bottom_layout.addStretch(1)
         bottom_layout.addWidget(self.confirm_button)
         content_layout.addLayout(bottom_layout)

@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from qasync import QEventLoop
 
 from FB_win import MyApp as FBWidget
-from page import HomePage
+from like import likePage
 
 
 class MainLayout(QWidget):
@@ -29,7 +29,7 @@ class MainLayout(QWidget):
         title_bar_layout.setContentsMargins(10, 5, 5, 5)
         title_bar_layout.setSpacing(0)
 
-        self.title_label = QLabel("工作台")
+        self.title_label = QLabel("Facebook")
         self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
         self.title_label.setStyleSheet("color: #333;")
         title_bar_layout.addWidget(self.title_label)
@@ -63,7 +63,7 @@ class MainLayout(QWidget):
         title_container.setLayout(title_bar_layout)
         title_container.setStyleSheet(
             """
-            QFrame { background-color: #f5f5f5; border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom: 1px solid #e0e0e0; }
+            QFrame { background-color: #f5f5f5; border-bottom: 1px solid #e0e0e0; }
             """
         )
         title_container.setFixedHeight(40)
@@ -81,7 +81,7 @@ class MainLayout(QWidget):
         nav_layout.setContentsMargins(10, 10, 10, 10)
         nav_layout.setSpacing(10)
 
-        btn_home = QPushButton("首頁")
+        btn_home = QPushButton("like")
         btn_fb = QPushButton("Facebook")
         for b in (btn_home, btn_fb):
             b.setFixedHeight(36)
@@ -99,16 +99,25 @@ class MainLayout(QWidget):
         nav_layout.addWidget(btn_home)
         nav_layout.addWidget(btn_fb)
         nav_layout.addStretch(1)
+
+        # 版本信息标签放置于导航底部
+        self.version = "1.0.0"
+        self.day = 100
+        version_label = QLabel(f"{self.version} 剩余天数：{self.day}")
+        version_label.setFont(QFont("微軟雅黑", 9))
+        version_label.setStyleSheet("color: #999;")
+        version_label.setAlignment(Qt.AlignHCenter)
+        nav_layout.addWidget(version_label)
         nav.setLayout(nav_layout)
 
         self.stack = QStackedWidget()
         self.stack.setStyleSheet("QStackedWidget { background-color: #ffffff; }")
 
         # 页面：首頁
-        self.home_page = HomePage()
+        self.home_page = likePage()
 
         # 页面：Facebook（嵌入式，不使用其窗口框架）
-        self.fb_page = FBWidget(embedded=True, version="1.1.1.1", day=100)
+        self.fb_page = FBWidget(embedded=True, version=self.version, day=self.day)
 
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.fb_page)
@@ -118,7 +127,7 @@ class MainLayout(QWidget):
 
         container = QFrame()
         container.setLayout(main_layout)
-        container.setStyleSheet("QFrame { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }")
+        container.setStyleSheet("QFrame { }")
         root.addWidget(container)
 
         self.setLayout(root)
@@ -132,11 +141,11 @@ class MainLayout(QWidget):
         if index == 0:
             btn_home.setChecked(True)
             btn_fb.setChecked(False)
-            self.title_label.setText("工作台 · 首頁")
+            self.title_label.setText("Facebook · like")
         else:
             btn_home.setChecked(False)
             btn_fb.setChecked(True)
-            self.title_label.setText("工作台 · Facebook")
+            self.title_label.setText("Facebook · reptile")
 
     # 拖动无边框窗口
     def mousePressEvent(self, event):
