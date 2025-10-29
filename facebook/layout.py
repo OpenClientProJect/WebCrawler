@@ -104,7 +104,7 @@ class MainLayout(QWidget):
         self.version = "1.0.0"
         self.day = 100
         version_label = QLabel(f"{self.version} 剩余天数：{self.day}")
-        version_label.setFont(QFont("微軟雅黑", 9))
+        version_label.setFont(QFont("微軟雅黑", 8))
         version_label.setStyleSheet("color: #999;")
         version_label.setAlignment(Qt.AlignHCenter)
         nav_layout.addWidget(version_label)

@@ -10,6 +10,16 @@ class likePage(QWidget):
     def __init__(self):
         super().__init__()
         self._init_ui()
+        self._bind_events()
+
+        # 默认参数
+        self._defaults = {
+            'device': '',
+            'refresh': '10',
+            'post_count': 50,
+            'collect_count': '50',
+            'links': ''
+        }
 
     def _init_ui(self):
         root = QVBoxLayout()
@@ -106,4 +116,27 @@ class likePage(QWidget):
             QPushButton#secondary:pressed { background-color: #d9d9d9; }
             """
         )
+
+    def _bind_events(self):
+        self.reset_btn.clicked.connect(self.on_reset_clicked)
+        self.save_btn.clicked.connect(self.on_save_clicked)
+
+    def on_reset_clicked(self):
+        """恢复默认参数"""
+        self.device_input.setText(self._defaults['device'])
+        self.refresh_input.setText(self._defaults['refresh'])
+        self.post_count.setValue(self._defaults['post_count'])
+        self.collect_count.setText(self._defaults['collect_count'])
+        self.links_text.setPlainText(self._defaults['links'])
+
+    def on_save_clicked(self):
+        """打印当前设置（临时日志）"""
+        data = {
+            'device': self.device_input.text().strip(),
+            'refresh': self.refresh_input.text().strip(),
+            'post_count': self.post_count.value(),
+            'collect_count': self.collect_count.text().strip(),
+            'links': [line for line in self.links_text.toPlainText().split('\n') if line.strip()],
+        }
+        print('[Like Settings] 保存设置:', data)
 
