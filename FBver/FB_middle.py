@@ -148,11 +148,8 @@ async def execute_tasks_immediately(status_window, content0, content1, cookies, 
     status_window.update_signal.emit("提前獲取用戶數據耐心等待...")
     await asyncio.sleep(1)
 
-    start_position = 0
-
-
     cookies = getCookie()
-    crawler = Crawler(cookies, data, start_position, content0, content1, task_order, rest_times)
+    crawler = Crawler(cookies, data, content0, content1, task_order, rest_times)
     crawler.completion_times = completion_times
 
     # 确保登录成功

@@ -18,7 +18,7 @@ from FB_loginwin import win_main
 from playwright.async_api import async_playwright
 
 class Crawler:
-    def __init__(self, cookies,data,content1):
+    def __init__(self, cookies, data, content0, content1, task_order, rest_times):
         self.username = None
         self.password = None
         self.browser = None
