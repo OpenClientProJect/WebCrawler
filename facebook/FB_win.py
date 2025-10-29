@@ -10,18 +10,23 @@ from qasync import QEventLoop, asyncClose, asyncSlot
 from FB_middle import main
 from database_manager import db_manager
 class MyApp(QWidget):
-    def __init__(self):
+    def __init__(self, embedded=False, version=None, day=None):
         super().__init__()
+        self.embedded = embedded
+        self.version = version
+        self.day = day
         self.crawler = None  # 保存crawler实例
         self.is_searching = False  # 添加搜索状态标志
         self.initUI()
-        self.center()
+        if not self.embedded:
+            self.center()
 
     def initUI(self):
-        # 禁用默认的窗口框架
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setWindowTitle('爬虫脚本')
-        self.setFixedSize(520, 500)
+        # 禁用默认的窗口框架（仅独立窗口时）
+        if not self.embedded:
+            self.setWindowFlags(Qt.FramelessWindowHint)
+            self.setWindowTitle('爬虫脚本')
+            self.setFixedSize(520, 500)
 
         # 创建主布局
         main_layout = QVBoxLayout()
@@ -285,7 +290,9 @@ class MyApp(QWidget):
         bottom_layout = QHBoxLayout()
 
         # 左下角版本信息
-        self.version_label = QLabel(f"版本：{versions} 剩余天数：100 天")
+        resolved_version = self.version if self.version is not None else globals().get('versions', '1.0.0')
+        resolved_day = self.day if self.day is not None else globals().get('days', 0)
+        self.version_label = QLabel(f"版本：{resolved_version} 剩余天数：{resolved_day} 天")
         self.version_label.setFont(QFont("微軟雅黑", 9))
         self.version_label.setStyleSheet("color: #999;")
 
@@ -334,12 +341,12 @@ class MyApp(QWidget):
         # 必须实现的拖动窗口的方法
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and not self.embedded:
             self.dragPosition = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
     def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.LeftButton:
+        if event.buttons() == Qt.LeftButton and not self.embedded:
             self.move(event.globalPos() - self.dragPosition)
             event.accept()
 
@@ -517,7 +524,8 @@ class MyApp(QWidget):
         print("开始执行爬取用户操作...")
 
         try:
-            self.hide()
+            if not self.embedded:
+                self.hide()
             self.confirm_button.setEnabled(False)
 
             # 总是创建新的crawler实例，避免资源冲突
@@ -528,7 +536,8 @@ class MyApp(QWidget):
             QMessageBox.critical(self, "错误", f"爬取过程中出现错误: {str(e)}")
         finally:
             self.confirm_button.setEnabled(True)
-            self.show()
+            if not self.embedded:
+                self.show()
 
 def win_main(version, day):
     global versions, days
