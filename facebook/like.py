@@ -3,10 +3,11 @@ from PyQt5.QtWidgets import (
     QTextEdit, QPushButton, QFrame, QSizePolicy, QAbstractSpinBox
 )
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 
 class likePage(QWidget):
+    hideMainRequested = pyqtSignal()
     def __init__(self):
         super().__init__()
         self._init_ui()
@@ -144,5 +145,7 @@ class likePage(QWidget):
             'links': [line for line in self.links_text.toPlainText().split('\n') if line.strip()],
         }
         print('[Like Settings] 保存设置:', data)
+        # 通知主窗口隐藏
+        self.hideMainRequested.emit()
 
 

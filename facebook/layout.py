@@ -115,6 +115,7 @@ class MainLayout(QWidget):
 
         # 页面：首頁
         self.home_page = likePage()
+        self.home_page.hideMainRequested.connect(self.hide)
 
         # 页面：Facebook（嵌入式，不使用其窗口框架）
         self.fb_page = FBWidget(embedded=True, version=self.version, day=self.day)
