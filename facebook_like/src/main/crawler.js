@@ -98,7 +98,7 @@ async function crawlerPost(currentSettings, page) {
     const like = 'div[role="dialog"] span[role="toolbar"] + *'
     const likeButton = await page.$(like)
     likeButton.click()
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 5000))
 
     //获取用户数
     const userMap = new Map()
@@ -119,9 +119,9 @@ async function crawlerPost(currentSettings, page) {
       for (const user of users) {
         try {
           // 检查是否已经收集了足够的用户
-          if (userCount >= maxAttempts) {
-            break
-          }
+          // if (userCount >= maxAttempts) {
+          //   break
+          // }
           // await user.evaluate((user) => {
           //   user.scrollIntoView({behavior: "smooth", block: "center"})
           // })
@@ -141,8 +141,10 @@ async function crawlerPost(currentSettings, page) {
               userName: textValue,
               Supportid: postId
             })
-            userCount++
-            console.log(`已收集${userMap.size}个用户`)
+            userCount = userMap.size
+            console.log('获取用户信息')
+            console.log('用户加一')
+            console.log(`已收集${userCount}个用户`)
           }
 
 
@@ -229,6 +231,7 @@ async function infiniteScroll(currentSettings, page) {
           const sponsorElement = await findElementByXPath(page, xpath)
 
           if (sponsorElement.found) {
+            console.log('找到赞助帖子')
             console.log(`在第${i}个帖子中找到赞助元素:`, sponsorElement.text)
             console.log(`元素标签: ${sponsorElement.tagName}, 类名: ${sponsorElement.className}`)
 
@@ -252,7 +255,7 @@ async function infiniteScroll(currentSettings, page) {
             const like = `${posts} span[role="toolbar"] + *`
             const likeButton = await page.waitForSelector(like)
             likeButton.click()
-            await new Promise((resolve) => setTimeout(resolve, 3000))
+            await new Promise((resolve) => setTimeout(resolve, 5000))
 
             const window =
               "div[role='dialog'] div[aria-hidden=false] >div >div:nth-child(2)>div:nth-child(2)>div>div>div>div >div >div >div:nth-child(2) >div  span >div a"
@@ -281,6 +284,8 @@ async function infiniteScroll(currentSettings, page) {
                       userName: textValue,
                       Supportid: postId
                     })
+
+                    console.log('用户加一')
                     userCount++
                     if (userCount >= currentSettings.collectCount) {
                       console.log('结束', userCount)
@@ -301,6 +306,12 @@ async function infiniteScroll(currentSettings, page) {
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                   } catch (error) {
                     console.log('用户采集跳过')
+                  }
+                  const lastUser = users[users.length - 1]
+                  if (users.length > 0) {
+                    await lastUser.evaluate((lastUser) => {
+                      lastUser.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    })
                   }
                 }
               }
@@ -336,6 +347,7 @@ async function infiniteScroll(currentSettings, page) {
       }
       await new Promise((resolve) => setTimeout(resolve, 1000))
     } catch (error) {
+
       //向下滚动
       await page.evaluate(() => {
         window.scrollBy(0, 1000)

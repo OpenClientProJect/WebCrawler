@@ -25,12 +25,8 @@
       </div>
 
       <div class="log-box">
-        <div class="log-content" ref="logContainer">
-          <div
-            v-for="(log, index) in logs"
-            :key="index"
-            :class="['log-item', log.type]"
-          >
+        <div class="log-content" ref="logContainer" style="max-height: 430px;">
+          <div v-for="(log, index) in logs" :key="index" :class="['log-item', log.type]">
             <span class="log-time">{{ log.timestamp }}</span>
             <span class="log-message">{{ log.message }}</span>
           </div>
@@ -74,21 +70,12 @@ const handleLogMessage = (event, logData) => {
   if (logData.message.includes('处理完第')) {
     processedCount.value++
   }
-  if (logData.message.includes('找到赞助元素')) {
+  if (logData.message.includes('找到赞助帖子')) {
     sponsorCount.value++
   }
-  if (logData.message.includes('找到') && logData.message.includes('个用户')) {
+  if (logData.message.includes('用户加一')) {
     // 从日志中解析采集的用户数量
-    const match = logData.message.match(/找到(\d+)个用户/)
-    if (match) {
-      collectedCount.value += parseInt(match[1])
-    }
-  }
-  if (logData.message.includes('成功批量插入')) {
-    const match = logData.message.match(/成功批量插入 (\d+)/)
-    if (match) {
-      sponsorCount.value++
-    }
+    collectedCount.value++
   }
 }
 
@@ -183,11 +170,9 @@ onUnmounted(() => {
 
 .log-box {
   background: #f8f9fa;
-  height: 300px;
   border-radius: 8px;
   overflow: hidden;
 }
-
 
 .log-content {
   overflow-y: auto;
@@ -228,7 +213,8 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
