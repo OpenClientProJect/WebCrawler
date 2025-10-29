@@ -8,7 +8,7 @@ import os
 import winreg  # 仅适用于Windows
 import shutil  # 适用于Linux和macOS
 from idlelib.rpc import response_queue
-
+import re
 import aiohttp
 import requests
 from PyQt5.QtWidgets import QApplication
@@ -18,7 +18,7 @@ from FB_loginwin import win_main
 from playwright.async_api import async_playwright
 
 class Crawler:
-    def __init__(self, cookies,data,content1):
+    def __init__(self, cookies, data, content0, content1, task_order, rest_times):
         self.username = None
         self.password = None
         self.browser = None
@@ -28,7 +28,7 @@ class Crawler:
         self.is_logged_in = False
         self.browser_path = get_chrome_path()
         # """全局配置"""
-        str(data["AppConfigData"]["GlobalConfig"]["DeviceNumber"])#设备编号
+        self.customer_code = str(data["AppConfigData"]["GlobalConfig"]["DeviceNumber"])#设备编号
         int(data["AppConfigData"]["GlobalConfig"]["EveryBrowserInterval"])#每个浏览器间隔
         parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPosting"])#启动循环发文
         parse_bool(data["AppConfigData"]["GlobalConfig"]["EnableLoopPush"])#启动循环推文
@@ -57,26 +57,26 @@ class Crawler:
         int(data["AppConfigData"]["AccountDevelopConfig"]["EachTimeInterval"])#每条时间间隔
         int(data["AppConfigData"]["AccountDevelopConfig"]["EveryIntervalHowManyAccount"])#每间隔多少条
         int(data["AppConfigData"]["AccountDevelopConfig"]["RestTimeInterval"])#休息时间间隔
-        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsConfirmFriendInvite"])#是否确认好友邀请
-        int(data["AppConfigData"]["AccountDevelopConfig"]["ConfirmHowManyFriendInvite"])#确认多少个好友邀请
-        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["SendPersonalUpdates"])#发个人动态
-        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsHomeLike"])#养号是否首页点赞
-        int(data["AppConfigData"]["AccountDevelopConfig"]["LikeType"])#點讚
-        parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsAddFriend"])#是否添加朋友
-        int(data["AppConfigData"]["AccountDevelopConfig"]["AddHowManyFriend"])#添加多少个朋友
-        int(data["AppConfigData"]["AccountDevelopConfig"]["SponsorCount"])#赞助的次数
+        self.ConfirmFriend = parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsConfirmFriendInvite"])#是否确认好友邀请
+        self.ConfirmFriend_num = int(data["AppConfigData"]["AccountDevelopConfig"]["ConfirmHowManyFriendInvite"])#确认多少个好友邀请
+        self.is_personal = parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["SendPersonalUpdates"])#发个人动态
+        self.is_home_like = parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsHomeLike"])#养号是否首页点赞
+        self.home_like = int(data["AppConfigData"]["AccountDevelopConfig"]["LikeType"])#點讚
+        self.addFriend = parse_bool(data["AppConfigData"]["AccountDevelopConfig"]["IsAddFriend"])#是否添加朋友
+        self.addFriend_num = int(data["AppConfigData"]["AccountDevelopConfig"]["AddHowManyFriend"])#添加多少个朋友
+        self.home_like_num = int(data["AppConfigData"]["AccountDevelopConfig"]["SponsorCount"])#赞助的次数
         # """粉专"""
-        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnableHomeLike"])#是否启用页首
+        self.is_home_page = parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnableHomeLike"])#是否启用页首
         int(data["AppConfigData"]["FanPagesConfig"]["EveryFanPagesInterval"])#每个粉丝专页间隔
         int(data["AppConfigData"]["FanPagesConfig"]["EveryIntervalHowManyFanPages"])#每间隔多少条
         int(data["AppConfigData"]["FanPagesConfig"]["FanPagesRestInterval"])#粉丝专页休息间隔
-        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnablePush"])#是否启用推文
+        self.is_leave_page = parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsEnablePush"])#是否启用推文
         int(data["AppConfigData"]["FanPagesConfig"]["LikeType"])#點讚
         int(data["AppConfigData"]["FanPagesConfig"]["EachTimeInterval"])#每条时间间隔
         int(data["AppConfigData"]["FanPagesConfig"]["EveryIntervalHowManyFanPages2"])#每间隔多少条
         int(data["AppConfigData"]["FanPagesConfig"]["RestTimeInterval"])#休息时间间隔
-        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelHomeLike"])#是否取消首页点赞
-        parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelPostsLike"])#是否取消贴文点赞
+        self.fans_home_like = parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelHomeLike"])#取消首页点赞
+        self.leave_page_like = parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelPostsLike"])#取消贴文点赞
 
         self.status_window = None  # 状态窗口引用
         self.username = content1
@@ -133,9 +133,11 @@ class Crawler:
             await context.add_cookies(self.cookies)
 
         self.page = await context.new_page()
-        # await self.home_post() # FB首页留言
-        # await self.tweet_comment() # """贴文、推文"""
-        await self.post_comment() # """推文"""
+        await self.tweet_comment() # """贴文、推文"""
+        # await self.post_comment() # """推文"""
+        # await self.add_join_groups() # """加社團"""
+        # await self.account_nurturing()#養號
+        # await self.fan_pages()  # 粉丝专页
         print("任务完成")
 
 
@@ -236,25 +238,205 @@ class Crawler:
 
 
     async def home_post(self):
-        await self.page.goto(url="https://www.facebook.com/", wait_until='load')
-        await asyncio.sleep(10)
-
-        num_posts = 6
+        await self.page.goto(url="https://www.facebook.com/", wait_until='load', timeout=50000)
+        title = await self.page.title()
+        if "Facebook" in title:
+            await asyncio.sleep(3)
+        else:
+            print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+            await asyncio.sleep(10)  # 等待10秒
+        num_posts = self.home_like_num
+        like_count = 0
+        seek_count = 0
+        i = 1
         print(f"准备与 {num_posts} 个帖子互动")
-
-        for i in range(1, num_posts + 1):
-
-            selector = f'//div[@class="x1hc1fzr x1unhpq9 x6o7n8i"]/div//div[@aria-posinset={i}]'
-            element = await self.page.wait_for_selector(selector, timeout=10000)
-            if element:
-                await element.scroll_into_view_if_needed()
-                print(f"第 {i} 个帖子")
+        while True:
             try:
-
-                await asyncio.sleep(random.uniform(5, 10))
-
+                selector = f'//div[contains(@class, "x1hc1fzr x1unhpq9")]/div//div[@aria-posinset={i}]'
+                element = await self.page.wait_for_selector(selector, timeout=15000)
+                if element:
+                    await element.scroll_into_view_if_needed()
+                    print(f"第 {i} 个帖子")
+                    like_count,seek_count = await self.sponsor_like(selector,like_count,seek_count)
+                    if like_count >= num_posts:
+                        break
             except Exception as e:
                 print(f"处理第 {i} 个帖子时出错: {str(e)}")
+            finally:
+                i += 1
+            #找不到执行普通点赞
+            if seek_count >= 5 :
+                like_count += 1
+                like_type = self.home_like
+                await self.like_post(selector, like_type)
+                # 提示檢測
+                await self.warning_prompt()
+
+                # 請求數據
+                tweet = await self.fetch_data(
+                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}")
+                response_url = tweet.split("|+|")
+                comment_text = response_url[7].split("{}")
+
+                await self.comment_post(random.choice(comment_text), selector)
+
+                # 提示檢測
+                await self.warning_prompt()
+
+                if like_count >= num_posts:
+                    break
+
+    async def sponsor_like(self,selector,like_count,seek_count):
+
+        try:
+            sponsor_element = await self.page.wait_for_selector(selector + '//span[contains(text(), "助")]',
+                                                                timeout=10000)
+            if sponsor_element:
+                await sponsor_element.scroll_into_view_if_needed()
+
+                print("出現啦")
+                like_count += 1
+                seek_count = 0
+                like_type = self.home_like
+                await self.like_post(selector,like_type)
+                #提示檢測
+                await self.warning_prompt()
+
+                #請求數據
+                tweet = await self.fetch_data(
+                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}")
+                response_url = tweet.split("|+|")
+                comment_text = response_url[7].split("{}")
+
+                await self.comment_post(random.choice(comment_text),selector)
+
+                # 提示檢測
+                await self.warning_prompt()
+            await asyncio.sleep(random.uniform(5, 10))
+
+        except Exception as e:
+            print(f"這个帖子不是贊助: {str(e)}")
+            seek_count += 1
+        return like_count,seek_count
+
+    async def like_post(self,like,like_type):
+        """封装点赞功能"""
+        await asyncio.sleep(2)
+        alreadylike = '//div[@aria-label="讚" or @aria-label="赞"]'
+        cancellike = '//div[contains(@aria-label, "取消") or contains(@aria-label, "移除")]'
+        try:
+            # selector = like.format(index)
+            selector = like
+            selector = selector + alreadylike
+            element = await self.page.wait_for_selector(selector, timeout=10000)
+
+            if element:
+                await element.scroll_into_view_if_needed()
+                await asyncio.sleep(2)
+                await element.hover()
+                await asyncio.sleep(3)
+
+                target_emotion = like_type - 1
+                target_emotion_list = ["赞", "大心", "加油", "哈", "哇", "嗚", "怒"]
+                emotion_selector = f'//div[@role="button" and @aria-label="{target_emotion_list[target_emotion]}"]'
+                try:
+                    emotion_button = await self.page.wait_for_selector(emotion_selector, timeout=5000)
+                    if emotion_button:
+                        await emotion_button.click()
+                        print(f"点击了表情: {target_emotion_list[target_emotion]}")
+                    else:
+                        print("未找到表情按钮，执行默认点赞")
+                        await element.click()
+                except Exception as e:
+                    print(f"表情点击失败: {str(e)}")
+                    await element.click()
+            return True
+        except Exception as e:
+            print(f"点赞失败: {str(e)}")
+            try:
+                # like = like.format(index)
+                like = like
+                element = await self.page.wait_for_selector(like + cancellike, timeout=10000)
+                if element:
+                    print("已經點過讃")
+                return False
+            except Exception as e:
+                print(f"点赞失败找不到可點讚位置: {str(e)}")
+
+    async def comment_post(self, comment_text, posts):
+        """封装留言功能"""
+        await asyncio.sleep(2)
+        try:
+            # 点击留言按钮
+            # selector = Posts.format(index)
+            selector = posts
+            element = await self.page.wait_for_selector(selector, timeout=10000)
+        except Exception as e:
+            print(f"留言失败: {str(e)}")
+            return False
+
+        try:
+            if element:
+                await element.scroll_into_view_if_needed()
+                await asyncio.sleep(1)
+                await element.click()
+                await asyncio.sleep(2)
+
+                # 定位留言输入框
+                input_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-label, "留言") or @role="textbox" and contains(@aria-label, "回答")]'
+                input_element = await self.page.wait_for_selector(input_selector, timeout=10000)
+
+                if input_element:
+                    await input_element.scroll_into_view_if_needed()
+                    aria_label = await input_element.get_attribute('aria-label')
+                    print(f"获取到的 aria-label 为: {aria_label}")
+
+                    if "送出" in aria_label or "回答" in aria_label:
+                        close_selectors = [
+                            '//div[@role="dialog"]//div[@aria-label="關閉"]',  # 方式1
+                            '//div[@aria-label="關閉" and @aria-hidden="false"]'  # 方式2
+                        ]
+                        for selector in close_selectors:
+                            try:
+                                close_button = await self.page.wait_for_selector(selector, timeout=3000)
+                                if close_button:
+                                    await close_button.scroll_into_view_if_needed()
+                                    await asyncio.sleep(1)
+                                    await close_button.click()
+                                    print("彈窗關閉！")
+                                    return True
+                            except Exception as e:
+                                continue  # 尝试下一种选择器
+                    else:
+
+                        # 发送文字部分
+                        if comment_text:
+                            await asyncio.sleep(1)
+                            await input_element.click()
+                            await input_element.fill(comment_text)
+                            await asyncio.sleep(2)
+                        await asyncio.sleep(random.randint(6, 10))
+
+                        close_selectors = [
+                            '//div[@aria-label="關閉" and @aria-hidden="false"]',  # 方式1
+                            '//div[@role="dialog"]//div[@aria-label="關閉"]'  # 方式2
+                        ]
+                        for selector in close_selectors:
+                            try:
+                                close_button = await self.page.wait_for_selector(selector, timeout=3000)
+                                if close_button:
+                                    await close_button.scroll_into_view_if_needed()
+                                    await asyncio.sleep(1)
+                                    await close_button.click()
+                                    print("彈窗關閉！")
+                                    return True
+                            except Exception as e:
+                                print(f"沒找到彈窗：{e}")
+                                continue  # 尝试下一种选择器
+                return False
+        except Exception as e:
+            print(f"留言失败: {str(e)}")
+            return False
     # """發文、推文"""
     async def tweet_comment(self):
         tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
@@ -266,8 +448,19 @@ class Crawler:
         print(response_url[1])  # 分享的網址
         print(response_url[2])  # 廣告的文案
         for i in range(len(post_url)):
-            await self.page.goto(url=post_url[i]+"/buy_sell_discussion", wait_until='load',timeout=50000)
+            await self.page.goto(url=post_url[i], wait_until='load',timeout=50000)
+            if await self.url_open_except() :# 檢測網站目前無法查看此內容
+                continue
             isno_groups = await self.join_groups()#加社团
+            if not isno_groups:
+                try:
+                    Mentions_selector = f'//div[@aria-orientation="horizontal" and @role="tablist"]//a[@role="tab" and @tabindex="0"]//span[contains(text(),"討論區") or contains(text(),"讨论")]/..'
+                    Mentions_but = await self.page.wait_for_selector(Mentions_selector, timeout=10000)
+                    if Mentions_but:
+                        await Mentions_but.scroll_into_view_if_needed()
+                        await Mentions_but.click()
+                except Exception as e:
+                    print(f"没有找到讨论区位置: {str(e)}")
             if not isno_groups:
                 try:
                     option_selector ='//span[contains(text(), "留個言吧……") or contains(text(), "...") or contains(text(), "分享心情...")]/..'
@@ -275,13 +468,32 @@ class Crawler:
                     if option_but:
                         await option_but.scroll_into_view_if_needed()
                         await option_but.click()
-                        # await self.personal_release(response_url[1],response_url[2])
                         response = response_url[1]+" "+response_url[2]
                         print(response)
                         await self.personal_release(response)
+                        await self.warning_prompt()
+                        await self.get_tweet_comment(response_url[5])
+
                 except Exception as e:
                     print(f"没有找到可发布贴文位置: {str(e)}")
                 await asyncio.sleep(5)
+
+    async def get_tweet_comment(self,code):
+        await asyncio.sleep(5)
+        try:
+            friend_selectors = '//div[@aria-posinset="NaN" or @aria-posinset="1"]//span[contains(text(), "刚") or contains(text(), "剛")]'
+            friend_but = await self.page.wait_for_selector(friend_selectors, timeout=15000)
+
+            if friend_but:
+                await friend_but.scroll_into_view_if_needed()
+                await friend_but.click()
+                await asyncio.sleep(8)
+                current_url = await self.page.evaluate("() => window.location.href")
+                print(current_url)
+                await self.report_up_tweet_comment(current_url, code)
+        except Exception as e:
+            print(f"没有找到可发布贴文位置: {str(e)}")
+        await asyncio.sleep(3)
     #推文
     async def post_comment(self):
         post = await self.fetch_data(
@@ -293,9 +505,67 @@ class Crawler:
         print(comment_text)  # 推文內容
         for i in range(len(post_url)):
             await self.page.goto(url=post_url[i], wait_until='load', timeout=50000)
+            current_url = await self.page.evaluate("() => window.location.href")
+            print("當前網頁：", current_url)
+            if await self.url_open_except() :# 檢測網站目前無法查看此內容
+                await self.report_dawn_post_status(current_url)
+                continue
             if self.Is_post_like:
                 await self.post_nei_like()#点赞
             await self.post_nei_comment(random.choice(comment_text))#留言
+            await self.report_up_post_status(current_url)
+
+    # 加社團up
+    async def add_join_groups(self):
+        groups = await self.fetch_data2(
+            f"http://aj.ry188.vip/api/GetGroupUrl.aspx?Account={self.username}")
+        is_on_line = parse_bool(groups["IsOnLineGroupData"])#是否在線社團
+        answer = ["遵守版規", "同意版規", "感謝版主"]
+        for i in range(len(groups["GroupDataList"])):
+            await self.page.goto(url="https://www.facebook.com/groups/"+groups["GroupDataList"][i]["GroupId"], wait_until='load', timeout=50000)
+            if is_on_line:
+                for s in range(1, 4):
+                    if groups["GroupDataList"][i]["Answer" + str(s)] != "" and groups["GroupDataList"][i]["IsAnswer"]:
+                        answer[i] = groups["GroupDataList"][i]["Answer" + str(s)]
+                if await self.join_groups():
+                    await asyncio.sleep(random.uniform(5, 10))
+                    await self.answer_questions(answer)
+                    await self.report_add_join_groups(
+                        "https://www.facebook.com/groups/" + groups["GroupDataList"][i]["GroupId"])#上傳add社團
+            else:
+                if await self.join_groups():
+                    await asyncio.sleep(random.uniform(5, 10))
+                    await self.answer_questions(answer)
+                    await self.report_add_join_groups(
+                        "https://www.facebook.com/groups/"+groups["GroupDataList"][i]["GroupId"])#上傳add社團
+
+    # 加社團回答問題
+    async def answer_questions(self,answer):
+        click = 0
+        for i in range(1,4):
+            try:
+                option_selector = f'//div[contains(@aria-label, "回答問題") and @role="dialog" or contains(@aria-label, "回答问题") and @role="dialog"]//div[contains(@class, "x1c1uobl")]/div[{i}]//textarea[contains(@placeholder, "撰寫回答") or contains(@placeholder, "输入回答")]'
+                option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
+                if option_but:
+                    await option_but.scroll_into_view_if_needed()
+                    await asyncio.sleep(random.uniform(1, 2))
+                    await option_but.click()
+                    await option_but.fill(answer[i-1])
+                    click += 1
+            except Exception as e:
+                print(f"没有找到回答問題窗口: {str(e)}")
+                break#一次找不到就出去
+        if click >= 1:
+            try:
+                submit_selector = f'//div[contains(@aria-label, "回答問題") and @role="dialog" or contains(@aria-label, "回答问题") and @role="dialog"]//div[contains(@aria-label, "提交") and @role="button" and @tabindex="0"]'
+                submit_but = await self.page.wait_for_selector(submit_selector, timeout=10000)
+                if submit_but:
+                    await submit_but.scroll_into_view_if_needed()
+                    await asyncio.sleep(random.uniform(1, 2))
+                    await submit_but.click()
+            except Exception as e:
+                print(f"没有找到提交: {str(e)}")
+        await asyncio.sleep(5)
 
     #加社團
     async def join_groups(self):
@@ -313,10 +583,169 @@ class Crawler:
             print(f"没有找到加入社團,可能已經申請過: {str(e)}")
             return False
 
+    # 養號
+    async def account_nurturing(self):
+        if self.ConfirmFriend:
+            await self.confirm_friend_invitation()#確認好友邀請
+        if self.addFriend:
+            await self.add_friend_invitation()#添加好友
+        if self.is_personal:
+            await self.post_personal_updates()#發佈個人動態
+        if self.is_home_like:
+            await self.home_post() # FB首页留言
+
+    async def fan_pages(self):
+        request_data = await self.fetch_data("http://aj.ry188.vip/api/GetFenPageData.aspx?Account=272275")
+        data_url = request_data.split("|+|")
+        home_page_data_split = data_url[0].split("{}")# 粉丝专页首頁网址
+        tweet_data_split = data_url[1].split("{}")# 粉丝专页推文网址
+        outgoing_message = data_url[2].split("{}")  # 粉丝专页发文内容
+        leave_message = data_url[3].split("{}")  # 粉丝专页留言内容
+        code = data_url[6]  # 客户代号
+        if self.is_home_page or not self.fans_home_like:
+            await self.fans_home_page(home_page_data_split,random.choice(outgoing_message))#粉丝专页发文首页
+        if self.is_leave_page or not self.leave_page_like:
+            await self.fans_leave_page(tweet_data_split,random.choice(leave_message),code)#粉丝专页贴文留言
+
+    async def fans_home_page(self,home_page_data_split,comment_text):
+        for i in range(len(home_page_data_split)):
+            await self.page.goto(url=home_page_data_split[i], wait_until='load', timeout=50000)
+            title = await self.page.title()
+            if "Facebook" in title:
+                await asyncio.sleep(3)
+            else:
+                print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+                await asyncio.sleep(10)  # 等待10秒
+            #点赞....
+            if not self.fans_home_like :
+                print("未开发")
+            if self.is_home_page:
+                try:
+                    Mentions_selector = f'//div[@aria-orientation="horizontal" and @role="tablist"]//a[@role="tab" and @tabindex="0"]//span[contains(text(),"Mentions") or contains(text(),"提及")]/..'
+                    Mentions_but = await self.page.wait_for_selector(Mentions_selector, timeout=10000)
+                    if Mentions_but:
+                        await Mentions_but.scroll_into_view_if_needed()
+                        await Mentions_but.click()
+                        await asyncio.sleep(random.uniform(4, 6))
+                        # 查找留言按钮
+                        friend_selectors = [
+                            '//span[contains(text(), "留言給") or contains(text(), "对")]/ancestor::div[@role="button"]',
+                            '//div[@role="button"]//span[contains(text(), "留言給") or contains(text(), "对")]',
+                        ]
+                        for selectors in friend_selectors:
+                            friend_but = await self.page.wait_for_selector(selectors, timeout=15000)
+
+                            if friend_but:
+                                await friend_but.scroll_into_view_if_needed()
+                                await friend_but.click()
+                                await asyncio.sleep(random.uniform(3, 5))
+                                await self.personal_release(comment_text)
+                                break
+                            else:
+                                print("未找到留言按钮，跳过此专页")
+                except Exception as e:
+                    print(f"没有找到Mentions: {str(e)}")
+
+        await asyncio.sleep(random.uniform(3, 5))
+
+    async def fans_leave_page(self,tweet_data_split,comment_text,code):
+        for i in range(len(tweet_data_split)):
+            await self.page.goto(url=tweet_data_split[i], wait_until='load', timeout=50000)
+            title = await self.page.title()
+            if "Facebook" in title:
+                await asyncio.sleep(3)
+            else:
+                print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+                await asyncio.sleep(10)  # 等待10秒
+            if await self.url_open_except():  # 檢測網站目前無法查看此內容
+                await self.report_dawn_post_status(tweet_data_split[i])
+                continue
+            if not self.leave_page_like:
+                await self.post_nei_like()  # 点赞
+            if self.is_leave_page:
+                await self.post_nei_comment(comment_text)  # 留言
+            await self.report_up_fans_post_status(code,tweet_data_split[i])
+        await asyncio.sleep(random.uniform(3, 5))
+
+    async def confirm_friend_invitation(self):
+
+        await self.page.goto(url="https://www.facebook.com/friends/requests", wait_until='load',timeout=50000)
+        title = await self.page.title()
+        if "Facebook" in title:
+            await asyncio.sleep(3)
+        else:
+            print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+            await asyncio.sleep(10)  # 等待10秒
+        confirm_friend_number = self.ConfirmFriend_num
+        count_friend_num = 0
+        while True:
+            try:
+                friend_selector = f'//div[@aria-label="交友邀請" and @role="navigation" or @aria-label="加好友请求" and @role="navigation"]//div[@role="button" and @tabindex="0" and contains(@aria-label,"確認") or @role="button" and @tabindex="0" and contains(@aria-label,"确认")]'
+                friend_but = await self.page.wait_for_selector(friend_selector, timeout=10000)
+                if friend_but:
+                    await friend_but.scroll_into_view_if_needed()
+                    await friend_but.click()
+                    await asyncio.sleep(random.uniform(4, 6))
+                    count_friend_num += 1
+                    print("確認朋友成功",count_friend_num)
+                    if count_friend_num >= confirm_friend_number :break
+            except Exception as e:
+                print(f"没有找到可以確認的朋友或沒有申請: {str(e)}")
+                break
+
+    async def add_friend_invitation(self):
+
+        await self.page.goto(url="https://www.facebook.com/friends/suggestions", wait_until='load',timeout=50000)
+        title = await self.page.title()
+        if "Facebook" in title:
+            await asyncio.sleep(3)
+        else:
+            print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+            await asyncio.sleep(10)  # 等待10秒
+        add_friend_number = self.addFriend_num
+        count_add_friend_num = 0
+        while True:
+            try:
+                friend_selector = f'//div[@aria-label="建議" and @role="navigation" or @aria-label="推荐用户" and @role="navigation"]//div[@role="button" and @tabindex="0" and contains(@aria-label,"加朋友") or @role="button" and @tabindex="0" and contains(@aria-label,"加好友")]'
+                friend_but = await self.page.wait_for_selector(friend_selector, timeout=10000)
+                if friend_but:
+                    await friend_but.scroll_into_view_if_needed()
+                    await friend_but.click()
+                    await asyncio.sleep(random.uniform(4, 6))
+                    count_add_friend_num += 1
+                    print("添加朋友成功",count_add_friend_num)
+                    if count_add_friend_num >= add_friend_number :break
+            except Exception as e:
+                print(f"没有找到可以添加的朋友或推薦: {str(e)}")
+                break
+
+    async def post_personal_updates(self):
+        tweet = await self.fetch_data(
+            f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
+        response_url = tweet.split("|+|")
+        await self.page.goto(url="https://www.facebook.com/", wait_until='load',timeout=50000)
+        title = await self.page.title()
+        if "Facebook" in title:
+            await asyncio.sleep(3)
+        else:
+            print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+            await asyncio.sleep(10)  # 等待10秒
+        try:
+            friend_selector = f'//div[@aria-label="建立貼文" and @role="region" or @aria-label="创建帖子" and @role="region"]//span[contains(text(), "在想些什麼") or contains(text(), "?") or contains(text(), "分享你的新鲜事吧") or contains(text(), "!")]/..'
+            friend_but = await self.page.wait_for_selector(friend_selector, timeout=10000)
+            if friend_but:
+                await friend_but.scroll_into_view_if_needed()
+                await friend_but.click()
+                await asyncio.sleep(random.uniform(4, 6))
+                response = response_url[6] + " " + random.choice(response_url[3].split("{}"))
+                await self.personal_release(response)
+        except Exception as e:
+            print(f"没有找到建立貼文: {str(e)}")
+
     async def personal_release(self,comment_text=None):
 
         try:
-            input_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-placeholder,"建立公開貼文……") or @role="textbox" and contains(@aria-placeholder, "...") or @role="textbox" and contains(@aria-placeholder, "发布公开帖…")]'
+            input_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-placeholder,"建立公開貼文……") or @role="textbox" and contains(@aria-placeholder, "...") or @role="textbox" and contains(@aria-placeholder, "发布公开帖…") or @role="textbox" and contains(@aria-placeholder, "在想些什麼") or @role="textbox" and contains(@aria-placeholder, "分享你的新鲜事吧") or @role="textbox" and contains(@aria-placeholder, "！") or @role="textbox" and contains(@aria-placeholder, "？") or @role="textbox" and contains(@aria-placeholder, "留言給") or @role="textbox" and contains(@aria-placeholder, "对")]'
             input_but = await self.page.wait_for_selector(input_selector, timeout=10000)
             if input_but:
                 await input_but.scroll_into_view_if_needed()
@@ -329,7 +758,7 @@ class Crawler:
 
     async def personal_release_but(self):
         try:
-            but_selector = '//div[@role="dialog"]//div[@tabindex="0" and contains(@aria-label,"發佈") or @tabindex="0" and contains(@aria-label, "发布")]'
+            but_selector = '//div[@role="dialog"]//div[@tabindex="0" and contains(@aria-label,"發佈") or @tabindex="0" and contains(@aria-label, "发布") or @tabindex="0" and contains(@aria-label, "发帖")]'
             but_but = await self.page.wait_for_selector(but_selector, timeout=15000)
             if but_but:
                 await but_but.scroll_into_view_if_needed()
@@ -385,10 +814,163 @@ class Crawler:
                 await input_element.scroll_into_view_if_needed()
                 aria_label = await input_element.get_attribute('aria-label')
                 print(f"获取到的 aria-label 为: {aria_label}")
-
-            return False
+                await input_element.click()
+                await input_element.fill(comment_text)
+                await asyncio.sleep(5)
+                await self._submit_comment()
         except Exception as e:
             print(f"点赞失败找不到可點讚位置: {str(e)}")
+
+    async def _submit_comment(self):
+        """提交评论"""
+        try:
+            submit_selector = '//div[@role="dialog"]//div[@id="focused-state-composer-submit"]//div[@role="button" and @tabindex="0"]'
+            submit_button = await self.page.wait_for_selector(submit_selector, timeout=20000)
+            if submit_button:
+                await submit_button.scroll_into_view_if_needed()
+                await asyncio.sleep(random.randint(8, 14))
+                await submit_button.click()
+                return True
+        except Exception as e:
+            print(f"提交评论失败: {str(e)}")
+        return False
+
+    async def url_open_except(self):
+        try:
+            url_selector = '//h2[@dir="auto"]//span[@dir="auto"]'
+            url_button = await self.page.wait_for_selector(url_selector, timeout=7000)
+            text = await url_button.inner_text()
+            if text in "目前無法查看此內容":
+                print("目前無法查看此內容")
+                return True
+        except Exception as e:
+            print(f"找不到目前無法查看此內容: {str(e)}")
+            return False
+
+    async def report_add_join_groups(self, task_name):
+        """异步上报add社團状态"""
+        try:
+            # 对task_name进行Base64编码并转换为字符串
+            encoded_bytes = base64.b64encode(task_name.encode('utf-8'))
+            encoded_task_name = encoded_bytes.decode('utf-8')
+
+            url = f"http://aj.ry188.vip/api/UpJoinGroupUrl.aspx?Account={self.username}&Urls={encoded_task_name}"
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"社團上傳上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"社團上傳上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"社團上傳上报失败: {e}")
+            return False
+    async def report_up_post_status(self, task_name):
+        """异步上报推文網址"""
+        try:
+            task_name = await self.extract_posturl_ids(task_name)
+            url = f"http://aj.ry188.vip/api/UpPostUrl.aspx?Account={self.username}&PostId={task_name}&UserNumber={self.customer_code}&GroupName="
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"推文上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"推文上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"推文上报失败: {e}")
+            return False
+    async def report_up_fans_post_status(self,user_numer, task_name):
+        """异步上报粉丝专页推文網址"""
+        try:
+            # task_name = await self.extract_posturl_ids(task_name)
+            url = f"http://aj.ry188.vip/api/UpPagesPostUrl.aspx?Account={self.username}&UserNumber={user_numer}&Urls={task_name}"
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"粉丝推文上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"粉丝推文上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"粉丝推文上报失败: {e}")
+            return False
+    async def report_dawn_post_status(self, task_name):
+        """异步上报刪除推文網址"""
+        try:
+            task_name = await self.extract_posturl_ids(task_name)
+            url = f"http://aj.ry188.vip/api/DeleteUrls.aspx?Account={self.username}&PostId={task_name}"
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"推文上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"推文上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"推文上报失败: {e}")
+            return False
+    async def report_up_tweet_comment(self, task_name,code):
+        """异步上报发文推文網址"""
+        try:
+            task_name2 = await self.extract_posturl_ids(task_name)
+            group_id = ""
+            # 一行代码提取所有群组ID
+            match = re.search(r'/groups/(\d+)', task_name)
+            if match:
+                group_id = match.group(1)
+                print("提取的群组ID:", group_id)
+            else:
+                print("未找到群组ID")
+            url = f"http://aj.ry188.vip/api/UpUrls.aspx?Account={self.username}&Urls={task_name}&GroupId={group_id}&GroupName='123'&PostId={task_name2}&UserNumber={code}"
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"发文推文上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"发文推文上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"发文推文上报失败: {e}")
+            return False
+    async def extract_posturl_ids(self,urls):
+        post_ids = ""
+        # 匹配各种格式的帖子ID
+        pattern = r'/(?:posts/|permalink/|permalink&id=)(\d+)'
+        match = re.search(pattern, urls)
+        if match:
+            post_ids = match.group(1)
+
+        return post_ids
+
+    async def warning_prompt(self):
+        await asyncio.sleep(4)
+        close_selectors = [
+            '//div[@role="dialog"]//div[@aria-label="關閉"]',  # 方式1
+            '//div[@aria-label="關閉" and @aria-hidden="false"]' ,# 方式2
+            '//div[@aria-label="關閉"]'# 方式3
+        ]
+        for selector in close_selectors:
+            try:
+                close_button = await self.page.wait_for_selector(selector, timeout=3000)
+                if close_button:
+                    await close_button.scroll_into_view_if_needed()
+                    await asyncio.sleep(1)
+                    await close_button.click()
+                    print("彈窗關閉！")
+                    return True
+            except Exception as e:
+                continue  # 尝试下一种选择器
 
     async def class_fb_set(self):
         try:
