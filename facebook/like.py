@@ -62,17 +62,17 @@ class likePage(QWidget):
         self.collect_count.setText("50")
 
         self.links_text = QTextEdit()
-        self.links_text.setPlaceholderText("请输入链接 1")
+        self.links_text.setPlaceholderText("請輸入地址，每行一個...\n例：https://www.facebook.com/steven.cheng.7792/posts/pfbid027XQvyQ4LS4FkA84nwYWt5snkMjcAGF7XN38u9c2iVFutWUwN4CWGuZdTygDpusEwl")
         self.links_text.setMinimumHeight(150)
         self.links_text.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.links_text.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.links_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        add_row("设备号 *", self.device_input)
-        add_row("刷新数", self.refresh_input)
-        add_row("采集帖子数量 *", self.post_count)
-        add_row("采集数 *", self.collect_count)
-        add_row("采集链接", self.links_text)
+        add_row("設備號 *", self.device_input)
+        add_row("刷新數", self.refresh_input)
+        add_row("採集帖子數量 *", self.post_count)
+        add_row("採集數 *", self.collect_count)
+        add_row("採集鏈接", self.links_text)
 
         form_container = QFrame()
         form_container.setLayout(form)
