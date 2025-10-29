@@ -387,21 +387,21 @@ class MyApp(QWidget):
             failed_addresses = result['failed']
 
             # 如果有解析失败的地址，提示用户
-            if failed_addresses:
-                failed_text = "\n".join(failed_addresses[:5])  # 最多显示5个
-                if len(failed_addresses) > 5:
-                    failed_text += f"\n... 还有 {len(failed_addresses) - 5} 个地址格式错误"
-
-                reply = QMessageBox.question(
-                    self,
-                    "地址格式错误",
-                    f"以下地址格式不正确，无法提取群组ID：\n\n{failed_text}\n\n是否继续处理其他有效地址？",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.Yes
-                )
-
-                if reply == QMessageBox.No:
-                    return
+            # if failed_addresses:
+            #     failed_text = "\n".join(failed_addresses[:5])  # 最多显示5个
+            #     if len(failed_addresses) > 5:
+            #         failed_text += f"\n... 还有 {len(failed_addresses) - 5} 个地址格式错误"
+            #
+            #     reply = QMessageBox.question(
+            #         self,
+            #         "地址格式错误",
+            #         f"以下地址格式不正确，无法提取群组ID：\n\n{failed_text}\n\n是否继续处理其他有效地址？",
+            #         QMessageBox.Yes | QMessageBox.No,
+            #         QMessageBox.Yes
+            #     )
+            #
+            #     if reply == QMessageBox.No:
+            #         return
 
             # 如果有重复地址，提示用户
             if duplicate_addresses:

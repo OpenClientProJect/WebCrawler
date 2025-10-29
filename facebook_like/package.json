@@ -21,7 +21,8 @@
     "@electron-toolkit/utils": "^2.0.0",
     "electron-updater": "^6.1.1",
     "mssql": "^12.0.0",
-    "puppeteer-core": "^24.26.0"
+    "puppeteer-core": "^24.26.0",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.1",

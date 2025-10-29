@@ -887,7 +887,7 @@ class Crawler:
             # 更新进度
             current_position = i + 1
             save_progress(self.User_Id, self.UsersLists, current_position, self.source_mapping)
-            self.up_users_status(group_id)
+            await self.up_users_status(group_id)
             # 每处理一个用户等待
             await asyncio.sleep(self.IsSwitchBrowser)
 
