@@ -1,3 +1,4 @@
+
 // 使用XPath查找包含特定文本的元素
 import { getSettings } from './settings'
 import { batchInsertUsers } from './database'
@@ -263,7 +264,7 @@ async function infiniteScroll(currentSettings, page) {
             let userCount = 0
 
             const userMap = new Map()
-            for (let j = 0; j < currentSettings.collectCount; j++) {
+            while (true) {
               const users = await page.$$(window, { delay: 5000 })
               console.log(`找到${users.length}个用户`)
               if (users.length > 5) {
@@ -279,14 +280,20 @@ async function infiniteScroll(currentSettings, page) {
                     const hrefValue = await href.jsonValue()
                     const userId = splitUserId(hrefValue)
 
-                    userMap.set(userId, {
-                      userId: userId,
-                      userName: textValue,
-                      Supportid: postId
-                    })
+                    if (!userMap.has(userId)) {
+                        // 如果不存在，则添加新用户
+                        userMap.set(userId, {
+                            userId: userId,
+                            userName: textValue,
+                            Supportid: postId
+                        });
 
-                    console.log('用户加一')
-                    userCount++
+                        console.log('用户加一');
+                        userCount++;
+                    } else {
+                        console.log('用户已存在');
+                    }
+
                     if (userCount >= currentSettings.collectCount) {
                       console.log('结束', userCount)
                       break
@@ -314,7 +321,10 @@ async function infiniteScroll(currentSettings, page) {
                     })
                   }
                 }
+              }else{
+              break
               }
+
               if (userCount >= currentSettings.collectCount) {
                 console.log('结束', userCount)
                 break

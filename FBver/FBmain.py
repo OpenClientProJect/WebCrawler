@@ -1,10 +1,12 @@
 import asyncio
 import random
+import subprocess
 import time
 import json
 import base64
 import platform
 import os
+import uuid
 import winreg  # 仅适用于Windows
 import shutil  # 适用于Linux和macOS
 from idlelib.rpc import response_queue
@@ -79,67 +81,259 @@ class Crawler:
         self.leave_page_like = parse_bool(data["AppConfigData"]["FanPagesConfig"]["IsCancelPostsLike"])#取消贴文点赞
 
         self.status_window = None  # 状态窗口引用
+        self.task_order = task_order or []
+        self.executed_tasks = []  # 用于跟踪已执行的任务
+        self.rest_times = rest_times or {}  # 存储休息时间配置
         self.username = content1
+        self.device_number = content0  # 设备号，可以从配置中获取
+        self.machine_code = self.generate_machine_code()  # 获取机器码
+        self.is_phone = 0  # 是否是手机
+        self.remote_id = content1  # AnyDesk ID
+        self.ui_update_lock = asyncio.Lock()  # 添加UI更新锁
+        self.completion_times = {}  # 新增：存储其他任务的完成时间配置
 
-    def update_status(self, text):
-        """更新状态窗口"""
-        if self.status_window:
-            # 确保在主线程更新UI
-            self.status_window.update_signal.emit(text)
-            # 立即处理事件队列
-            QApplication.processEvents()
+        # 如果传递了completion_times，则使用它
+        if isinstance(task_order, dict) and 'completion_times' in task_order:
+            self.completion_times = task_order.get('completion_times', {})
+        elif rest_times and 'completion_times' in rest_times:
+            self.completion_times = rest_times.get('completion_times', {})
+
+    async def safe_update_status(self, text):
+        """安全的异步状态更新"""
+        async with self.ui_update_lock:
+            if self.status_window:
+                loop = asyncio.get_event_loop()
+                loop.call_soon_threadsafe(
+                    lambda: self.status_window.update_signal.emit(text)
+                )
+            await asyncio.sleep(0.01)  # 添加微小延迟
+
+    async def robust_update_status(self, text, max_retries=3):
+        """带重试机制的状态更新"""
+        for attempt in range(max_retries):
+            try:
+                await self.safe_update_status(text)
+                return True
+            except Exception as e:
+                print(f"状态更新失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+                await asyncio.sleep(0.5 * (attempt + 1))
+        return False
+
+    async def periodic_online_report(self):
+        """定期上报在线状态"""
+        while True:
+            await asyncio.sleep(40)  # 每分钟上报一次
+            # 不等待完成，直接创建任务
+            asyncio.create_task(self.report_online_status())
 
     async def start(self):
-        playwright = await async_playwright().start()
-        # 增强浏览器配置
-        browser_args = [
-            '--no-first-run',
-            '--no-default-browser-check',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
-            '--disable-default-apps',
-            '--disable-extensions',
-            '--disable-component-extensions-with-background-pages',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-dev-shm-usage',
-            '--no-sandbox',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-back-forward-cache',
-            '--disable-site-isolation-trials'
-        ]
-        self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
-        ]
-        context = await self.browser.new_context(
-            user_agent=random.choice(user_agents)
-        )
-        await context.add_init_script("""
-               Object.defineProperty(navigator, 'webdriver', {
-                   get: () => undefined,
-               });
-               window.chrome = {
-                   runtime: {},
-               };
-           """)
-        if self.cookies:
-            await context.add_cookies(self.cookies)
 
-        self.page = await context.new_page()
-        await self.tweet_comment() # """贴文、推文"""
+        if 0 in self.task_order or 1 in self.task_order or 2 in self.task_order or 3 in self.task_order or 4 in self.task_order:
+            print("存在序号需要浏览器：", self.task_order)
+            await self.robust_update_status("啟動瀏覽器...")
+            playwright = await async_playwright().start()
+            # 增强浏览器配置
+            browser_args = [
+                '--no-first-run',
+                '--no-default-browser-check',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--disable-features=TranslateUI',
+                '--disable-ipc-flooding-protection',
+                '--disable-default-apps',
+                '--disable-extensions',
+                '--disable-component-extensions-with-background-pages',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor',
+                '--disable-back-forward-cache',
+                '--disable-site-isolation-trials'
+            ]
+            self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/131.0.0.0"
+            ]
+            context = await self.browser.new_context(
+                user_agent=random.choice(user_agents)
+            )
+            await context.add_init_script("""
+                   Object.defineProperty(navigator, 'webdriver', {
+                       get: () => undefined,
+                   });
+                   window.chrome = {
+                       runtime: {},
+                   };
+               """)
+            if self.cookies:
+                await context.add_cookies(self.cookies)
+
+            self.page = await context.new_page()
+        await asyncio.sleep(1)
+        function_map = {
+            0: self.tweet_comment,
+            1: self.post_comment,
+            2: self.add_join_groups,
+            3: self.account_nurturing,
+            4: self.fan_pages,
+            5: self.sleep_time
+        }
+        if self.task_order:
+            print(f"将按照以下顺序执行任务: {self.task_order}")
+            # 按顺序执行任务
+            for position, task_index in enumerate(self.task_order):
+                # 更新状态窗口显示当前任务队列
+                if self.status_window:
+                    self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
+                task_func = function_map.get(task_index)
+                if task_func:
+                    try:
+                        # 如果是休息任务，传递休息时间
+                        if task_index == 5:  # 休息时间任务
+                            rest_time = self.rest_times.get(position, 60)
+                            await task_func(rest_time)
+                        else:
+                            # 其他任务：获取完成时间并执行带超时控制的任务
+                            completion_time = self.completion_times.get(position, 1800)  # 默认30分钟
+                            await self.execute_task_with_timeout(task_func, task_index, position, completion_time)
+
+                        # 记录已执行的任务
+                        task_id = f"{position}_{task_index}"
+                        self.executed_tasks.append(task_id)
+
+                        # 更新状态窗口显示已完成任务
+                        if self.status_window:
+                            self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
+                    except Exception as e:
+                        print(f"执行任务 {task_index} 时出错: {str(e)}")
+                        await self.robust_update_status(f"任务执行出错: {str(e)}")
+                        continue
+        # await self.tweet_comment() # """贴文、推文"""
         # await self.post_comment() # """推文"""
         # await self.add_join_groups() # """加社團"""
         # await self.account_nurturing()#養號
         # await self.fan_pages()  # 粉丝专页
         print("任务完成")
+        await self.robust_update_status("全部任務完成...")
 
+        await self.browser.close()
+
+    async def execute_task_with_timeout(self, task_func, task_index, position, completion_time):
+        """执行带超时控制的任务"""
+        task_names = {
+            0: "循環發文",
+            1: "循環推文",
+            2: "循環加社團",
+            3: "養號",
+            4: "粉絲專頁"
+        }
+
+        task_name = task_names.get(task_index, f"任务{task_index}")
+        task_id = f"{position}_{task_index}"  # 任务唯一标识
+
+        if completion_time == 0:
+            await self.robust_update_status(f"開始執行{task_name}，無時間限制")
+            # 对于无时间限制的任务，不显示倒计时
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, -1)  # -1表示无时间限制
+        else:
+            await self.robust_update_status(f"開始執行{task_name}，最大執行時間: {completion_time // 60}分鐘")
+
+        start_time = time.time()
+        task_completed = False
+
+        try:
+            # 创建任务
+            task = asyncio.create_task(task_func())
+
+            if completion_time == 0:
+                # 无时间限制，直接等待任务完成
+                await task
+                task_completed = True
+                elapsed_time = time.time() - start_time
+                await self.robust_update_status(f"{task_name}完成，用時: {int(elapsed_time)}秒")
+            else:
+                # 有时间限制，等待任务完成或超时
+                # 启动倒计时更新
+                if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                    asyncio.create_task(self.update_task_countdown(task_id, completion_time, start_time))
+
+                try:
+                    await asyncio.wait_for(task, timeout=completion_time)
+                    task_completed = True
+                    elapsed_time = time.time() - start_time
+                    remaining_time = completion_time - elapsed_time
+
+                    if remaining_time > 0:
+                        await self.robust_update_status(f"{task_name}提前完成，等待剩余时间: {int(remaining_time)}秒")
+                        # 更新倒计时显示为剩余等待时间
+                        if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                            asyncio.create_task(self.update_waiting_countdown(task_id, int(remaining_time)))
+                        await asyncio.sleep(remaining_time)
+                    else:
+                        await self.robust_update_status(f"{task_name}在指定时间内完成")
+
+                except asyncio.TimeoutError:
+                    await self.robust_update_status(f"{task_name}執行超時，強制結束並進入下一個任務")
+                    # 取消任务
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+
+        except Exception as e:
+            await self.robust_update_status(f"{task_name}執行出錯: {str(e)}")
+            raise
+
+        finally:
+            # 无论任务是否完成，都标记为已完成状态
+            if self.status_window:
+                # 清除倒计时显示
+                if hasattr(self.status_window, 'update_task_countdown'):
+                    self.status_window.update_task_countdown(task_id, 0)
+
+                # 立即更新状态为完成
+                if task_id not in self.executed_tasks:
+                    self.executed_tasks.append(task_id)
+                self.status_window.task_update_signal.emit(self.task_order, self.executed_tasks)
+
+    async def update_task_countdown(self, task_id, total_time, start_time):
+        """更新任务执行倒计时"""
+        while True:
+            elapsed_time = time.time() - start_time
+            remaining_time = max(0, total_time - elapsed_time)
+
+            if remaining_time <= 0:
+                break
+
+            # 更新状态窗口的倒计时显示
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, int(remaining_time))
+
+            await asyncio.sleep(1)  # 每秒更新一次
+
+    async def update_waiting_countdown(self, task_id, wait_time):
+        """更新等待倒计时"""
+        remaining = wait_time
+        while remaining > 0:
+            # 更新状态窗口的倒计时显示
+            if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+                self.status_window.update_task_countdown(task_id, remaining)
+
+            await asyncio.sleep(1)
+            remaining -= 1
+
+        # 等待结束，清除倒计时
+        if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
+            self.status_window.update_task_countdown(task_id, 0)
 
     async def check_cookies_valid(self):
         """检查cookies是否有效"""
@@ -1001,6 +1195,65 @@ class Crawler:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=30) as response:
                 return await response.json()
+
+    async def sleep_time(self, rest_time=60):
+        """执行休息任务"""
+        asyncio.create_task(self.report_task_status(f"正在執行倒計時..."))
+        await asyncio.sleep(random.uniform(2, 4))
+        await self.robust_update_status(f"開始休息，持續 {rest_time} 秒...")
+
+        # 发送倒计时信号
+        if self.status_window:
+            self.status_window.countdown_signal.emit(rest_time)
+
+        # 使用异步方式等待，同时保持UI响应
+        start_time = time.time()
+        while time.time() - start_time < rest_time:
+            await asyncio.sleep(1)
+            remaining = rest_time - int(time.time() - start_time)
+            if self.status_window and remaining > 0:
+                self.status_window.countdown_signal.emit(remaining)
+
+        await self.robust_update_status("休息結束，繼續執行任務...")
+
+        # 隐藏倒计时显示
+        if self.status_window:
+            self.status_window.countdown_signal.emit(0)
+
+    async def report_online_status(self):
+        """异步上报在线状态"""
+        try:
+            url = f"http://aj.ry188.vip/API/UpDataState.aspx?Account={self.username}&DeviceNumber={self.device_number}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}&RunText=在线"
+
+            # 使用 aiohttp 进行异步请求
+            timeout = aiohttp.ClientTimeout(total=10)  # 设置10秒超时
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"在线状态上报: {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print("在线状态上报超时")
+            return False
+        except Exception as e:
+            print(f"在线状态上报失败: {e}")
+            return False
+
+    async def report_task_status(self, task_name):
+        """异步上报任务执行状态"""
+        try:
+            url = f"http://aj.ry188.vip/API/UpDataRunState.aspx?Account={self.username}&DeviceNumber={self.device_number}&RunText={task_name}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}"
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    print(f"任务状态上报: {task_name} - {response.status}")
+                    return True
+        except asyncio.TimeoutError:
+            print(f"任务状态上报超时: {task_name}")
+            return False
+        except Exception as e:
+            print(f"任务状态上报失败: {e}")
+            return False
     # 添加新的辅助方法
     def minimize_browser_window(self):
         """最小化浏览器窗口（平台特定实现）"""
@@ -1020,7 +1273,38 @@ class Crawler:
             # Linux 系统需要额外的窗口管理器支持，这里暂不处理
         except Exception as e:
             print(f"最小化窗口失败: {e}")
+    def generate_machine_code(self):
+        # 获取设备型号（去除空格）
+        device_model = platform.machine().replace(" ", "")
+        print(f"设备型号：{device_model}")
 
+        # 获取 MAC 地址
+        try:
+            mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff)
+                            for elements in range(0, 2 * 6, 2)][::-1])
+        except:
+            mac = "00:00:00:00:00:00"
+        print(f"Mac：{mac}")
+
+        # 获取系统版本号
+        try:
+            if platform.system() == "Windows":
+                system_version = platform.version()
+            elif platform.system() == "Darwin":  # macOS
+                result = subprocess.run(['sw_vers', '-productVersion'],
+                                        capture_output=True, text=True)
+                system_version = result.stdout.strip()
+            else:  # Linux/Android
+                system_version = platform.release()
+        except:
+            system_version = "未知版本"
+        print(f"系统版本号：{system_version}")
+
+        # 组合机器码并 Base64 编码
+        machine_code = f"{device_model}{mac}{system_version}"
+        base64_encoded = base64.b64encode(machine_code.encode('utf-8')).decode('utf-8')
+
+        return base64_encoded
     async def force_minimize_browser(self):
         """强制最小化浏览器窗口"""
         # 先尝试通过Playwright的方式

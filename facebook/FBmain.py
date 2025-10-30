@@ -122,7 +122,11 @@ class Crawler:
                 # 确保窗口显示
                 QApplication.processEvents()
                 await asyncio.sleep(0.5)  # 给窗口显示一点时间
-                await self.getusers()
+                if self.params.get('combo_value', 'combo_value') in "社團":
+                    await self.getusers()
+                else:
+                    await self.getusers_fans()
+
             print("任务完成")
         except Exception as e:
             print(f"任务执行出错: {str(e)}")
@@ -485,9 +489,11 @@ class Crawler:
                 groups_name_selector = '//h1[@dir="auto"]//a[@role="link"]'
                 groups_name_function = await self.page.wait_for_selector(groups_name_selector, timeout=10000)
                 self.groups_name = await groups_name_function.inner_text()
-                groups_num_selector = '//span[@dir="auto"]/div//a[@role="link"]'
+                print(self.groups_name)
+                groups_num_selector = '//span[@dir="auto"]/div//a[@role="link" and contains(text(), "成員")]'
                 groups_num_function = await self.page.wait_for_selector(groups_num_selector, timeout=10000)
                 self.groups_num = await groups_num_function.inner_text()
+                print(self.groups_num)
                 await self.robust_update_status(f"社團名:{self.groups_name} 社團人數：{self.groups_num}")
             except Exception as e:
                 print(f"提取社团信息时出错: {str(e)}")
@@ -537,14 +543,14 @@ class Crawler:
                             in_csv_data.append([user_id,text.strip(),self.extract_group_id(url)])
 
                             # 检查是否达到目标数量
-                            if user_counter >= int(self.params.get('crawl_count')):
+                            if user_counter >= int(self.params.get('crawl_count')) != 0:
                                 print(f"达到目标数量 {user_counter}，停止爬取")
                                 break
                     except Exception as e:
                         print(f"提取用户信息时出错: {str(e)}")
                         continue
                 # 如果已达到目标数量，跳出循环
-                if user_counter >= int(self.params.get('crawl_count')):
+                if user_counter >= int(self.params.get('crawl_count'))!= 0:
                     break
 
                 if current_count == previous_count:
@@ -565,6 +571,117 @@ class Crawler:
                 csv_writer.writerows(in_csv_data)  # 写入数据
             print(f"爬取完成，共获取 {user_counter} 个用户信息")
             # return users
+    async def getusers_fans(self):
+        addresses = self.params.get('addresses', [])
+        if not addresses:
+            print("没有提供地址列表")
+            return
+
+        for i in range(len(addresses)):
+            url = addresses[i].strip()
+            # 创建一个新的CSV文件名
+            csv_filename = f'fans_data_{i}.csv'
+            in_csv_data = []
+            print(f"开始爬取用户信息，地址: {url}")
+            await self.robust_update_status(f"粉絲專頁地址:{url}")
+            await self.page.goto(url=url, wait_until='load')
+            await asyncio.sleep(5)
+            try:
+                fans_name_selector = '//div[@class="x1e56ztr x1xmf6yo"]//span[@dir="auto"]//h1[contains(@class, "html-h1")]'
+                fans_name_function = await self.page.wait_for_selector(fans_name_selector, timeout=10000)
+                self.groups_name = await fans_name_function.inner_text()
+                print(self.groups_name)
+                fans_num_selector = '//span[@dir="auto"]//a[@role="link" and contains(text(), "追蹤者")]//strong'
+                fans_num_function = await self.page.wait_for_selector(fans_num_selector, timeout=10000)
+                self.groups_num = await fans_num_function.inner_text()
+                print(self.groups_num)
+                await self.robust_update_status(f"粉絲專頁名:{self.groups_name} 粉絲人數：{self.groups_num}")
+            except Exception as e:
+                print(f"提取粉丝专页信息时出错: {str(e)}")
+            await self.robust_update_status("开始爬取用户信息...")
+            # 滚动加载更多用户
+            previous_count = 0
+            current_count = 0
+            scroll_attempts = 0
+            max_scroll_attempts = 10
+            users = []
+            seen_user_ids = set()  # 用于跟踪已处理的用户ID
+            user_counter = 0  # 新增：独立计数器
+
+            while scroll_attempts < max_scroll_attempts:
+                # 滚动到底部
+                await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await asyncio.sleep(3)
+
+                # 获取当前用户数量
+                user_links = await self.page.query_selector_all(
+                    '//div[@class="x78zum5 x1q0g3np x1a02dak x1qughib"]//a[@role="link" and @tabindex="0" and contains(@href, "/profile.php?id=") or @role="link" and @tabindex="0" and contains(@href, "facebook.com/")]')
+
+                current_count = len(user_links)
+                print(f"滚动后用户数量: {current_count}")
+
+                for n, link in enumerate(user_links):
+                    try:
+                        href = await link.get_attribute('href')
+                        # 修改这里：直接从链接元素获取文本内容
+                        text = await link.inner_text()
+
+                        # 如果inner_text为空，尝试其他方法获取文本
+                        if not text or not text.strip():
+                            # 方法1：尝试获取aria-label属性
+                            text = await link.get_attribute('aria-label') or ''
+                            # 方法2：尝试获取子元素文本
+                            if not text.strip():
+                                span_element = await link.query_selector('span')
+                                if span_element:
+                                    text = await span_element.inner_text()
+
+                        if not href or not text or not text.strip():
+                            continue
+
+                        user_id = await self.extract_facebook_identifier(href)
+
+                        # 检查用户ID是否已存在
+                        if user_id and user_id not in seen_user_ids:
+                            seen_user_ids.add(user_id)  # 添加到已见集合
+                            user_counter += 1  # 只有在添加新用户时才增加计数器
+                            users.append({
+                                'index': user_counter,  # 使用独立计数器
+                                'name': text.strip(),
+                                'user_id': user_id
+                            })
+                            print(f"{user_counter}：{user_id} {text.strip()}")
+                            await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
+                            in_csv_data.append([user_id, text.strip(), await self.extract_facebook_identifier(url)])
+
+                            # 检查是否达到目标数量
+                            if user_counter >= int(self.params.get('crawl_count')) != 0:
+                                print(f"达到目标数量 {user_counter}，停止爬取")
+                                break
+                    except Exception as e:
+                        print(f"提取用户信息时出错: {str(e)}")
+                        continue
+                # 如果已达到目标数量，跳出循环
+                if user_counter >= int(self.params.get('crawl_count')) != 0:
+                    break
+
+                if current_count == previous_count:
+                    scroll_attempts += 1
+                    print(f"用户数量未增加，尝试次数: {scroll_attempts}/{max_scroll_attempts}")
+                else:
+                    scroll_attempts = 0
+
+                previous_count = current_count
+
+                if scroll_attempts >= 3:  # 连续3次没有新用户就停止
+                    print("已加载所有用户")
+                    break
+            # 将数据写入CSV文件
+            with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                csv_writer.writerows(in_csv_data)  # 写入数据
+            print(f"爬取完成，共获取 {user_counter} 个用户信息")
 
     async def extract_facebook_identifier(self,url):
         # 处理相对路径
