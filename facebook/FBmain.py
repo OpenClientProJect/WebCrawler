@@ -38,6 +38,8 @@ class Crawler:
         self.groups_name = ""
         self.groups_num = ""
         self.supportId = ""
+        self.post_user_cunt = 0
+        self.post_name = ""
 
     async def safe_update_status(self, text):
         """安全的异步状态更新"""
@@ -784,6 +786,7 @@ class Crawler:
             await self.page.goto(url=url[i], wait_until='load', timeout=50000)
 
             self.supportId = await self.get_support_id(url[i])
+            self.post_name = self.supportId
             title = await self.page.title()
             if "Facebook" in title:
                 await asyncio.sleep(3)
@@ -801,6 +804,18 @@ class Crawler:
             if sponsor_element:
                 await sponsor_element.scroll_into_view_if_needed()
                 print("出現啦")
+                pots = selector + '//h4//a'
+                sponsor_element = await self.page.wait_for_selector(pots)
+                href = await sponsor_element.get_attribute("href")
+                self.supportId = await self.get_support_id(href)
+
+                print('获取到贴文链接', type(href))
+                post_name_element = await self.page.wait_for_selector(pots + ' //span')
+                self.post_name = await post_name_element.inner_text()
+
+                print('获取到贴文id', self.supportId)
+                print('获取到贴文name', self.post_name)
+
                 await self.robust_update_status(f"出現贊助貼文.")
                 like_count += 1
                 seek_count = 0
@@ -931,7 +946,7 @@ class Crawler:
         #         csv_writer.writerows(in_csv_data)  # 写入数据
         #     print(f"数据已保存到 {csv_filename}")
 
-        #提交数据
+        # 提交数据
 
         print('获取的数据', users, 'id')
         print(f"爬取完成，共获取 {user_counter} 个用户信息")
@@ -939,7 +954,18 @@ class Crawler:
             (user['user_id'], user['name'], self.supportId)
             for user in users
         ]
-        db_manager.insert_supportUser(user_data)
+        self.post_user_cunt = db_manager.insert_supportUser(user_data)
+
+        if self.post_user_cunt > 0:
+            post_info = {
+                'Supportid': self.supportId,
+                'SupportName': self.post_name,
+                'number': self.post_user_cunt
+            }
+            print('提交数据', post_info)
+            db_manager.insert_post_info(post_info)
+        else:
+            print('数据为空不提交')
         # return users
 
     async def extract_facebook_identifier(self, url):
@@ -967,20 +993,27 @@ class Crawler:
 
         return None
 
+    # 贴文id
     async def get_support_id(self, url):
         try:
+            print(f"正在处理URL: {url}")
             if '/posts/' in url:
                 postId = url.split('/posts/')[1].split('/')[0]
                 return postId
-            elif'/permalink/'  in url:
+            elif '/permalink/' in url:
                 postId = url.split('/permalink/')[1]
                 return postId
-            elif'multi_permalinks=' in url:
+            elif 'multi_permalinks=' in url:
                 postId = url.split('/?multi_permalinks=')[1].split('&')[0]
                 return postId
-            elif'permalink.php?' in url:
+            elif 'permalink.php?' in url:
                 postId = url.split('/permalink.php?')[1]
                 return postId
+            elif '?__cft__' in url:
+                postId = url.split('?__cft__')[0].split('https://www.facebook.com/')[1]
+                return postId
+            elif 'profile.php?id=' in url:
+                return url.split('profile.php?id=')[1].split('&__cft__')[0]
         except Exception as e:
             print(f"处理URL时出错: {str(e)}")
 

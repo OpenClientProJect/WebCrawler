@@ -182,8 +182,45 @@ class DatabaseManager:
 
             conn.commit()
             print(f"成功插入 {inserted_count} 条用户数据")
-            return True
+            return inserted_count
             
+        except Exception as e:
+            print(f"插入数据失败: {e}")
+            if 'conn' in locals():
+                try:
+                    conn.rollback()
+                except:
+                    pass
+            return False
+
+    ##插入贴文info
+    def insert_post_info(self, post_info: any) -> bool:
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # 使用 UPSERT 操作（如果记录存在则更新，否则插入）
+            cursor.execute(
+                """
+                IF EXISTS (SELECT 1 FROM SupportInf_copy1 WHERE Supportid = ?)
+                    UPDATE SupportInf_copy1 
+                    SET number = number + ?, SupportName = ?
+                    WHERE Supportid = ?
+                ELSE
+                    INSERT INTO SupportInf_copy1 (Supportid, SupportName, number)
+                    VALUES (?, ?, ?)
+                """,
+                post_info['Supportid'], 
+                post_info['number'], 
+                post_info['SupportName'], 
+                post_info['Supportid'],
+                post_info['Supportid'], 
+                post_info['SupportName'], 
+                post_info['number']
+            )
+            conn.commit()
+            print(f"成功插入或更新贴文 {post_info['SupportName']} 数据成功")
+            return True
         except Exception as e:
             print(f"插入数据失败: {e}")
             if 'conn' in locals():
