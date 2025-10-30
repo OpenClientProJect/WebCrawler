@@ -26,10 +26,10 @@ class likePage(QWidget):
         root.setContentsMargins(24, 20, 24, 20)
         root.setSpacing(14)
 
-        title = QLabel("系统设置")
-        title.setAlignment(Qt.AlignHCenter)
-        title.setFont(QFont("微軟雅黑", 14, QFont.Bold))
-        root.addWidget(title)
+        # title = QLabel("系统设置")
+        # title.setAlignment(Qt.AlignHCenter)
+        # title.setFont(QFont("微軟雅黑", 14, QFont.Bold))
+        # root.addWidget(title)
 
         form = QVBoxLayout()
         form.setSpacing(12)
@@ -44,6 +44,7 @@ class likePage(QWidget):
             form.addLayout(row)
 
         self.device_input = QLineEdit()
+        self.device_input.setText("000")
         self.device_input.setPlaceholderText("请输入设备唯一标识")
 
         self.refresh_input = QLineEdit()
@@ -139,4 +140,5 @@ class likePage(QWidget):
             'links': [line for line in self.links_text.toPlainText().split('\n') if line.strip()],
         }
         print('[Like Settings] 保存设置:', data)
+
 

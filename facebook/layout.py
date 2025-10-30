@@ -101,7 +101,7 @@ class MainLayout(QWidget):
         nav_layout.addStretch(1)
 
         # 版本信息标签放置于导航底部
-        self.version = "1.0.0"
+        self.version = "1.0.0.0"
         self.day = 100
         version_label = QLabel(f"{self.version} 剩余天数：{self.day}")
         version_label.setFont(QFont("微軟雅黑", 8))
