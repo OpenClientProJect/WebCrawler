@@ -17,8 +17,11 @@ from PyQt5.QtWidgets import QApplication
 from FB_loginwin import win_main
 from playwright.async_api import async_playwright
 from FB_status import StatusWindow
+from database_manager import db_manager
+
+
 class Crawler:
-    def __init__(self, cookies,params):
+    def __init__(self, cookies, params):
         self.username = None
         self.password = None
         self.browser = None
@@ -34,6 +37,8 @@ class Crawler:
         self.status_window = None  # 状态窗口引用
         self.groups_name = ""
         self.groups_num = ""
+        self.supportId = ""
+
     async def safe_update_status(self, text):
         """安全的异步状态更新"""
         async with self.ui_update_lock:
@@ -54,6 +59,7 @@ class Crawler:
                 print(f"状态更新失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
                 await asyncio.sleep(0.5 * (attempt + 1))
         return False
+
     async def cleanup(self):
         """清理浏览器资源"""
         try:
@@ -63,6 +69,7 @@ class Crawler:
                 self.page = None
         except Exception as e:
             print(f"清理资源时出错: {str(e)}")
+
     async def start(self):
         playwright = None
         try:
@@ -87,7 +94,8 @@ class Crawler:
                 '--disable-back-forward-cache',
                 '--disable-site-isolation-trials'
             ]
-            self.browser = await playwright.chromium.launch(headless=False,args=browser_args, executable_path=self.browser_path)
+            self.browser = await playwright.chromium.launch(headless=False, args=browser_args,
+                                                            executable_path=self.browser_path)
             context = await self.browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
             )
@@ -116,9 +124,9 @@ class Crawler:
                 # 确保窗口显示
                 QApplication.processEvents()
                 if not self.params["links"]:
-                    await self.getusers_like()
+                    await self.getusers_like()  # 无链接
                 else:
-                    await self.getusers_like_url(self.params["links"])
+                    await self.getusers_like_url(self.params["links"])  # 带链接
 
             else:
                 # 根据action参数执行不同的操作
@@ -160,6 +168,7 @@ class Crawler:
         """执行确认操作"""
         self.params = params
         await self.getusers()
+
     async def check_cookies_valid(self):
         """检查cookies是否有效"""
         try:
@@ -192,8 +201,9 @@ class Crawler:
                 headless=False,
                 executable_path=self.browser_path
             )
-            page = await self.browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-            await page.goto(url="https://www.facebook.com/login", wait_until='load',timeout=50000)
+            page = await self.browser.new_page(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+            await page.goto(url="https://www.facebook.com/login", wait_until='load', timeout=50000)
 
             await asyncio.sleep(random.uniform(1.5, 3.5))
 
@@ -274,7 +284,7 @@ class Crawler:
                 print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
                 await asyncio.sleep(10)
 
-            post = int(self.params.get('search_count')) # 设置要获取的帖子数量
+            post = int(self.params.get('search_count'))  # 设置要获取的帖子数量
             current_groups_postlist = []
             max_scroll_attempts = 10
             scroll_attempts = 0
@@ -378,7 +388,7 @@ class Crawler:
             print(f"處理關鍵字 {key_index + 1}/{len(key)}: {current_keyword}")
 
             await self.page.goto(
-                url="https://www.facebook.com/search/pages/?q=" + current_keyword ,
+                url="https://www.facebook.com/search/pages/?q=" + current_keyword,
                 wait_until='load',
                 timeout=50000
             )
@@ -390,7 +400,7 @@ class Crawler:
                 print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
                 await asyncio.sleep(10)
 
-            post = int(self.params.get('search_count')) # 设置要获取的帖子数量
+            post = int(self.params.get('search_count'))  # 设置要获取的帖子数量
             current_groups_postlist = []
             max_scroll_attempts = 10
             scroll_attempts = 0
@@ -462,7 +472,7 @@ class Crawler:
         print(f"搜索完成，共找到 {len(self.search_results)} 个地址")
         return self.search_results
 
-    def extract_fans_id(self,url):
+    def extract_fans_id(self, url):
         # 处理相对路径
         if url.startswith('/'):
             user_match = re.search(r'/user/(\d+)', url)
@@ -558,7 +568,7 @@ class Crawler:
                             })
                             print(f"{user_counter}：{user_id} {text.strip()}")
                             await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
-                            in_csv_data.append([user_id,text.strip(),self.extract_group_id(url)])
+                            in_csv_data.append([user_id, text.strip(), self.extract_group_id(url)])
 
                             # 检查是否达到目标数量
                             if user_counter >= int(self.params.get('crawl_count')) != 0:
@@ -568,7 +578,7 @@ class Crawler:
                         print(f"提取用户信息时出错: {str(e)}")
                         continue
                 # 如果已达到目标数量，跳出循环
-                if user_counter >= int(self.params.get('crawl_count'))!= 0:
+                if user_counter >= int(self.params.get('crawl_count')) != 0:
                     break
 
                 if current_count == previous_count:
@@ -589,6 +599,7 @@ class Crawler:
                 csv_writer.writerows(in_csv_data)  # 写入数据
             print(f"爬取完成，共获取 {user_counter} 个用户信息")
             # return users
+
     async def getusers_fans(self):
         addresses = self.params.get('addresses', [])
         if not addresses:
@@ -730,7 +741,7 @@ class Crawler:
         #         print(f"处理第 {i} 个帖子时出错: {str(e)}")
         #     finally:
         #         i += 1
-        like_count,seek_count = await self.cycle_post(num_posts,like_count,seek_count)
+        like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
         # 找不到执行普通点赞
         # if seek_count >= int(self.params["refresh"]) and like_count <= num_posts:
         #     while True:
@@ -745,7 +756,7 @@ class Crawler:
         #         if like_count >= num_posts:
         #             break
 
-    async def cycle_post(self,num_posts,like_count,seek_count):
+    async def cycle_post(self, num_posts, like_count, seek_count):
         i = 1
         print(f"准备与 {num_posts} 个帖子互动")
         while True:
@@ -757,7 +768,7 @@ class Crawler:
                     print(f"第 {i} 个帖子")
                     await self.robust_update_status(f"第 {i} 个帖子")
                     like_count, seek_count = await self.sponsor_like(selector, like_count, seek_count)
-                    if like_count >= num_posts :
+                    if like_count >= num_posts:
                         break
                     # if like_count >= num_posts or seek_count >= int(self.params["refresh"]):
                     #     seek_count = 0
@@ -767,9 +778,12 @@ class Crawler:
             finally:
                 i += 1
         return like_count, seek_count
-    async def getusers_like_url(self,url):
+
+    async def getusers_like_url(self, url):
         for i in range(len(url)):
             await self.page.goto(url=url[i], wait_until='load', timeout=50000)
+
+            self.supportId = await self.get_support_id(url[i])
             title = await self.page.title()
             if "Facebook" in title:
                 await asyncio.sleep(3)
@@ -779,7 +793,7 @@ class Crawler:
             selector = '//div[@role="dialog"]'
             await self.sponsor_like_click(selector)
 
-    async def sponsor_like(self,selector,like_count,seek_count):
+    async def sponsor_like(self, selector, like_count, seek_count):
 
         try:
             sponsor_element = await self.page.wait_for_selector(selector + '//span[contains(text(), "助")]',
@@ -797,12 +811,13 @@ class Crawler:
         except Exception as e:
             print(f"這个帖子不是贊助: {str(e)}")
             seek_count += 1
-        return like_count,seek_count
+        return like_count, seek_count
 
-    async def sponsor_like_click(self,selector):
+    async def sponsor_like_click(self, selector):
         try:
-            sponsor_element = await self.page.wait_for_selector(selector + '//span[@role="toolbar"]/following-sibling::*[1]',
-                                                                timeout=4000)
+            sponsor_element = await self.page.wait_for_selector(
+                selector + '//span[@role="toolbar"]/following-sibling::*[1]',
+                timeout=4000)
             if sponsor_element:
                 await sponsor_element.scroll_into_view_if_needed()
                 await sponsor_element.click()
@@ -877,7 +892,7 @@ class Crawler:
                         # in_csv_data.append([user_id, clean_name, group_id])
 
                         # 检查是否达到目标数量
-                        if user_counter >= int(self.params.get('collect_count', 100))!=0:
+                        if user_counter >= int(self.params.get('collect_count', 100)) != 0:
                             print(f"达到目标数量 {user_counter}，停止爬取")
                             break
 
@@ -886,7 +901,7 @@ class Crawler:
                     continue
 
             # 如果已达到目标数量，跳出循环
-            if user_counter >= int(self.params.get('collect_count', 100))!=0:
+            if user_counter >= int(self.params.get('collect_count', 100)) != 0:
                 break
 
             # 检查是否有新内容加载
@@ -916,10 +931,18 @@ class Crawler:
         #         csv_writer.writerows(in_csv_data)  # 写入数据
         #     print(f"数据已保存到 {csv_filename}")
 
+        #提交数据
+
+        print('获取的数据', users, 'id')
         print(f"爬取完成，共获取 {user_counter} 个用户信息")
+        user_data = [
+            (user['user_id'], user['name'], self.supportId)
+            for user in users
+        ]
+        db_manager.insert_supportUser(user_data)
         # return users
 
-    async def extract_facebook_identifier(self,url):
+    async def extract_facebook_identifier(self, url):
         # 处理相对路径
         if url.startswith('/'):
             user_match = re.search(r'/user/(\d+)', url)
@@ -943,6 +966,24 @@ class Crawler:
                 return path_parts[0]
 
         return None
+
+    async def get_support_id(self, url):
+        try:
+            if '/posts/' in url:
+                postId = url.split('/posts/')[1].split('/')[0]
+                return postId
+            elif'/permalink/'  in url:
+                postId = url.split('/permalink/')[1]
+                return postId
+            elif'multi_permalinks=' in url:
+                postId = url.split('/?multi_permalinks=')[1].split('&')[0]
+                return postId
+            elif'permalink.php?' in url:
+                postId = url.split('/permalink.php?')[1]
+                return postId
+        except Exception as e:
+            print(f"处理URL时出错: {str(e)}")
+
     async def dialog_(self):
         try:
             dialog = await self.page.wait_for_selector('div[role="dialog"]', timeout=10000)
@@ -999,7 +1040,7 @@ class Crawler:
                             await asyncio.sleep(1)
                             await disabled_but.click()
                             await asyncio.sleep(random.uniform(4, 6))
-                            #找到再次点击才能激活下面查找
+                            # 找到再次点击才能激活下面查找
                             await Option_but.scroll_into_view_if_needed()
                             await asyncio.sleep(1)
                             await Option_but.click()
@@ -1007,15 +1048,15 @@ class Crawler:
         except Exception as e:
             print(f"没有找到來電音效: {str(e)}")
         try:
-                    # 彈出新訊息关闭
-                    disabled_selector = '//div[@aria-label="聊天室設定"]//div[@aria-checked="true" and contains(@aria-label, "彈出新訊息")]'
-                    disabled_but = await self.page.wait_for_selector(disabled_selector, timeout=10000)
-                    if disabled_but:
-                        await disabled_but.scroll_into_view_if_needed()
-                        await asyncio.sleep(1)
-                        await disabled_but.click()
-                        await asyncio.sleep(random.uniform(3, 6))
-                    await Option_but.click()
+            # 彈出新訊息关闭
+            disabled_selector = '//div[@aria-label="聊天室設定"]//div[@aria-checked="true" and contains(@aria-label, "彈出新訊息")]'
+            disabled_but = await self.page.wait_for_selector(disabled_selector, timeout=10000)
+            if disabled_but:
+                await disabled_but.scroll_into_view_if_needed()
+                await asyncio.sleep(1)
+                await disabled_but.click()
+                await asyncio.sleep(random.uniform(3, 6))
+            await Option_but.click()
         except Exception as e:
             print(f"没有找到新訊息关闭: {str(e)}")
 
@@ -1043,8 +1084,8 @@ class Crawler:
         await asyncio.sleep(4)
         close_selectors = [
             '//div[@role="dialog"]//div[@aria-label="關閉"]',  # 方式1
-            '//div[@aria-label="關閉" and @aria-hidden="false"]' ,# 方式2
-            '//div[@aria-label="關閉"]'# 方式3
+            '//div[@aria-label="關閉" and @aria-hidden="false"]',  # 方式2
+            '//div[@aria-label="關閉"]'  # 方式3
         ]
         for selector in close_selectors:
             try:
@@ -1057,6 +1098,7 @@ class Crawler:
                     return True
             except Exception as e:
                 continue  # 尝试下一种选择器
+
     # 添加新的辅助方法
     def minimize_browser_window(self):
         """最小化浏览器窗口（平台特定实现）"""
@@ -1098,9 +1140,11 @@ class Crawler:
         # 再使用平台特定的方法
         self.minimize_browser_window()
 
+
 def parse_bool(type_data):
     type_data = str(type_data).lower().strip()
     return type_data in ('true', '1', 'yes', 'yes')
+
 
 def get_chrome_path():
     system = platform.system()

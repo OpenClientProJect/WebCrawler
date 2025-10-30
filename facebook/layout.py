@@ -200,6 +200,8 @@ def main(version, day):
             sys.exit(loop.run_forever())
     except KeyboardInterrupt:
         pass
+    except RuntimeError:
+        pass
 
 
 if __name__ == '__main__':

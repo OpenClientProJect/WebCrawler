@@ -147,6 +147,51 @@ class DatabaseManager:
                 conn.rollback()
             return False
 
+    def insert_supportUser(self, userData: any) -> bool:
+        try:
+            print('接收的数据', userData)
+
+            # 如果userData为空或None，直接返回
+            if not userData:
+                print("没有数据需要插入")
+                return False
+
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # 批量插入数据
+            inserted_count = 0
+            for item in userData:
+                if isinstance(item, tuple) and len(item) >= 3:
+                    userid, username, supportid = item
+                    
+                    # 检查是否已存在相同的记录
+                    cursor.execute("SELECT COUNT(*) FROM SupportUser_copy1 WHERE userid = ? AND Supportid = ?", 
+                                   userid, supportid)
+                    if cursor.fetchone()[0] == 0:
+                        # 不存在相同记录，执行插入
+                        query = """
+                        INSERT INTO SupportUser_copy1 (userid, username, Supportid)
+                        VALUES (?, ?, ?)
+                        """
+                        cursor.execute(query, userid, username, supportid)
+                        inserted_count += 1
+                        print(f"插入用户: {username} (ID: {userid})")
+                    else:
+                        print(f"用户 {username} 已存在，跳过插入")
+
+            conn.commit()
+            print(f"成功插入 {inserted_count} 条用户数据")
+            return True
+            
+        except Exception as e:
+            print(f"插入数据失败: {e}")
+            if 'conn' in locals():
+                try:
+                    conn.rollback()
+                except:
+                    pass
+            return False
 
 # 创建全局实例
 db_manager = DatabaseManager()
