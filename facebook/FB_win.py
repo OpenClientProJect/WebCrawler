@@ -454,7 +454,8 @@ class MyApp(QWidget):
             'device_id': device_id,
             'combo_value': combo_value,
             'addresses': final_addresses,
-            'action': 'confirm'
+            'action': 'confirm',
+            'type': "like"
         }
 
         print("开始执行爬取用户操作...")

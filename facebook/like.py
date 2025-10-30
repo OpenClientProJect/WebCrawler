@@ -1,10 +1,11 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSpinBox,
-    QTextEdit, QPushButton, QFrame, QSizePolicy, QAbstractSpinBox
+    QTextEdit, QPushButton, QFrame, QSizePolicy, QAbstractSpinBox,QMessageBox
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, pyqtSignal
-
+from qasync import QEventLoop, asyncClose, asyncSlot
+from FB_middle import main
 
 class likePage(QWidget):
     hideMainRequested = pyqtSignal()
@@ -135,17 +136,25 @@ class likePage(QWidget):
         self.collect_count.setText(self._defaults['collect_count'])
         self.links_text.setPlainText(self._defaults['links'])
 
-    def on_save_clicked(self):
+    @asyncSlot()
+    async def on_save_clicked(self):
         """打印当前设置（临时日志）"""
-        data = {
+        params = {
             'device': self.device_input.text().strip(),
             'refresh': self.refresh_input.text().strip(),
             'post_count': self.post_count.value(),
             'collect_count': self.collect_count.text().strip(),
             'links': [line for line in self.links_text.toPlainText().split('\n') if line.strip()],
+            'type':"like"
         }
-        print('[Like Settings] 保存设置:', data)
-        # 通知主窗口隐藏
+        print('[Like Settings] 保存设置:', params)
+
+
         self.hideMainRequested.emit()
+
+        # 总是创建新的crawler实例，避免资源冲突
+        await main(params)
+
+
 
 

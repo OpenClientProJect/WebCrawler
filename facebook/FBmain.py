@@ -103,14 +103,8 @@ class Crawler:
                 await context.add_cookies(self.cookies)
 
             self.page = await context.new_page()
-            # 根据action参数执行不同的操作
-            action = self.params.get('action', 'search')
-            if action == 'search':
-                if self.params.get('combo_value', 'combo_value') in "社團":
-                    await self.key_groups()
-                else:
-                    await self.key_fans()
-            elif action == 'confirm':
+
+            if self.params["type"] in 'like':
                 app = QApplication.instance()
                 if not app:
                     app = QApplication(sys.argv)
@@ -121,11 +115,35 @@ class Crawler:
 
                 # 确保窗口显示
                 QApplication.processEvents()
-                await asyncio.sleep(0.5)  # 给窗口显示一点时间
-                if self.params.get('combo_value', 'combo_value') in "社團":
-                    await self.getusers()
+                if self.params["links"] != "":
+                    await self.getusers_like_url(self.params["links"])
                 else:
-                    await self.getusers_fans()
+                    await self.getusers_like()
+
+            else:
+                # 根据action参数执行不同的操作
+                action = self.params.get('action', 'search')
+                if action == 'search':
+                    if self.params.get('combo_value', 'combo_value') in "社團":
+                        await self.key_groups()
+                    else:
+                        await self.key_fans()
+                elif action == 'confirm':
+                    app = QApplication.instance()
+                    if not app:
+                        app = QApplication(sys.argv)
+
+                    # 创建状态窗口并保存引用
+                    self.status_window = StatusWindow()
+                    self.status_window.show()
+
+                    # 确保窗口显示
+                    QApplication.processEvents()
+                    await asyncio.sleep(0.5)  # 给窗口显示一点时间
+                    if self.params.get('combo_value', 'combo_value') in "社團":
+                        await self.getusers()
+                    else:
+                        await self.getusers_fans()
 
             print("任务完成")
         except Exception as e:
@@ -683,6 +701,129 @@ class Crawler:
                 csv_writer.writerows(in_csv_data)  # 写入数据
             print(f"爬取完成，共获取 {user_counter} 个用户信息")
 
+    async def getusers_like(self):
+        await self.page.goto(url="https://www.facebook.com/", wait_until='load', timeout=50000)
+        title = await self.page.title()
+        if "Facebook" in title:
+            await asyncio.sleep(3)
+        else:
+            print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+            await asyncio.sleep(10)  # 等待10秒
+        await self.robust_update_status(f"贊助功能")
+        num_posts = int(self.params["post_count"])
+        like_count = 0
+        seek_count = 0
+        i = 1
+        print(f"准备与 {num_posts} 个帖子互动")
+        while True:
+            try:
+                selector = f'//div[contains(@class, "x1hc1fzr x1unhpq9")]/div//div[@aria-posinset={i}]'
+                element = await self.page.wait_for_selector(selector, timeout=15000)
+                if element:
+                    await element.scroll_into_view_if_needed()
+                    print(f"第 {i} 个帖子")
+                    like_count,seek_count = await self.sponsor_like(selector,like_count,seek_count)
+                    if like_count >= num_posts:
+                        break
+            except Exception as e:
+                print(f"处理第 {i} 个帖子时出错: {str(e)}")
+            finally:
+                i += 1
+    async def getusers_like_url(self,url):
+        print(len(url))
+        for i in range(len(url)):
+            await self.page.goto(url=url[i], wait_until='load', timeout=50000)
+            title = await self.page.title()
+            if "Facebook" in title:
+                await asyncio.sleep(3)
+            else:
+                print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+                await asyncio.sleep(10)  # 等待10秒
+            selector = '//div[@role="dialog"]'
+            await self.sponsor_like_click(selector)
+            await self.get_sponsor_user()
+
+    async def sponsor_like(self,selector,like_count,seek_count):
+
+        try:
+            sponsor_element = await self.page.wait_for_selector(selector + '//span[contains(text(), "助")]',
+                                                                timeout=2000)
+            if sponsor_element:
+                await sponsor_element.scroll_into_view_if_needed()
+                print("出現啦")
+                like_count += 1
+                seek_count = 0
+                await self.sponsor_like_click(selector)
+                await self.warning_prompt()
+            await asyncio.sleep(random.uniform(5, 10))
+
+        except Exception as e:
+            print(f"這个帖子不是贊助: {str(e)}")
+            seek_count += 1
+        return like_count,seek_count
+
+    async def sponsor_like_click(self,selector):
+        try:
+            sponsor_element = await self.page.wait_for_selector(selector + '//span[@role="toolbar"]/following-sibling::*[1]',
+                                                                timeout=4000)
+            if sponsor_element:
+                await sponsor_element.scroll_into_view_if_needed()
+                await sponsor_element.click()
+                await self.get_sponsor_user()
+            await asyncio.sleep(random.uniform(5, 10))
+
+        except Exception as e:
+            print(f"這个帖子不是贊助: {str(e)}")
+
+    async def get_sponsor_user(self):
+
+        while True:
+            # 查找对话框内的滚动容器
+            scroll_container_selector = '//div[@role="dialog"]//div[@style*="overflow" or contains(@class, "scroll") or @role="list"]'
+            scroll_container = await self.page.query_selector(scroll_container_selector)
+            if scroll_container:
+                # 滚动对话框内的容器
+                await scroll_container.evaluate("""
+                                    element => {
+                                        element.scrollTop = element.scrollHeight;
+                                    }
+                                """)
+            else:
+                # 方法2: 如果没有找到滚动容器，尝试用JavaScript直接滚动对话框
+                await self.page.evaluate("""
+                                    () => {
+                                        const dialog = document.querySelector('div[role="dialog"]');
+                                        if (dialog) {
+                                            // 查找对话框内的可滚动元素
+                                            const scrollable = dialog.querySelector('[style*="overflow"], [class*="scroll"]');
+                                            if (scrollable) {
+                                                scrollable.scrollTop = scrollable.scrollHeight;
+                                            } else {
+                                                // 如果没有找到特定滚动元素，尝试滚动对话框本身
+                                                dialog.scrollTop = dialog.scrollHeight;
+                                            }
+                                        }
+                                    }
+                                """)
+            await asyncio.sleep(3)
+
+            # 获取当前用户数量
+            user_links = await self.page.query_selector_all(
+                '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]//a[contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "/profile.php?id=") or contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "facebook.com/")]')
+
+            current_count = len(user_links)
+            print(f"滚动后用户数量: {current_count}")
+            for n, link in enumerate(user_links):
+                try:
+                    href = await link.get_attribute('href')
+                    text = await link.get_attribute('aria-label')
+
+                    # if not href or not text or not text.strip():
+                    #     continue
+                    print(href,text)
+                except Exception as e:
+                    print(1111)
+
     async def extract_facebook_identifier(self,url):
         # 处理相对路径
         if url.startswith('/'):
@@ -780,6 +921,25 @@ class Crawler:
                 await Option_but.click()
         except Exception as e:
             print(f"没有找到: {str(e)}")
+
+    async def warning_prompt(self):
+        await asyncio.sleep(4)
+        close_selectors = [
+            '//div[@role="dialog"]//div[@aria-label="關閉"]',  # 方式1
+            '//div[@aria-label="關閉" and @aria-hidden="false"]' ,# 方式2
+            '//div[@aria-label="關閉"]'# 方式3
+        ]
+        for selector in close_selectors:
+            try:
+                close_button = await self.page.wait_for_selector(selector, timeout=3000)
+                if close_button:
+                    await close_button.scroll_into_view_if_needed()
+                    await asyncio.sleep(1)
+                    await close_button.click()
+                    print("彈窗關閉！")
+                    return True
+            except Exception as e:
+                continue  # 尝试下一种选择器
     # 添加新的辅助方法
     def minimize_browser_window(self):
         """最小化浏览器窗口（平台特定实现）"""
