@@ -115,10 +115,10 @@ class Crawler:
 
                 # 确保窗口显示
                 QApplication.processEvents()
-                if self.params["links"] != "":
-                    await self.getusers_like_url(self.params["links"])
-                else:
+                if not self.params["links"]:
                     await self.getusers_like()
+                else:
+                    await self.getusers_like_url(self.params["links"])
 
             else:
                 # 根据action参数执行不同的操作
@@ -598,7 +598,7 @@ class Crawler:
         for i in range(len(addresses)):
             url = addresses[i].strip()
             # 创建一个新的CSV文件名
-            csv_filename = f'fans_data_{i}.csv'
+            csv_filename = f'data_{i}.csv'
             in_csv_data = []
             print(f"开始爬取用户信息，地址: {url}")
             await self.robust_update_status(f"粉絲專頁地址:{url}")
@@ -709,10 +709,43 @@ class Crawler:
         else:
             print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
             await asyncio.sleep(10)  # 等待10秒
-        await self.robust_update_status(f"贊助功能")
+
         num_posts = int(self.params["post_count"])
         like_count = 0
         seek_count = 0
+
+        # i = 1
+        # print(f"准备与 {num_posts} 个帖子互动")
+        # while True:
+        #     try:
+        #         selector = f'//div[contains(@class, "x1hc1fzr x1unhpq9")]/div//div[@aria-posinset={i}]'
+        #         element = await self.page.wait_for_selector(selector, timeout=15000)
+        #         if element:
+        #             await element.scroll_into_view_if_needed()
+        #             print(f"第 {i} 个帖子")
+        #             like_count,seek_count = await self.sponsor_like(selector,like_count,seek_count)
+        #             if like_count >= num_posts:
+        #                 break
+        #     except Exception as e:
+        #         print(f"处理第 {i} 个帖子时出错: {str(e)}")
+        #     finally:
+        #         i += 1
+        like_count,seek_count = await self.cycle_post(num_posts,like_count,seek_count)
+        # 找不到执行普通点赞
+        # if seek_count >= int(self.params["refresh"]) and like_count <= num_posts:
+        #     while True:
+        #         await self.page.reload()
+        #         title = await self.page.title()
+        #         if "Facebook" in title:
+        #             await asyncio.sleep(3)
+        #         else:
+        #             print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+        #             await asyncio.sleep(15)  # 等待10秒
+        #         like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
+        #         if like_count >= num_posts:
+        #             break
+
+    async def cycle_post(self,num_posts,like_count,seek_count):
         i = 1
         print(f"准备与 {num_posts} 个帖子互动")
         while True:
@@ -722,15 +755,19 @@ class Crawler:
                 if element:
                     await element.scroll_into_view_if_needed()
                     print(f"第 {i} 个帖子")
-                    like_count,seek_count = await self.sponsor_like(selector,like_count,seek_count)
-                    if like_count >= num_posts:
+                    await self.robust_update_status(f"第 {i} 个帖子")
+                    like_count, seek_count = await self.sponsor_like(selector, like_count, seek_count)
+                    if like_count >= num_posts :
                         break
+                    # if like_count >= num_posts or seek_count >= int(self.params["refresh"]):
+                    #     seek_count = 0
+                    #     break
             except Exception as e:
                 print(f"处理第 {i} 个帖子时出错: {str(e)}")
             finally:
                 i += 1
+        return like_count, seek_count
     async def getusers_like_url(self,url):
-        print(len(url))
         for i in range(len(url)):
             await self.page.goto(url=url[i], wait_until='load', timeout=50000)
             title = await self.page.title()
@@ -741,7 +778,6 @@ class Crawler:
                 await asyncio.sleep(10)  # 等待10秒
             selector = '//div[@role="dialog"]'
             await self.sponsor_like_click(selector)
-            await self.get_sponsor_user()
 
     async def sponsor_like(self,selector,like_count,seek_count):
 
@@ -751,6 +787,7 @@ class Crawler:
             if sponsor_element:
                 await sponsor_element.scroll_into_view_if_needed()
                 print("出現啦")
+                await self.robust_update_status(f"出現贊助貼文.")
                 like_count += 1
                 seek_count = 0
                 await self.sponsor_like_click(selector)
@@ -776,53 +813,111 @@ class Crawler:
             print(f"這个帖子不是贊助: {str(e)}")
 
     async def get_sponsor_user(self):
+        """修正版：获取赞助帖子的点赞用户"""
+        print("开始获取赞助帖子用户...")
+        await self.robust_update_status("开始获取赞助帖子用户...")
 
-        while True:
-            # 查找对话框内的滚动容器
-            scroll_container_selector = '//div[@role="dialog"]//div[@style*="overflow" or contains(@class, "scroll") or @role="list"]'
-            scroll_container = await self.page.query_selector(scroll_container_selector)
-            if scroll_container:
-                # 滚动对话框内的容器
-                await scroll_container.evaluate("""
-                                    element => {
-                                        element.scrollTop = element.scrollHeight;
-                                    }
-                                """)
-            else:
-                # 方法2: 如果没有找到滚动容器，尝试用JavaScript直接滚动对话框
-                await self.page.evaluate("""
-                                    () => {
-                                        const dialog = document.querySelector('div[role="dialog"]');
-                                        if (dialog) {
-                                            // 查找对话框内的可滚动元素
-                                            const scrollable = dialog.querySelector('[style*="overflow"], [class*="scroll"]');
-                                            if (scrollable) {
-                                                scrollable.scrollTop = scrollable.scrollHeight;
-                                            } else {
-                                                // 如果没有找到特定滚动元素，尝试滚动对话框本身
-                                                dialog.scrollTop = dialog.scrollHeight;
-                                            }
-                                        }
-                                    }
-                                """)
+        # 初始化变量（移到循环外）
+        previous_count = 0
+        current_count = 0
+        scroll_attempts = 0
+        max_scroll_attempts = 10
+        users = []
+        seen_user_ids = set()  # 用于跟踪已处理的用户ID
+        user_counter = 0  # 用户计数器
+        in_csv_data = []  # 存储CSV数据
+
+        # 修改为有限循环
+        while scroll_attempts < max_scroll_attempts:
+            await self.dialog_()  # 滚动弹窗
             await asyncio.sleep(3)
 
             # 获取当前用户数量
             user_links = await self.page.query_selector_all(
-                '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]//a[contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "/profile.php?id=") or contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "facebook.com/")]')
+                '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]//a[contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "/user/") or contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "/profile.php?id=") or contains(@aria-label, "大頭貼照") and @role="link" and @tabindex="0" and contains(@href, "facebook.com/")]'
+            )
 
             current_count = len(user_links)
             print(f"滚动后用户数量: {current_count}")
-            for n, link in enumerate(user_links):
+
+            # 处理新找到的用户链接
+            new_users_found = 0
+            for link in user_links:
                 try:
                     href = await link.get_attribute('href')
                     text = await link.get_attribute('aria-label')
 
-                    # if not href or not text or not text.strip():
-                    #     continue
-                    print(href,text)
+                    if not href or not text or not text.strip():
+                        continue
+
+                    # print(f"找到链接: {href}, {text}")
+                    user_id = await self.extract_facebook_identifier(href)
+
+                    # 检查用户ID是否已存在
+                    if user_id and user_id not in seen_user_ids:
+                        seen_user_ids.add(user_id)  # 添加到已见集合
+                        user_counter += 1
+                        new_users_found += 1
+
+                        # 清理用户名
+                        clean_name = text.strip().replace("的大頭貼照", "")
+
+                        users.append({
+                            'index': user_counter,
+                            'name': clean_name,
+                            'user_id': user_id
+                        })
+
+                        print(f"{user_counter}：{user_id} {clean_name}")
+                        await self.robust_update_status(f"{user_counter}：{user_id} {clean_name}")
+
+                        # # 添加到CSV数据
+                        # # 注意：这里需要根据实际情况获取group_id
+                        # group_id = "sponsor_post"  # 或者从其他地方获取
+                        # in_csv_data.append([user_id, clean_name, group_id])
+
+                        # 检查是否达到目标数量
+                        if user_counter >= int(self.params.get('collect_count', 100))!=0:
+                            print(f"达到目标数量 {user_counter}，停止爬取")
+                            break
+
                 except Exception as e:
-                    print(1111)
+                    print(f"提取用户信息时出错: {str(e)}")
+                    continue
+
+            # 如果已达到目标数量，跳出循环
+            if user_counter >= int(self.params.get('collect_count', 100))!=0:
+                break
+
+            # 检查是否有新内容加载
+            if current_count == previous_count:
+                scroll_attempts += 1
+                print(f"用户数量未增加，尝试次数: {scroll_attempts}/{max_scroll_attempts}")
+            else:
+                scroll_attempts = 0  # 重置尝试次数
+                print(f"找到 {new_users_found} 个新用户")
+
+            previous_count = current_count
+
+            # 如果连续多次没有新用户，停止滚动
+            if scroll_attempts >= 3:
+                print("已加载所有可用用户")
+                break
+
+            # 短暂延迟后继续滚动
+            await asyncio.sleep(2)
+
+        # # 将数据写入CSV文件
+        # if in_csv_data:
+        #     csv_filename = f'sponsor_users_{int(time.time())}.csv'
+        #     with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+        #         csv_writer = csv.writer(csvfile)
+        #         csv_writer.writerow(['userid', 'username', 'fansid'])  # 写入表头
+        #         csv_writer.writerows(in_csv_data)  # 写入数据
+        #     print(f"数据已保存到 {csv_filename}")
+
+        print(f"爬取完成，共获取 {user_counter} 个用户信息")
+        # return users
 
     async def extract_facebook_identifier(self,url):
         # 处理相对路径
@@ -848,6 +943,28 @@ class Crawler:
                 return path_parts[0]
 
         return None
+    async def dialog_(self):
+        try:
+            dialog = await self.page.wait_for_selector('div[role="dialog"]', timeout=10000)
+            if not dialog:
+                print("未找到弹窗")
+                return
+
+        except Exception as e:
+            print(f"等待弹窗出现时出错: {str(e)}")
+            return
+        try:
+            # 获取弹窗的位置和大小
+            dialog_box = await dialog.bounding_box()
+            if dialog_box:
+                center_x = dialog_box['x'] + dialog_box['width'] / 2
+                center_y = dialog_box['y'] + dialog_box['height'] / 2
+                # 将鼠标移动到弹窗中心，然后滚动
+                await self.page.mouse.move(center_x, center_y)
+                await self.page.mouse.wheel(0, 5000)  # 向下滚动5000像素
+                print(f"鼠标滚动，位置: ({center_x}, {center_y})")
+        except Exception as e:
+            print(f"鼠标滚动出错: {str(e)}")
 
     async def home_post(self):
         await self.page.goto(url="https://www.facebook.com/", wait_until='load')

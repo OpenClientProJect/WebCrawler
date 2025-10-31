@@ -101,8 +101,8 @@ class MainLayout(QWidget):
         nav_layout.addStretch(1)
 
         # 版本信息标签放置于导航底部
-        self.version = "1.0.0.0"
-        self.day = 100
+        self.version = versions
+        self.day = days
         version_label = QLabel(f"{self.version} 剩余天数：{self.day}")
         version_label.setFont(QFont("微軟雅黑", 8))
         version_label.setStyleSheet("color: #999;")
@@ -162,7 +162,10 @@ class MainLayout(QWidget):
             event.accept()
 
 
-def main():
+def main(version, day):
+    global versions, days
+    versions = version
+    days = day
     app = QApplication(sys.argv)
 
     # 使用 qasync 事件循环以兼容內部異步槽
@@ -200,5 +203,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main("1.0.0.0", 1)
 
