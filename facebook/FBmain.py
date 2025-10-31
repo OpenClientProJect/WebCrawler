@@ -1018,22 +1018,26 @@ class Crawler:
     async def dialog_(self):
         try:
 
-            dialog = await self.page.wait_for_selector('div[role="dialog"]', timeout=10000)
-            if not dialog:
-                print("未找到弹窗")
+            # 获取页面的尺寸信息
+            page_size = await self.page.evaluate("""() => ({
+                width: document.documentElement.clientWidth,
+                height: document.documentElement.clientHeight
+            })""")
+
+            if not page_size:
+                print("未找到页面窗口")
                 await self.robust_update_status(f"未找到弹窗")
                 return
 
         except Exception as e:
-            print(f"等待弹窗出现时出错: {str(e)}")
+            print(f"等待窗口出现时出错: {str(e)}")
             await self.robust_update_status(f"等待弹窗出现时出错")
             return
         try:
             # 获取弹窗的位置和大小
-            dialog_box = await dialog.bounding_box()
-            if dialog_box:
-                center_x = dialog_box['x'] + dialog_box['width'] / 2
-                center_y = dialog_box['y'] + dialog_box['height'] / 2
+            if page_size:
+                center_x = page_size['width'] / 2
+                center_y = page_size['height'] / 2
                 # 将鼠标移动到弹窗中心，然后滚动
                 await self.page.mouse.move(center_x, center_y)
                 await self.page.mouse.wheel(0, 5000)  # 向下滚动5000像素
