@@ -154,8 +154,7 @@ class Crawler:
                         await self.getusers()
                     else:
                         await self.getusers_fans()
-
-            print("任务完成")
+            await self.robust_update_status(f"全部任務完成")
         except Exception as e:
             print(f"任务执行出错: {str(e)}")
             raise

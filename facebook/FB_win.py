@@ -455,7 +455,7 @@ class MyApp(QWidget):
             'combo_value': combo_value,
             'addresses': final_addresses,
             'action': 'confirm',
-            'type': "like"
+            'type': "facebook"
         }
 
         print("开始执行爬取用户操作...")
