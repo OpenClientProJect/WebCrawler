@@ -193,15 +193,19 @@ async def check_version():
             remote_version = (await response.text()).strip()
             return version, remote_version
 
+
 def version_ver():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     version, remote_version = loop.run_until_complete(check_version())
-    print(version,remote_version)
+    print(version, remote_version)
+
     if remote_version > version:
         install_new_version_thread(version, remote_version)
     else:
-        main(version, 1)
+        # 使用授权验证来启动主程序
+        from authorization import verify_and_run
+        verify_and_run(version, 1)
 if __name__ == "__main__":
     application_path = get_real_path()
     os.chdir(application_path)
