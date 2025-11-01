@@ -164,7 +164,8 @@ class MyApp(QWidget):
                 border-radius: 3px;
             }
         """)
-
+        # 连接下拉框变化信号
+        self.combo_box.currentTextChanged.connect(self.update_address_placeholder)
         row3_layout.addLayout(device_layout)
         row3_layout.addWidget(self.combo_box)
         content_layout.addLayout(row3_layout)
@@ -276,6 +277,14 @@ class MyApp(QWidget):
         self.search_button.clicked.connect(self.on_search)
         # 必须实现的拖动窗口的方法
 
+    def update_address_placeholder(self, current_text):
+        """根据下拉框选择更新地址框的提示信息"""
+        if current_text == "社團":
+            self.address_textbox.setPlaceholderText(
+                "請輸入地址，每行一個...\n例：https://www.facebook.com/groups/613691032041093/members")
+        elif current_text == "粉絲專頁":
+            self.address_textbox.setPlaceholderText(
+                "請輸入地址，每行一個...\n例：https://www.facebook.com/profile.php?id=100063946265091&sk=followers")
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and not self.embedded:
             self.dragPosition = event.globalPos() - self.frameGeometry().topLeft()
