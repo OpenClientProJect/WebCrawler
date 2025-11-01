@@ -228,7 +228,7 @@ class StatusWindow(QDialog):
         title_container = QWidget()
         title_container.setFixedHeight(40)  # 设置标题栏高度
         title_container.setStyleSheet(
-            "background-color: #fce3c2; border-top-left-radius: 8px; border-top-right-radius: 8px;")
+            "background-color: #e0e5e0; border-top-left-radius: 8px; border-top-right-radius: 8px;")
 
         title_bar = QHBoxLayout(title_container)
         title_bar.setContentsMargins(15, 0, 15, 0)
@@ -240,43 +240,38 @@ class StatusWindow(QDialog):
         title_bar.addStretch(1)  # 添加弹性空间
 
         # 最小化按钮
-        min_button = QPushButton("", self)  # 修改：使用减号字符
+        min_button = QPushButton("-", self)  # 使用减号字符
         min_button.setFixedSize(20, 20)
-        min_button.setFont(QFont("Arial", 12, QFont.Bold))
+        min_button.setFont(QFont("微軟雅黑", 12))
         min_button.clicked.connect(self.showMinimized)
         min_button.setStyleSheet("""
                     QPushButton {
-                        background-color: #f7b36a;
-                        color: white;
+                        background-color: transparent;
+                        color: #333333;
+                        border: 1px solid #ccc;
                         border-radius: 10px;
-                        border: none;
                     }
                     QPushButton:hover {
-                        background-color: #fce3c2;
-                    }
-                    QPushButton:pressed {
-                        background-color: #4a3aac;
+                        background-color: #f0f0f0;
                     }
                 """)
         title_bar.addWidget(min_button)
 
         # 关闭按钮
-        close_button = QPushButton("", self)  # 修改：使用乘号字符
+        close_button = QPushButton("×", self)  # 使用乘号字符
         close_button.setFixedSize(20, 20)
-        close_button.setFont(QFont("Arial", 12, QFont.Bold))
+        close_button.setFont(QFont("微軟雅黑", 12))
         close_button.clicked.connect(self.close)
         close_button.setStyleSheet("""
                     QPushButton {
-                        background-color: #f7b36a;
-                        color: white;
+                        background-color: transparent;
+                        color: #333333;
+                        border: 1px solid #ccc;
                         border-radius: 10px;
-                        border: none;
                     }
                     QPushButton:hover {
-                        background-color: #ff5252;
-                    }
-                    QPushButton:pressed {
-                        background-color: #ff3838;
+                        background-color: #ff4d4f;
+                        color: white;
                     }
                 """)
         title_bar.addWidget(close_button)
@@ -297,7 +292,7 @@ class StatusWindow(QDialog):
         scroll_area.setFrameShape(QFrame.NoFrame)  # 无边框
         scroll_area.setStyleSheet("""
             QScrollArea {
-                background-color: #8b8b8b; 
+                background-color: white; 
                 border: none;
                 border-bottom-left-radius: 8px;
                 border-bottom-right-radius: 8px;
@@ -305,19 +300,21 @@ class StatusWindow(QDialog):
             QScrollBar:vertical {
                 border: none;
                 background: #f0f0f0;
-                width: 10px;
+                width: 12px;
                 margin: 0px;
-                border-radius: 5px;
+                border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background: #fce3c2;
+                background: #c0c0c0;
                 min-height: 20px;
-                border-radius: 5px;
+                border-radius: 6px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #a89cf9;
+                background: #a0a0a0;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
                 height: 0px;
             }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
@@ -327,9 +324,9 @@ class StatusWindow(QDialog):
 
         # 创建内容容器
         content_widget = QWidget()
-        content_widget.setStyleSheet("background-color: #fffaf2;")
+        content_widget.setStyleSheet("background-color: white;")
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(15, 10, 15, 15)
+        content_layout.setContentsMargins(20, 15, 20, 15)
         content_layout.setAlignment(Qt.AlignTop)
 
         # 状态文本区域
@@ -338,11 +335,11 @@ class StatusWindow(QDialog):
         self.status_textedit.setFont(QFont("微軟雅黑", 10))
         self.status_textedit.setStyleSheet("""
                     QTextEdit {
-                        color: #3c9d6d;
-                        background-color: #ffffff;
+                        color: #333333;
+                        background-color: white;
                         border: none;
-                        border-radius: 10px;
-                        border: 2px dashed #f9ecdb;
+                        border: 2px dashed #ffe0e0;
+                        border-radius: 4px;
                         padding: 10px;
                         font-size: 14px;
                     }
@@ -358,9 +355,9 @@ class StatusWindow(QDialog):
 
         self.setLayout(layout)
 
-        # 设置暗色主题
+        # 设置亮色主题
         palette = QPalette()
-        palette.setColor(QPalette.Window, QColor(255, 250, 242))
+        palette.setColor(QPalette.Window, QColor(255, 255, 255))
         palette.setColor(QPalette.WindowText, QColor(51, 51, 51))
         palette.setColor(QPalette.Base, QColor(255, 255, 255))
         self.setPalette(palette)
