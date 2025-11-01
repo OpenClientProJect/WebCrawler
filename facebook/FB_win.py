@@ -106,63 +106,49 @@ class MyApp(QWidget):
         form_layout = QVBoxLayout()
         form_layout.setSpacing(16)
 
-        def add_row(label_text, widget):
-            row = QVBoxLayout()
-            row.setSpacing(6)
-            lbl = QLabel(label_text)
-            lbl.setFont(QFont("微軟雅黑", 10))
-            row.addWidget(lbl)
-            row.addWidget(widget)
-            form_layout.addLayout(row)
-
-        # 设备编号单独一行
+        # 设备编号单独一行 - 水平布局
+        device_row = QHBoxLayout()
+        device_label = QLabel("設備編號*:")
+        device_label.setFont(QFont("微軟雅黑", 10))
         self.device_input = QLineEdit()
         self.device_input.setText("000")
         self.device_input.setPlaceholderText("請輸入設備編號")
-        add_row("設備編號*:", self.device_input)
+        device_row.addWidget(device_label)
+        device_row.addWidget(self.device_input, 1)
+        form_layout.addLayout(device_row)
 
         # 搜索数量、爬取数量、爬取类型在一行
         row_layout = QHBoxLayout()
         row_layout.setSpacing(16)
 
         # 搜索数量
-        search_count_layout = QVBoxLayout()
-        search_count_layout.setSpacing(6)
         search_count_label = QLabel("搜索數量:")
         search_count_label.setFont(QFont("微軟雅黑", 10))
         self.search_count_input = QLineEdit()
         self.search_count_input.setText("10")
         self.search_count_input.setPlaceholderText("例如: 100")
-        search_count_layout.addWidget(search_count_label)
-        search_count_layout.addWidget(self.search_count_input)
+        row_layout.addWidget(search_count_label)
+        row_layout.addWidget(self.search_count_input, 1)
 
         # 爬取数量
-        crawl_count_layout = QVBoxLayout()
-        crawl_count_layout.setSpacing(6)
         crawl_count_label = QLabel("爬取數量:")
         crawl_count_label.setFont(QFont("微軟雅黑", 10))
         self.crawl_count_input = QLineEdit()
         self.crawl_count_input.setText("2025")
         self.crawl_count_input.setPlaceholderText("例如: 50")
-        crawl_count_layout.addWidget(crawl_count_label)
-        crawl_count_layout.addWidget(self.crawl_count_input)
+        row_layout.addWidget(crawl_count_label)
+        row_layout.addWidget(self.crawl_count_input, 1)
 
         # 下拉框
-        combo_layout = QVBoxLayout()
-        combo_layout.setSpacing(6)
         combo_label = QLabel("爬取類型:")
         combo_label.setFont(QFont("微軟雅黑", 10))
         self.combo_box = QComboBox()
         self.combo_box.addItem("社團")
         self.combo_box.addItem("粉絲專頁")
-        combo_layout.addWidget(combo_label)
-        combo_layout.addWidget(self.combo_box)
         # 连接下拉框变化信号
         self.combo_box.currentTextChanged.connect(self.update_address_placeholder)
-
-        row_layout.addLayout(search_count_layout)
-        row_layout.addLayout(crawl_count_layout)
-        row_layout.addLayout(combo_layout)
+        row_layout.addWidget(combo_label)
+        row_layout.addWidget(self.combo_box, 1)
 
         form_layout.addLayout(row_layout)
         content_layout.addLayout(form_layout)
