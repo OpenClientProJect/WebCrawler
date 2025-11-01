@@ -22,7 +22,7 @@ class MainLayout(QWidget):
         self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle('Facebookreptile')
-        self.setFixedSize(850, 600)
+        self.setFixedSize(850, 620)
         self._init_ui()
 
     def _init_ui(self):

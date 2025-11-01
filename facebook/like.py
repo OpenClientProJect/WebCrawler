@@ -1,3 +1,5 @@
+import sys
+import os
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSpinBox,
     QTextEdit, QPushButton, QFrame, QSizePolicy, QAbstractSpinBox,QMessageBox
@@ -5,6 +7,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import QEventLoop, asyncClose, asyncSlot
+from PyQt5.QtSvg import QSvgWidget
 from FB_middle import main
 
 class likePage(QWidget):
@@ -44,14 +47,44 @@ class likePage(QWidget):
         form = QVBoxLayout()
         form.setSpacing(16)
 
-        def add_row(label_text, widget):
+        def add_row(label_text, widget, warning_text=None):
             row = QVBoxLayout()
             row.setSpacing(6)
             lbl = QLabel(label_text)
             lbl.setFont(QFont("微軟雅黑", 10))
             row.addWidget(lbl)
             row.addWidget(widget)
+            
+            # 如果提供了文本，添加警告提示
+            if warning_text:
+                warning_layout = QHBoxLayout()
+                warning_layout.setSpacing(8)
+                warning_layout.setContentsMargins(0, 0, 0, 0)
+                
+                # 警告图标
+                warn_icon_path = resource_path("image/warn.svg")
+                warn_icon = QSvgWidget(warn_icon_path)
+                warn_icon.setFixedSize(20, 20)
+                warning_layout.addWidget(warn_icon)
+                
+                # 警告文本
+                warn_label = QLabel(warning_text)
+                warn_label.setFont(QFont("微軟雅黑", 9))
+                warn_label.setStyleSheet("color: #333333;")
+                warning_layout.addWidget(warn_label)
+                warning_layout.addStretch()
+                
+                row.addLayout(warning_layout)
+            
             form.addLayout(row)
+        
+        def resource_path(relative_path):
+            """ 获取资源的绝对路径（兼容开发环境和PyInstaller打包环境） """
+            try:
+                base_path = sys._MEIPASS
+            except Exception:
+                base_path = os.path.abspath(".")
+            return os.path.join(base_path, relative_path)
 
         self.device_input = QLineEdit()
         self.device_input.setText("000")
@@ -75,19 +108,15 @@ class likePage(QWidget):
         self.links_text.setMinimumHeight(120)
         self.links_text.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.links_text.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.links_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.links_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         add_row("設備號*", self.device_input)
         add_row("刷新數", self.refresh_input)
-        add_row("採集贊助帖子數量*", self.post_count)
+        add_row("採集贊助帖子數量*", self.post_count, "贊助貼文與指定貼文僅能二選一進行採集")
         add_row("採集數*", self.collect_count)
         add_row("採集指定貼文鏈接", self.links_text)
 
-        form_container = QFrame()
-        form_container.setLayout(form)
-        form_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        content_layout.addWidget(form_container)
+        content_layout.addLayout(form)
 
         btns = QHBoxLayout()
         btns.setSpacing(12)
