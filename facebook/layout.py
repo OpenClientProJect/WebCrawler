@@ -1,9 +1,10 @@
+import os
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QLabel, QFrame, QStackedWidget
 )
-from PyQt5.QtGui import QFont, QPalette, QColor
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
 from PyQt5.QtCore import Qt
 from qasync import QEventLoop
 
@@ -14,8 +15,10 @@ from like import likePage
 class MainLayout(QWidget):
     def __init__(self):
         super().__init__()
+        icon_path = resource_path("image/FBre.ico")
+        self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setWindowTitle('主界面')
+        self.setWindowTitle('Facebookreptile')
         self.setFixedSize(900, 560)
         self._init_ui()
 
@@ -161,6 +164,11 @@ class MainLayout(QWidget):
             self.move(event.globalPos() - self._drag_pos)
             event.accept()
 
+    def closeEvent(self, event):
+        """重写关闭事件，发出关闭信号"""
+        self.close_app_signal.emit()  # 发出关闭应用程序信号
+        super().closeEvent(event)
+
 
 def main(version, day):
     global versions, days
@@ -203,7 +211,14 @@ def main(version, day):
     except RuntimeError:
         pass
 
-
+def resource_path(relative_path):
+    """ 获取资源的绝对路径（兼容开发环境和PyInstaller打包环境） """
+    try:
+        # PyInstaller创建的临时文件夹路径
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 if __name__ == '__main__':
     main("1.0.0.0", 1)
 

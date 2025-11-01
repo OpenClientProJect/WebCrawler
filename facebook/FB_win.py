@@ -45,7 +45,7 @@ class MyApp(QWidget):
         row1_layout.setSpacing(10)
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("請輸入搜索內容...")
+        self.search_input.setPlaceholderText("請輸入搜索內容...(多#隔開)")
         self.search_input.setStyleSheet("""
             QLineEdit {
                 padding: 8px;
@@ -284,7 +284,7 @@ class MyApp(QWidget):
                 "請輸入地址，每行一個...\n例：https://www.facebook.com/groups/613691032041093/members")
         elif current_text == "粉絲專頁":
             self.address_textbox.setPlaceholderText(
-                "請輸入地址，每行一個...\n例：https://www.facebook.com/profile.php?id=100063946265091&sk=followers")
+                "請輸入地址，每行一個...\n例：https://www.facebook.com/profile.php?id=100063946265091&sk=followers\n例：https://www.facebook.com/LukaZxc/followers")
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and not self.embedded:
             self.dragPosition = event.globalPos() - self.frameGeometry().topLeft()

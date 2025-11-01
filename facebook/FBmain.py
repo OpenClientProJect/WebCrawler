@@ -96,7 +96,7 @@ class Crawler:
                 '--disable-back-forward-cache',
                 '--disable-site-isolation-trials'
             ]
-            self.browser = await playwright.chromium.launch(headless=False, args=browser_args,
+            self.browser = await playwright.chromium.launch(headless=True, args=browser_args,
                                                             executable_path=self.browser_path)
             context = await self.browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
@@ -425,9 +425,9 @@ class Crawler:
                             if post_url_before and len(current_groups_postlist) < post:
                                 # 提取群组ID并构建成员页面URL
                                 print(post_url_before)
-                                group_id = self.extract_fans_id(post_url_before)
+                                group_id = self.convert_to_followers_url(post_url_before)
                                 if group_id:
-                                    members_url = f"https://www.facebook.com/profile.php?id={group_id}&sk=followers"
+                                    members_url = group_id
                                     if members_url not in current_groups_postlist:
                                         current_groups_postlist.append(members_url)
                                         print(f"找到群组 {len(current_groups_postlist)}: {members_url}")
@@ -495,6 +495,30 @@ class Crawler:
             if path_parts and path_parts[0] != 'profile.php':
                 return path_parts[0]
 
+        return None
+
+    def convert_to_followers_url(self,facebook_url):
+        """
+        将Facebook个人主页链接转换为粉丝页链接
+        """
+        # 第一种类型：包含profile.php?id=
+        if 'profile.php' in facebook_url:
+            # 直接从URL中提取ID
+            id_match = re.search(r'[?&]id=(\d+)', facebook_url)
+            if id_match:
+                user_id = id_match.group(1)
+                return f"https://www.facebook.com/profile.php?id={user_id}&sk=followers"
+
+        # 第二种类型：用户名格式
+        elif 'facebook.com/' in facebook_url:
+            # 提取用户名
+            clean_url = facebook_url.split('?')[0]  # 移除查询参数
+            username_match = re.search(r'facebook\.com/([^/?]+)', clean_url)
+            if username_match:
+                username = username_match.group(1)
+                return f"https://www.facebook.com/{username}/followers"
+
+        # 如果无法识别格式，返回原链接
         return None
 
     async def getusers(self):
@@ -741,20 +765,20 @@ class Crawler:
         #         print(f"处理第 {i} 个帖子时出错: {str(e)}")
         #     finally:
         #         i += 1
-        like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
-        # 找不到执行普通点赞
+        # like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
+        # # 找不到执行普通点赞
         # if seek_count >= int(self.params["refresh"]) and like_count <= num_posts:
-        #     while True:
-        #         await self.page.reload()
-        #         title = await self.page.title()
-        #         if "Facebook" in title:
-        #             await asyncio.sleep(3)
-        #         else:
-        #             print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
-        #             await asyncio.sleep(15)  # 等待10秒
-        #         like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
-        #         if like_count >= num_posts:
-        #             break
+        while True:
+            like_count, seek_count = await self.cycle_post(num_posts, like_count, seek_count)
+            await self.page.reload()
+            title = await self.page.title()
+            if "Facebook" in title:
+                await asyncio.sleep(3)
+            else:
+                print(f"標題未包含 'Facebook'，當前標題: {title}，等待10秒後重試...")
+                await asyncio.sleep(15)  # 等待10秒
+            if like_count >= num_posts:
+                break
 
     async def cycle_post(self, num_posts, like_count, seek_count):
         i = 1
@@ -768,11 +792,12 @@ class Crawler:
                     print(f"第 {i} 个帖子")
                     await self.robust_update_status(f"第 {i} 个帖子")
                     like_count, seek_count = await self.sponsor_like(selector, like_count, seek_count)
-                    if like_count >= num_posts:
-                        break
-                    # if like_count >= num_posts or seek_count >= int(self.params["refresh"]):
-                    #     seek_count = 0
+                    # if like_count >= num_posts:
                     #     break
+                    if like_count >= num_posts or seek_count >= int(self.params["refresh"]):
+                        await self.robust_update_status(f"達到刷新數或達到贊助數~")
+                        seek_count = 0
+                        break
             except Exception as e:
                 print(f"处理第 {i} 个帖子时出错: {str(e)}")
             finally:
@@ -964,6 +989,7 @@ class Crawler:
             db_manager.insert_post_info(post_info)
         else:
             print('数据为空不提交')
+            await self.robust_update_status(f"沒有成員跳過~")
         # return users
 
     async def extract_facebook_identifier(self, url):

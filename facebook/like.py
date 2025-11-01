@@ -50,8 +50,8 @@ class likePage(QWidget):
         self.device_input.setPlaceholderText("请输入设备唯一标识")
 
         self.refresh_input = QLineEdit()
-        self.refresh_input.setText("10")
-        self.refresh_input.setPlaceholderText("10")
+        self.refresh_input.setText("30")
+        self.refresh_input.setPlaceholderText("瀏覽器頁面刷新")
         self.refresh_input.setValidator(None)
 
         self.post_count = QSpinBox()
@@ -60,7 +60,7 @@ class likePage(QWidget):
         self.post_count.setButtonSymbols(QAbstractSpinBox.NoButtons)
 
         self.collect_count = QLineEdit()
-        self.collect_count.setText("50")
+        self.collect_count.setText("2025")
 
         self.links_text = QTextEdit()
         self.links_text.setPlaceholderText("請輸入地址，每行一個...\n例：https://www.facebook.com/steven.cheng.7792/posts/pfbid027XQvyQ4LS4FkA84nwYWt5snkMjcAGF7XN38u9c2iVFutWUwN4CWGuZdTygDpusEwl")
