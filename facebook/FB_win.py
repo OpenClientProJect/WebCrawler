@@ -35,44 +35,9 @@ class MyApp(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 自定义标题栏 - 添加到右上角
-        title_bar_layout = QHBoxLayout()
-        title_bar_layout.setContentsMargins(0, 5, 5, 5)
-        title_bar_layout.setSpacing(10)
-        title_bar_layout.addStretch(1)
-
-        btn_min = QPushButton("-")
-        btn_min.setFont(QFont("微軟雅黑", 10))
-        btn_min.setFixedSize(24, 24)
-        btn_min.clicked.connect(self.showMinimized)
-        btn_min.setStyleSheet(
-            """
-            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
-            QPushButton:hover { background-color: #f0f0f0; }
-            """
-        )
-        title_bar_layout.addWidget(btn_min)
-
-        btn_close = QPushButton("×")
-        btn_close.setFont(QFont("微軟雅黑", 10))
-        btn_close.setFixedSize(24, 24)
-        btn_close.clicked.connect(self.close)
-        btn_close.setStyleSheet(
-            """
-            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
-            QPushButton:hover { background-color: #ff4d4f; color: white; }
-            """
-        )
-        title_bar_layout.addWidget(btn_close)
-
-        title_bar_container = QFrame()
-        title_bar_container.setLayout(title_bar_layout)
-        title_bar_container.setStyleSheet("QFrame { background-color: transparent; }")
-        main_layout.addWidget(title_bar_container)
-
         # 创建内容区域
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(20, 10, 20, 20)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         content_layout.setSpacing(15)
 
         # 第一行：长输入框和搜索按钮

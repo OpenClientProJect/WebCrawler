@@ -94,8 +94,52 @@ class MainLayout(QWidget):
         nav_layout.addWidget(day_label)
         nav.setLayout(nav_layout)
 
+        # 右侧内容区域容器
+        right_content_container = QWidget()
+        right_content_container.setStyleSheet("QWidget { background-color: #fefbf8; }")
+        right_content_layout = QVBoxLayout()
+        right_content_layout.setContentsMargins(0, 0, 0, 0)
+        right_content_layout.setSpacing(0)
+
+        # 顶部标题栏 - 透明背景覆盖在内容顶层
+        title_bar = QFrame()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet("QFrame { background-color: transparent; }")
+        title_bar_layout = QHBoxLayout()
+        title_bar_layout.setContentsMargins(0, 5, 5, 5)
+        title_bar_layout.setSpacing(10)
+        title_bar_layout.addStretch(1)
+
+        btn_min = QPushButton("-")
+        btn_min.setFont(QFont("微軟雅黑", 10))
+        btn_min.setFixedSize(24, 24)
+        btn_min.clicked.connect(self.showMinimized)
+        btn_min.setStyleSheet(
+            """
+            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
+            QPushButton:hover { background-color: #f0f0f0; }
+            """
+        )
+        title_bar_layout.addWidget(btn_min)
+
+        btn_close = QPushButton("×")
+        btn_close.setFont(QFont("微軟雅黑", 10))
+        btn_close.setFixedSize(24, 24)
+        btn_close.clicked.connect(self.close)
+        btn_close.setStyleSheet(
+            """
+            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
+            QPushButton:hover { background-color: #ff4d4f; color: white; }
+            """
+        )
+        title_bar_layout.addWidget(btn_close)
+
+        title_bar.setLayout(title_bar_layout)
+        right_content_layout.addWidget(title_bar)
+
+        # 页面内容
         self.stack = QStackedWidget()
-        self.stack.setStyleSheet("QStackedWidget { background-color: #fefbf8; }")
+        self.stack.setStyleSheet("QStackedWidget { background-color: transparent; }")
 
         # 页面：首頁
         self.home_page = likePage()
@@ -109,8 +153,11 @@ class MainLayout(QWidget):
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.fb_page)
 
+        right_content_layout.addWidget(self.stack)
+        right_content_container.setLayout(right_content_layout)
+
         main_layout.addWidget(nav)
-        main_layout.addWidget(self.stack, 1)
+        main_layout.addWidget(right_content_container, 1)
 
         container = QFrame()
         container.setLayout(main_layout)
