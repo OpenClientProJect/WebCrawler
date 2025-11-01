@@ -162,6 +162,24 @@ class MyApplog(QDialog):
             QPushButton#confirm:pressed { 
                 background-color: #cc9900; 
             }
+            QMessageBox {
+                background-color: #ffffff;
+                color: #333333;
+            }
+            QMessageBox QLabel {
+                background-color: #ffffff;
+                color: #333333;
+            }
+            QMessageBox QPushButton {
+                background-color: #f0f0f0;
+                color: #333333;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 6px 20px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #e0e0e0;
+            }
         """)
 
         # 连接按钮点击事件
@@ -242,19 +260,19 @@ def win_main():
     # 设置应用程序的样式
     app.setStyle('Fusion')
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.WindowText, Qt.white)
-    palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.ToolTipBase, Qt.white)
-    palette.setColor(QPalette.ToolTipText, Qt.white)
-    palette.setColor(QPalette.Text, Qt.white)
-    palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.ButtonText, Qt.white)
+    palette.setColor(QPalette.Window, QColor(255, 255, 255))
+    palette.setColor(QPalette.WindowText, QColor(51, 51, 51))
+    palette.setColor(QPalette.Base, QColor(255, 255, 255))
+    palette.setColor(QPalette.AlternateBase, QColor(245, 245, 245))
+    palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255))
+    palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Text, QColor(51, 51, 51))
+    palette.setColor(QPalette.Button, QColor(240, 240, 240))
+    palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
     palette.setColor(QPalette.BrightText, Qt.red)
     palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.HighlightedText, Qt.black)
+    palette.setColor(QPalette.Highlight, QColor(24, 144, 255))
+    palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
     app.setPalette(palette)
     app.setFont(QFont("微軟雅黑", 10))
     loop = QEventLoop(app)

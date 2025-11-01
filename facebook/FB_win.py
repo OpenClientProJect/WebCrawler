@@ -293,6 +293,24 @@ class MyApp(QWidget):
             QPushButton#secondary:pressed { 
                 background-color: #ffcccc; 
             }
+            QMessageBox {
+                background-color: #ffffff;
+                color: #333333;
+            }
+            QMessageBox QLabel {
+                background-color: #ffffff;
+                color: #333333;
+            }
+            QMessageBox QPushButton {
+                background-color: #f0f0f0;
+                color: #333333;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 6px 20px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #e0e0e0;
+            }
         """)
 
         # 连接按钮事件
