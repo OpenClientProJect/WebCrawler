@@ -4,10 +4,12 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, \
     QComboBox, QMessageBox, QDialog
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import QEventLoop
 
 class MyApplog(QDialog):
+    window_closed = pyqtSignal()
+    
     def __init__(self):
         super().__init__()
         icon_path = resource_path("Thcat.ico")
@@ -20,39 +22,9 @@ class MyApplog(QDialog):
     def initUI(self):
         # 禁用默认的窗口框架
         self.setWindowFlags(Qt.FramelessWindowHint)
-
-        # 设置窗口属性
-        self.setWindowTitle('賬號登錄')  # 这个标题现在只用于任务栏显示
-        # 创建整体布局
-        main_layout = QVBoxLayout()
-
-        # 创建自定义标题栏
-        title_bar = QHBoxLayout()
-        self.title_label = QLabel("Facebook登錄", self)  # 自定义标题文本
-        self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        self.setFixedSize(350, 0)  # 设置窗口的固定大小
-        title_bar.addWidget(self.title_label)
-        title_bar.addStretch(1)
-
-        # 添加关闭按钮到标题栏
-        close_button = QPushButton("-")  # 改变按钮文本为减号表示最小化
-        close_button.setFont(QFont("微軟雅黑", 12))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.showMinimized)  # 连接到最小化方法
-        title_bar.addWidget(close_button)
-        # 添加关闭按钮到标题栏
-        close_button = QPushButton("×")
-        close_button.setFont(QFont("微軟雅黑", 12))
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.close)
-        title_bar.addWidget(close_button)
-        close_button.setStyleSheet("""
-                   QPushButton:hover {
-                       background-color: red;
-                   }
-               """)
-        # 将标题栏添加到主布局
-        main_layout.addLayout(title_bar)
+        self.setWindowTitle('Facebook 登錄')
+        
+        # 读取保存的登录信息
         login_name = ''
         login_pass = ''
         if os.path.exists('FBlogin.txt'):
@@ -60,47 +32,140 @@ class MyApplog(QDialog):
                 login = file.read().split("|+|")
                 login_name = login[0].strip('')
                 login_pass = login[1].strip('')
-        print(login_name,login_pass)
+        print(login_name, login_pass)
 
-        # 创建三个输入框
+        # 创建整体布局
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(30, 25, 30, 25)
+        main_layout.setSpacing(20)
+
+        # 标题行（包含最小化、关闭按钮）
+        title_row = QHBoxLayout()
+        self.title_label = QLabel("Facebook登錄")
+        self.title_label.setFont(QFont("微軟雅黑", 18, QFont.Bold))
+        self.title_label.setStyleSheet("color: #333333;")
+        title_row.addWidget(self.title_label)
+        title_row.addStretch(1)
+        
+        # 最小化按钮
+        min_button = QPushButton("-", self)
+        min_button.setFixedSize(24, 24)
+        min_button.setFont(QFont("微軟雅黑", 8))
+        min_button.clicked.connect(self.showMinimized)
+        min_button.setStyleSheet("""
+            QPushButton { 
+                background-color: transparent; 
+                border: 1px solid #ccc; 
+                border-radius: 12px;
+            }
+            QPushButton:hover { 
+                background-color: #f2b84b; 
+            }
+        """)
+        title_row.addWidget(min_button)
+        
+        # 关闭按钮
+        close_button = QPushButton("×", self)
+        close_button.setFixedSize(24, 24)
+        close_button.setFont(QFont("微軟雅黑", 8))
+        close_button.clicked.connect(self.close)
+        close_button.setStyleSheet("""
+            QPushButton { 
+                background-color: transparent; 
+                border: 1px solid #ccc; 
+                border-radius: 12px;
+            }
+            QPushButton:hover { 
+                background-color: #ff4d4f; 
+                color: white; 
+            }
+        """)
+        title_row.addWidget(close_button)
+        
+        main_layout.addLayout(title_row)
+
+        # 分隔线
+        separator = QLabel()
+        separator.setFixedHeight(1)
+        separator.setStyleSheet("background-color: #e0e0e0;")
+        main_layout.addWidget(separator)
+        main_layout.addSpacing(5)
+
+        # 表单布局
+        def add_row(label_text, widget):
+            row = QVBoxLayout()
+            row.setSpacing(6)
+            lbl = QLabel(label_text)
+            lbl.setFont(QFont("微軟雅黑", 10))
+            row.addWidget(lbl)
+            row.addWidget(widget)
+            main_layout.addLayout(row)
+
+        # 创建输入框
         self.txt_username = QLineEdit(self)
         self.txt_username.setText(login_name)
-        self.txt_username.setPlaceholderText("請輸入賬號...")
+        self.txt_username.setPlaceholderText("請輸入帳號...")
+        add_row("Facebook帳號:", self.txt_username)
+
         self.txt_password = QLineEdit(self)
         self.txt_password.setText(login_pass)
         self.txt_password.setPlaceholderText("請輸入密碼...")
-        main_layout.addWidget(QLabel("Facebook賬號:"))
-        main_layout.addWidget(self.txt_username)
-        main_layout.addWidget(QLabel("Facebook密碼:"))
-        main_layout.addWidget(self.txt_password)
+        self.txt_password.setEchoMode(QLineEdit.Password)
+        add_row("Facebook密碼:", self.txt_password)
 
-        # 创建水平布局用于放置按钮并居中
-        button_layout = QHBoxLayout()
-        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
+        main_layout.addSpacing(10)
+
+        # 确定按钮
         self.button = QPushButton('確定', self)
-        self.button.setFixedSize(60, 35)  # 设置按钮大小
-        self.button.setStyleSheet("""
-            QPushButton {
-                border-radius: 15px;
-                background-color: #90EE90;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #7FFFD4;
-            }
-        """)
-        button_layout.addWidget(self.button)
-        button_layout.addStretch(1)  # 添加伸缩量使得按钮居中
-
-        # 将按钮布局添加到主布局
-        main_layout.addLayout(button_layout)
-
-        # 连接按钮点击事件到处理函数
-        self.button.clicked.connect(self.on_click)
+        self.button.setFixedHeight(40)
+        self.button.setObjectName("confirm")
+        main_layout.addWidget(self.button)
 
         # 设置布局
         self.setLayout(main_layout)
+
+        # 设置窗口大小
+        self.setFixedSize(400, 320)
+
+        # 应用全局样式
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #fefbf8;
+            }
+            QLabel { 
+                color: #333333;
+                background-color: transparent;
+            }
+            QLineEdit {
+                padding: 8px; 
+                border: 1px solid #e0e0e0; 
+                border-radius: 6px; 
+                font-size: 14px;
+                background: #ffffff;
+                color: #333333;
+            }
+            QLineEdit:focus {
+                border: 1px solid #1890ff; 
+                outline: none;
+            }
+            QPushButton#confirm {
+                border-radius: 6px; 
+                background-color: #f2b84b; 
+                color: #ffffff; 
+                font-weight: bold; 
+                border: 0px;
+                font-size: 14px;
+            }
+            QPushButton#confirm:hover { 
+                background-color: #ffc107; 
+            }
+            QPushButton#confirm:pressed { 
+                background-color: #cc9900; 
+            }
+        """)
+
+        # 连接按钮点击事件
+        self.button.clicked.connect(self.on_click)
 
         # 显示窗口
         self.show()
