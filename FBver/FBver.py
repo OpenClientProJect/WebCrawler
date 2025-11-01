@@ -47,19 +47,19 @@ def create_shutdown_and_extract_script(zip_file_path):
     script_content = (
         f'@echo off\n'
         f'echo 关闭当前程序...\n'
-        f'taskkill /F /IM FBScriptver.exe\n'  # 确保进程名称正确
+        f'taskkill /F /IM FBver.exe\n'  # 确保进程名称正确
         f':CHECK\n'
-        f'tasklist | findstr /I /C:"FBScriptver.exe" >nul\n'
+        f'tasklist | findstr /I /C:"FBver.exe" >nul\n'
         f'if %errorlevel%==0 (\n'
         f'    timeout /T 1 /NOBREAK >nul\n'
         f'    goto CHECK\n'
         f')\n'
         f'echo 删除旧程序...\n'
-        f'del "%~dp0FBScriptver.exe"\n'  # 使用 %~dp0 获取批处理文件所在目录
+        f'del "%~dp0FBver.exe"\n'  # 使用 %~dp0 获取批处理文件所在目录
         f'echo 解压新程序...\n'
         f'powershell -Command "Expand-Archive -Path \'%~dp0{zip_file_path}\' -DestinationPath \'%~dp0\' -Force"\n'
         f'echo 启动新程序...\n'
-        f'start \"\" \"%~dp0FBScriptver.exe\"\n'  # 使用绝对路径启动
+        f'start \"\" \"%~dp0FBver.exe\"\n'  # 使用绝对路径启动
         f'echo 删除压缩包...\n'
         f'del \"%~dp0{zip_file_path}\"\n'
         f'echo 删除更新脚本...\n'
@@ -91,19 +91,19 @@ def create_registry_file():
     """
     # 使用绝对路径生成注册表文件
     regeditfile = get_absolute_path('regeditfile.reg')
-    sstap_path = get_absolute_path("FBScriptver.exe")
+    sstap_path = get_absolute_path("FBver.exe")
     sstap_path_registry = sstap_path.replace("\\", "\\\\")
 
     script_content = (
         'Windows Registry Editor Version 5.00\n\n'
-        '[HKEY_CLASSES_ROOT\\FBScriptProtocol]\n'
-        '@="URL:FBScriptProtocol Protocol"\n'
+        '[HKEY_CLASSES_ROOT\\FBverProtocol]\n'
+        '@="URL:FBverProtocol Protocol"\n'
         '"URL Protocol"=""\n\n'
-        '[HKEY_CLASSES_ROOT\\FBScriptProtocol\\DefaultIcon]\n'
+        '[HKEY_CLASSES_ROOT\\FBverProtocol\\DefaultIcon]\n'
         f'@="{sstap_path_registry},1"\n\n'
-        '[HKEY_CLASSES_ROOT\\FBScriptProtocol\\shell]\n\n'
-        '[HKEY_CLASSES_ROOT\\FBScriptProtocol\\shell\\open]\n\n'
-        '[HKEY_CLASSES_ROOT\\FBScriptProtocol\\shell\\open\\command]\n'
+        '[HKEY_CLASSES_ROOT\\FBverProtocol\\shell]\n\n'
+        '[HKEY_CLASSES_ROOT\\FBverProtocol\\shell\\open]\n\n'
+        '[HKEY_CLASSES_ROOT\\FBverProtocol\\shell\\open\\command]\n'
         f'@="\\"{sstap_path_registry}\\" \\"%1\\""\n'
     )
 
@@ -152,8 +152,8 @@ def install_new_version_thread(version, remote_version):
             progress_bar = Progressbar(root, variable=progress_var, maximum=100, length=250)
             progress_bar.pack(pady=15)
             def start_download():
-                url = f"http://ver.kydb.vip/UpData/FBfans/FBScriptver.zip?x={int(time.time())}"
-                local_path = 'FBScriptver.zip'
+                url = f"http://ver.kydb.vip/UpData/FBfans/FBver.zip?x={int(time.time())}"
+                local_path = 'FBver.zip'
                 download_file_with_progress_http(url, local_path, progress_var, progress_label)
                 messagebox.showinfo("更新完成", "下載完成。等待重新啟動。")
                 subprocess.run("update.bat", creationflags=subprocess.CREATE_NO_WINDOW,cwd=os.path.dirname(sys.executable))
@@ -185,8 +185,8 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
 
 
 async def check_version():
-    version = '1.0.0.6'
-    remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=FBScript'
+    version = '1.0.0.0'
+    remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=FBver'
 
     async with aiohttp.ClientSession() as session:
         async with session.get(remote_version_url, headers=headers) as response:

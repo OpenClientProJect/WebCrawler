@@ -127,6 +127,11 @@ class Crawler:
             asyncio.create_task(self.report_online_status())
 
     async def start(self):
+        # 程序开始时上报在线状态
+        await self.report_online_status()
+
+        # 设置定时器，每隔一段时间上报一次在线状态
+        asyncio.create_task(self.periodic_online_report())
 
         if 0 in self.task_order or 1 in self.task_order or 2 in self.task_order or 3 in self.task_order or 4 in self.task_order:
             print("存在序号需要浏览器：", self.task_order)
@@ -451,6 +456,8 @@ class Crawler:
                 if element:
                     await element.scroll_into_view_if_needed()
                     print(f"第 {i} 个帖子")
+                    await self.robust_update_status(f"處理第 {i} 個帖子")
+                    asyncio.create_task(self.report_task_status(f"處理第 {i} 個帖子"))
                     like_count,seek_count = await self.sponsor_like(selector,like_count,seek_count)
                     if like_count >= num_posts:
                         break
@@ -460,6 +467,8 @@ class Crawler:
                 i += 1
             #找不到执行普通点赞
             if seek_count >= 5 :
+                await self.robust_update_status(f"多次找不到贊助帖子執行普通點讚")
+                asyncio.create_task(self.report_task_status(f"多次找不到贊助帖子執行普通點讚"))
                 like_count += 1
                 like_type = self.home_like
                 await self.like_post(selector, like_type)
@@ -487,7 +496,8 @@ class Crawler:
                                                                 timeout=10000)
             if sponsor_element:
                 await sponsor_element.scroll_into_view_if_needed()
-
+                await self.robust_update_status(f"找到贊助帖子")
+                asyncio.create_task(self.report_task_status(f"找到贊助帖子"))
                 print("出現啦")
                 like_count += 1
                 seek_count = 0
@@ -633,6 +643,7 @@ class Crawler:
             return False
     # """發文、推文"""
     async def tweet_comment(self):
+        await self.robust_update_status("開始執行發文")
         tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = tweet.split("|+|")
         post_url = response_url[0].split("{}")
@@ -656,6 +667,7 @@ class Crawler:
                 except Exception as e:
                     print(f"没有找到讨论区位置: {str(e)}")
             if not isno_groups:
+                await self.robust_update_status("開始執行發文位置")
                 try:
                     option_selector ='//span[contains(text(), "留個言吧……") or contains(text(), "...") or contains(text(), "分享心情...")]/..'
                     option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
@@ -690,6 +702,8 @@ class Crawler:
         await asyncio.sleep(3)
     #推文
     async def post_comment(self):
+        await self.robust_update_status(f"開始執行推文")
+        asyncio.create_task(self.report_task_status(f"開始執行推文"))
         post = await self.fetch_data(
             f"http://aj.ry188.vip/api/GetPostUrlList.aspx?Account={self.username}&UrlCount={self.Count_num}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = post.split("|+|")
@@ -699,6 +713,8 @@ class Crawler:
         print(comment_text)  # 推文內容
         for i in range(len(post_url)):
             await self.page.goto(url=post_url[i], wait_until='load', timeout=50000)
+            await self.robust_update_status(f"開始執行推文地址：{post_url[i]}")
+            asyncio.create_task(self.report_task_status(f"開始執行推文地址：{post_url[i]}"))
             current_url = await self.page.evaluate("() => window.location.href")
             print("當前網頁：", current_url)
             if await self.url_open_except() :# 檢測網站目前無法查看此內容
@@ -716,6 +732,8 @@ class Crawler:
         is_on_line = parse_bool(groups["IsOnLineGroupData"])#是否在線社團
         answer = ["遵守版規", "同意版規", "感謝版主"]
         for i in range(len(groups["GroupDataList"])):
+            await self.robust_update_status(f'開始執行加社團：{groups["GroupDataList"][i]["GroupId"]}')
+            asyncio.create_task(self.report_task_status(f'開始執行加社團：{groups["GroupDataList"][i]["GroupId"]}'))
             await self.page.goto(url="https://www.facebook.com/groups/"+groups["GroupDataList"][i]["GroupId"], wait_until='load', timeout=50000)
             if is_on_line:
                 for s in range(1, 4):
@@ -735,6 +753,8 @@ class Crawler:
 
     # 加社團回答問題
     async def answer_questions(self,answer):
+        await self.robust_update_status(f'開始加社團回答問題')
+        asyncio.create_task(self.report_task_status(f'開始加社團回答問題'))
         click = 0
         for i in range(1,4):
             try:
@@ -763,6 +783,8 @@ class Crawler:
 
     #加社團
     async def join_groups(self):
+        await self.robust_update_status(f'開始加社團')
+        asyncio.create_task(self.report_task_status(f'開始加社團'))
         try:
             option_selector = '//div[@class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w x1icxu4v x25sj25 x1yrsyyn x17upfok xdl72j9 x1iyjqo2 x1l90r2v x13a6bvl"]//div[@aria-label="加入社團" or @aria-label="加入小组"]'
             option_but = await self.page.wait_for_selector(option_selector, timeout=10000)
@@ -770,6 +792,7 @@ class Crawler:
                 await option_but.scroll_into_view_if_needed()
                 await asyncio.sleep(1)
                 print("加社团")
+                await self.robust_update_status("加社團")
                 await option_but.click()
                 await asyncio.sleep(random.uniform(5, 8))
                 return True
@@ -780,15 +803,25 @@ class Crawler:
     # 養號
     async def account_nurturing(self):
         if self.ConfirmFriend:
+            await self.robust_update_status(f"執行養號確認好友邀請")
+            asyncio.create_task(self.report_task_status(f"執行養號確認好友邀請"))
             await self.confirm_friend_invitation()#確認好友邀請
         if self.addFriend:
+            await self.robust_update_status(f"執行養號加好友")
+            asyncio.create_task(self.report_task_status(f"執行養號加好友"))
             await self.add_friend_invitation()#添加好友
         if self.is_personal:
+            await self.robust_update_status(f"執行養號發佈個人動態")
+            asyncio.create_task(self.report_task_status(f"執行養號發佈個人動態"))
             await self.post_personal_updates()#發佈個人動態
         if self.is_home_like:
+            await self.robust_update_status(f"執行養號首頁操作")
+            asyncio.create_task(self.report_task_status(f"執行養號首頁操作"))
             await self.home_post() # FB首页留言
 
     async def fan_pages(self):
+        await self.robust_update_status(f'開始執行粉絲專頁')
+        asyncio.create_task(self.report_task_status(f'開始執行粉絲專頁'))
         request_data = await self.fetch_data("http://aj.ry188.vip/api/GetFenPageData.aspx?Account=272275")
         data_url = request_data.split("|+|")
         home_page_data_split = data_url[0].split("{}")# 粉丝专页首頁网址
@@ -803,6 +836,8 @@ class Crawler:
 
     async def fans_home_page(self,home_page_data_split,comment_text):
         for i in range(len(home_page_data_split)):
+            await self.robust_update_status(f'開始執行粉絲專頁首頁操作')
+            asyncio.create_task(self.report_task_status(f'開始執行粉絲專頁首頁操作'))
             await self.page.goto(url=home_page_data_split[i], wait_until='load', timeout=50000)
             title = await self.page.title()
             if "Facebook" in title:
@@ -832,6 +867,8 @@ class Crawler:
                             if friend_but:
                                 await friend_but.scroll_into_view_if_needed()
                                 await friend_but.click()
+                                await self.robust_update_status(f'發送內容{comment_text}')
+                                asyncio.create_task(self.report_task_status(f'發送內容{comment_text}'))
                                 await asyncio.sleep(random.uniform(3, 5))
                                 await self.personal_release(comment_text)
                                 break
@@ -843,6 +880,8 @@ class Crawler:
         await asyncio.sleep(random.uniform(3, 5))
 
     async def fans_leave_page(self,tweet_data_split,comment_text,code):
+        await self.robust_update_status(f'執行粉絲專頁貼文留言')
+        asyncio.create_task(self.report_task_status(f'執行粉絲專頁貼文留言'))
         for i in range(len(tweet_data_split)):
             await self.page.goto(url=tweet_data_split[i], wait_until='load', timeout=50000)
             title = await self.page.title()
@@ -882,6 +921,8 @@ class Crawler:
                     await asyncio.sleep(random.uniform(4, 6))
                     count_friend_num += 1
                     print("確認朋友成功",count_friend_num)
+                    await self.robust_update_status(f"確認朋友成功{count_friend_num}")
+                    asyncio.create_task(self.report_task_status(f"確認朋友成功{count_friend_num}"))
                     if count_friend_num >= confirm_friend_number :break
             except Exception as e:
                 print(f"没有找到可以確認的朋友或沒有申請: {str(e)}")
@@ -907,6 +948,8 @@ class Crawler:
                     await friend_but.click()
                     await asyncio.sleep(random.uniform(4, 6))
                     count_add_friend_num += 1
+                    await self.robust_update_status(f"添加朋友成功{count_add_friend_num}")
+                    asyncio.create_task(self.report_task_status(f"添加朋友成功{count_add_friend_num}"))
                     print("添加朋友成功",count_add_friend_num)
                     if count_add_friend_num >= add_friend_number :break
             except Exception as e:
@@ -932,6 +975,8 @@ class Crawler:
                 await friend_but.click()
                 await asyncio.sleep(random.uniform(4, 6))
                 response = response_url[6] + " " + random.choice(response_url[3].split("{}"))
+                await self.robust_update_status(f"發佈內容：{response}")
+                asyncio.create_task(self.report_task_status(f"發佈內容：{response}"))
                 await self.personal_release(response)
         except Exception as e:
             print(f"没有找到建立貼文: {str(e)}")
@@ -958,11 +1003,13 @@ class Crawler:
                 await but_but.scroll_into_view_if_needed()
                 await but_but.click()
                 print("发布")
+                await self.robust_update_status("發佈內容")
         except Exception as e:
             print(f"没有找到发布按钮: {str(e)}")
 
     async def post_nei_like(self):
-
+        await self.robust_update_status(f"執行點讚")
+        asyncio.create_task(self.report_task_status(f"執行點讚"))
         already_like = '//div[@aria-label="讚" or @aria-label="赞"]'
         cancel_like = '//div[contains(@aria-label, "取消") or contains(@aria-label, "移除")]'
         try:
@@ -980,6 +1027,8 @@ class Crawler:
                     emotion_button = await self.page.wait_for_selector(emotion_selector, timeout=5000)
                     if emotion_button:
                         await emotion_button.click()
+                        asyncio.create_task(self.report_task_status(f"點擊表情：{target_emotion_list[target_emotion]}"))
+                        await self.robust_update_status(f"點擊表情：{target_emotion_list[target_emotion]}")
                         print(f"点击了表情: {target_emotion_list[target_emotion]}")
                     else:
                         print("未找到表情按钮，执行默认点赞")
@@ -1002,6 +1051,8 @@ class Crawler:
     async def post_nei_comment(self,comment_text):
 
         try:
+            await self.robust_update_status(f"發送內容：{comment_text}")
+            asyncio.create_task(self.report_task_status(f"發送內容：{comment_text}"))
             but_selector = '//div[@role="dialog"]//div[@role="textbox" and contains(@aria-label, "留言") or @role="textbox" and contains(@aria-label, "回答")]'
             input_element = await self.page.wait_for_selector(but_selector, timeout=10000)
             if input_element:
@@ -1018,6 +1069,8 @@ class Crawler:
     async def _submit_comment(self):
         """提交评论"""
         try:
+            asyncio.create_task(self.report_task_status(f"提交評論"))
+            await self.robust_update_status(f"提交評論")
             submit_selector = '//div[@role="dialog"]//div[@id="focused-state-composer-submit"]//div[@role="button" and @tabindex="0"]'
             submit_button = await self.page.wait_for_selector(submit_selector, timeout=20000)
             if submit_button:
@@ -1031,6 +1084,8 @@ class Crawler:
 
     async def url_open_except(self):
         try:
+            asyncio.create_task(self.report_task_status(f"檢測網站是否能打開..."))
+            await self.robust_update_status(f"檢測網站是否能打開")
             url_selector = '//h2[@dir="auto"]//span[@dir="auto"]'
             url_button = await self.page.wait_for_selector(url_selector, timeout=7000)
             text = await url_button.inner_text()
