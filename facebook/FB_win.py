@@ -334,7 +334,8 @@ class MyApp(QWidget):
             'crawl_count': crawl_count,
             'device_id': device_id,
             'combo_value': combo_value,
-            'action': 'search'
+            'action': 'search',
+            'types': 'facebook'
         }
 
         print(f"搜索内容: {search_content}")
@@ -455,7 +456,7 @@ class MyApp(QWidget):
             'combo_value': combo_value,
             'addresses': final_addresses,
             'action': 'confirm',
-            'type': "facebook"
+            'types': 'facebook'
         }
 
         print("开始执行爬取用户操作...")

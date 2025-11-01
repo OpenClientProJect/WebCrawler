@@ -113,8 +113,7 @@ class Crawler:
                 await context.add_cookies(self.cookies)
 
             self.page = await context.new_page()
-
-            if self.params["type"] in 'like':
+            if self.params["types"] in 'like':
                 app = QApplication.instance()
                 if not app:
                     app = QApplication(sys.argv)
@@ -1018,13 +1017,16 @@ class Crawler:
 
     async def dialog_(self):
         try:
+
             dialog = await self.page.wait_for_selector('div[role="dialog"]', timeout=10000)
             if not dialog:
                 print("未找到弹窗")
+                await self.robust_update_status(f"未找到弹窗")
                 return
 
         except Exception as e:
             print(f"等待弹窗出现时出错: {str(e)}")
+            await self.robust_update_status(f"等待弹窗出现时出错")
             return
         try:
             # 获取弹窗的位置和大小
@@ -1038,6 +1040,7 @@ class Crawler:
                 print(f"鼠标滚动，位置: ({center_x}, {center_y})")
         except Exception as e:
             print(f"鼠标滚动出错: {str(e)}")
+            await self.robust_update_status(f"鼠标滚动出错")
 
     async def home_post(self):
         await self.page.goto(url="https://www.facebook.com/", wait_until='load')

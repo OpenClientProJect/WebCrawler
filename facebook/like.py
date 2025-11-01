@@ -145,7 +145,7 @@ class likePage(QWidget):
             'post_count': self.post_count.value(),
             'collect_count': self.collect_count.text().strip(),
             'links': [line for line in self.links_text.toPlainText().split('\n') if line.strip()],
-            'type':"like"
+            'types':'like'
         }
         print('[Like Settings] 保存设置:', params)
 
