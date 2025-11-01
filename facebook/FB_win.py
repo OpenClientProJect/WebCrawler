@@ -19,6 +19,17 @@ class MyApp(QWidget):
         self.day = day
         self.crawler = None  # 保存crawler实例
         self.is_searching = False  # 添加搜索状态标志
+        
+        # 默认参数
+        self._defaults = {
+            'search_content': '',
+            'search_count': '10',
+            'crawl_count': '2025',
+            'device_id': '000',
+            'combo_value': '社團',
+            'addresses': ''
+        }
+        
         self.initUI()
         if not self.embedded:
             self.center()
@@ -37,8 +48,16 @@ class MyApp(QWidget):
 
         # 创建内容区域
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(20, 20, 20, 20)
-        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(30, 15, 30, 20)
+        content_layout.setSpacing(16)
+
+        # Page title
+        page_title = QLabel("採集社群成員")
+        page_title.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        page_title.setFont(QFont("微軟雅黑", 20, QFont.Bold))
+        page_title.setStyleSheet("color: #333333;")
+        content_layout.addWidget(page_title)
+        content_layout.addSpacing(8)
 
         # 第一行：长输入框和搜索按钮
         row1_layout = QHBoxLayout()
@@ -60,18 +79,20 @@ class MyApp(QWidget):
 
         self.search_button = QPushButton("搜索")
         self.search_button.setFixedSize(80, 35)
+        self.search_button.setObjectName("search")
         self.search_button.setStyleSheet("""
-            QPushButton {
-                border-radius: 5px;
-                background-color: #1890ff;
-                color: white;
+            QPushButton#search {
+                border-radius: 6px;
+                background-color: #f2b84b;
+                color: #fdffff;
                 font-size: 14px;
                 font-weight: bold;
+                border: none;
             }
-            QPushButton:hover {
-                background-color: #40a9ff;
+            QPushButton#search:hover {
+                background-color: #ffc107;
             }
-            QPushButton:disabled {
+            QPushButton#search:disabled {
                 background-color: #cccccc;
                 color: #666666;
             }
@@ -81,94 +102,70 @@ class MyApp(QWidget):
         row1_layout.addWidget(self.search_button)
         content_layout.addLayout(row1_layout)
 
-        # 第二行：搜索数量和爬取数量 - 修复布局问题
-        row2_layout = QHBoxLayout()
-        row2_layout.setSpacing(10)
+        # Form layout
+        form_layout = QVBoxLayout()
+        form_layout.setSpacing(16)
+
+        def add_row(label_text, widget):
+            row = QVBoxLayout()
+            row.setSpacing(6)
+            lbl = QLabel(label_text)
+            lbl.setFont(QFont("微軟雅黑", 10))
+            row.addWidget(lbl)
+            row.addWidget(widget)
+            form_layout.addLayout(row)
+
+        # 设备编号单独一行
+        self.device_input = QLineEdit()
+        self.device_input.setText("000")
+        self.device_input.setPlaceholderText("請輸入設備編號")
+        add_row("設備編號*:", self.device_input)
+
+        # 搜索数量、爬取数量、爬取类型在一行
+        row_layout = QHBoxLayout()
+        row_layout.setSpacing(16)
 
         # 搜索数量
-        search_count_layout = QHBoxLayout()
-        search_count_layout.setSpacing(5)
-        search_count_label = QLabel("搜索数量:")
+        search_count_layout = QVBoxLayout()
+        search_count_layout.setSpacing(6)
+        search_count_label = QLabel("搜索數量:")
         search_count_label.setFont(QFont("微軟雅黑", 10))
         self.search_count_input = QLineEdit()
         self.search_count_input.setText("10")
         self.search_count_input.setPlaceholderText("例如: 100")
-        self.search_count_input.setFixedWidth(100)
-        self.search_count_input.setStyleSheet("""
-            QLineEdit {
-                padding: 5px;
-                border: 1px solid #e0e0e0;
-                border-radius: 3px;
-            }
-        """)
         search_count_layout.addWidget(search_count_label)
         search_count_layout.addWidget(self.search_count_input)
-        # 移除不必要的 addStretch(1)
 
         # 爬取数量
-        crawl_count_layout = QHBoxLayout()
-        crawl_count_layout.setSpacing(5)
-        crawl_count_label = QLabel("爬取数量:")
+        crawl_count_layout = QVBoxLayout()
+        crawl_count_layout.setSpacing(6)
+        crawl_count_label = QLabel("爬取數量:")
         crawl_count_label.setFont(QFont("微軟雅黑", 10))
         self.crawl_count_input = QLineEdit()
         self.crawl_count_input.setText("2025")
         self.crawl_count_input.setPlaceholderText("例如: 50")
-        self.crawl_count_input.setFixedWidth(100)
-        self.crawl_count_input.setStyleSheet("""
-            QLineEdit {
-                padding: 5px;
-                border: 1px solid #e0e0e0;
-                border-radius: 3px;
-            }
-        """)
         crawl_count_layout.addWidget(crawl_count_label)
         crawl_count_layout.addWidget(self.crawl_count_input)
-        # 移除不必要的 addStretch(1)
-
-        row2_layout.addLayout(search_count_layout)
-        row2_layout.addStretch(1)  # 在两者之间添加拉伸，使它们分布在左右两侧
-        row2_layout.addLayout(crawl_count_layout)
-        content_layout.addLayout(row2_layout)
-
-        # 第三行：设备编号和下拉框
-        row3_layout = QHBoxLayout()
-        row3_layout.setSpacing(10)
-
-        # 设备编号
-        device_layout = QHBoxLayout()
-        device_layout.setSpacing(5)
-        device_label = QLabel("设备编号:")
-        device_label.setFont(QFont("微軟雅黑", 10))
-        self.device_input = QLineEdit()
-        self.device_input.setText("000")
-        self.device_input.setPlaceholderText("請輸入設備編號")
-        self.device_input.setStyleSheet("""
-            QLineEdit {
-                padding: 5px;
-                border: 1px solid #e0e0e0;
-                border-radius: 3px;
-            }
-        """)
-        device_layout.addWidget(device_label)
-        device_layout.addWidget(self.device_input)
 
         # 下拉框
+        combo_layout = QVBoxLayout()
+        combo_layout.setSpacing(6)
+        combo_label = QLabel("爬取類型:")
+        combo_label.setFont(QFont("微軟雅黑", 10))
         self.combo_box = QComboBox()
         self.combo_box.addItem("社團")
         self.combo_box.addItem("粉絲專頁")
-        self.combo_box.setFixedWidth(120)
-        self.combo_box.setStyleSheet("""
-            QComboBox {
-                padding: 5px;
-                border: 1px solid #e0e0e0;
-                border-radius: 3px;
-            }
-        """)
+        combo_layout.addWidget(combo_label)
+        combo_layout.addWidget(self.combo_box)
         # 连接下拉框变化信号
         self.combo_box.currentTextChanged.connect(self.update_address_placeholder)
-        row3_layout.addLayout(device_layout)
-        row3_layout.addWidget(self.combo_box)
-        content_layout.addLayout(row3_layout)
+
+        row_layout.addLayout(search_count_layout)
+        row_layout.addLayout(crawl_count_layout)
+        row_layout.addLayout(combo_layout)
+
+        form_layout.addLayout(row_layout)
+        content_layout.addLayout(form_layout)
 
         # 地址文本框
         address_label = QLabel("地址列表:")
@@ -232,49 +229,90 @@ class MyApp(QWidget):
         # 底部布局
         bottom_layout = QHBoxLayout()
 
-        # 右下角确定按钮
-        self.confirm_button = QPushButton("確定")
-        self.confirm_button.setFixedSize(100, 35)
-        self.confirm_button.setStyleSheet("""
-            QPushButton {
-                border-radius: 5px;
-                background-color: #52c41a;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #73d13d;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #666666;
-            }
-        """)
+        # 重置設置按钮
+        self.reset_button = QPushButton("重置設置")
+        self.reset_button.setObjectName("secondary")
+        self.reset_button.setFixedHeight(36)
+        self.reset_button.setMinimumWidth(100)
 
-        if not self.embedded:
-            bottom_layout.addWidget(self.version_label)
+        # 保存設置按钮
+        self.confirm_button = QPushButton("保存設置")
+        self.confirm_button.setObjectName("primary")
+        self.confirm_button.setFixedHeight(36)
+        self.confirm_button.setMinimumWidth(100)
+
         bottom_layout.addStretch(1)
+        bottom_layout.addWidget(self.reset_button)
         bottom_layout.addWidget(self.confirm_button)
         content_layout.addLayout(bottom_layout)
 
         # 设置主布局
         main_container = QFrame()
         main_container.setLayout(content_layout)
-        main_container.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-bottom-left-radius: 10px;
-                border-bottom-right-radius: 10px;
-            }
-        """)
         main_layout.addWidget(main_container)
 
         self.setLayout(main_layout)
 
+        # 应用全局样式
+        self.setStyleSheet("""
+            QWidget {
+                background-color: transparent;
+            }
+            QLabel { 
+                color: #333333;
+                background-color: transparent;
+            }
+            QLineEdit, QTextEdit, QComboBox {
+                padding: 8px; 
+                border: 1px solid #e0e0e0; 
+                border-radius: 6px; 
+                font-size: 14px;
+                background: #ffffff;
+                color: #333333;
+            }
+            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+                border: 1px solid #1890ff; 
+                outline: none;
+            }
+            QComboBox QAbstractItemView {
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                selection-background-color: #1890ff;
+                selection-color: white;
+                background-color: white;
+                color: #333333;
+            }
+            QPushButton#primary {
+                border-radius: 6px; 
+                background-color: #f2b84b; 
+                color: #ffffff; 
+                font-weight: bold; 
+                border: 0px;
+            }
+            QPushButton#primary:hover { 
+                background-color: #ffc107; 
+            }
+            QPushButton#primary:pressed { 
+                background-color: #cc9900; 
+            }
+            QPushButton#secondary {
+                border-radius: 6px; 
+                background-color: #ffe0db; 
+                color: #333333; 
+                border: 1px solid #e0e0e0;
+            }
+            QPushButton#secondary:hover { 
+                background-color: #ffe8e8; 
+            }
+            QPushButton#secondary:pressed { 
+                background-color: #ffcccc; 
+            }
+        """)
+
         # 连接按钮事件
         self.confirm_button.clicked.connect(self.on_confirm)
         self.search_button.clicked.connect(self.on_search)
+        self.reset_button.clicked.connect(self.on_reset)
         # 必须实现的拖动窗口的方法
 
     def update_address_placeholder(self, current_text):
@@ -315,6 +353,17 @@ class MyApp(QWidget):
         else:
             self.search_button.setText("搜索")
             self.search_button.setEnabled(True)
+
+    def on_reset(self):
+        """恢复默认参数"""
+        self.search_input.setText(self._defaults['search_content'])
+        self.search_count_input.setText(self._defaults['search_count'])
+        self.crawl_count_input.setText(self._defaults['crawl_count'])
+        self.device_input.setText(self._defaults['device_id'])
+        index = self.combo_box.findText(self._defaults['combo_value'])
+        if index >= 0:
+            self.combo_box.setCurrentIndex(index)
+        self.address_textbox.clear()
 
     @asyncSlot()
     async def on_search(self):
