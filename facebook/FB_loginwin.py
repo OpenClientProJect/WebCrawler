@@ -16,7 +16,7 @@ class MyApplog(QDialog):
         self.credentials = None
         self.initUI()
         self.center()
-
+    
     def initUI(self):
         # 禁用默认的窗口框架
         self.setWindowFlags(Qt.FramelessWindowHint)

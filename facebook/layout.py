@@ -5,72 +5,30 @@ from PyQt5.QtWidgets import (
     QLabel, QFrame, QStackedWidget
 )
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import QEventLoop
+from PyQt5.QtSvg import QSvgWidget
 
 from FB_win import MyApp as FBWidget
 from like import likePage
 
 
 class MainLayout(QWidget):
+    close_app_signal = pyqtSignal()
+    
     def __init__(self):
         super().__init__()
         icon_path = resource_path("image/FBre.ico")
         self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle('Facebookreptile')
-        self.setFixedSize(900, 560)
+        self.setFixedSize(850, 600)
         self._init_ui()
 
     def _init_ui(self):
         root = QVBoxLayout()
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
-
-        # 自定义标题栏
-        title_bar_layout = QHBoxLayout()
-        title_bar_layout.setContentsMargins(10, 5, 5, 5)
-        title_bar_layout.setSpacing(0)
-
-        self.title_label = QLabel("Facebook")
-        self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
-        self.title_label.setStyleSheet("color: #333;")
-        title_bar_layout.addWidget(self.title_label)
-        title_bar_layout.addStretch(1)
-
-        btn_min = QPushButton("-")
-        btn_min.setFont(QFont("微軟雅黑", 10))
-        btn_min.setFixedSize(24, 24)
-        btn_min.clicked.connect(self.showMinimized)
-        btn_min.setStyleSheet(
-            """
-            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
-            QPushButton:hover { background-color: #f0f0f0; }
-            """
-        )
-        title_bar_layout.addWidget(btn_min)
-
-        btn_close = QPushButton("×")
-        btn_close.setFont(QFont("微軟雅黑", 10))
-        btn_close.setFixedSize(24, 24)
-        btn_close.clicked.connect(self.close)
-        btn_close.setStyleSheet(
-            """
-            QPushButton { background-color: transparent; border: 1px solid #ddd; border-radius: 12px; }
-            QPushButton:hover { background-color: #ff4d4f; color: white; }
-            """
-        )
-        title_bar_layout.addWidget(btn_close)
-
-        title_container = QFrame()
-        title_container.setLayout(title_bar_layout)
-        title_container.setStyleSheet(
-            """
-            QFrame { background-color: #f5f5f5; border-bottom: 1px solid #e0e0e0; }
-            """
-        )
-        title_container.setFixedHeight(40)
-        root.addWidget(title_container)
 
         # 主体区域：左侧导航 + 右侧内容
         main_layout = QHBoxLayout()
@@ -79,21 +37,38 @@ class MainLayout(QWidget):
 
         nav = QFrame()
         nav.setFixedWidth(140)
-        nav.setStyleSheet("QFrame { background-color: #fafafa; border-right: 1px solid #e0e0e0; }")
+        nav.setStyleSheet("QFrame { background-color: #f0f5f0; border-right: 1px solid #e0e0e0; }")
         nav_layout = QVBoxLayout()
-        nav_layout.setContentsMargins(10, 10, 10, 10)
+        nav_layout.setContentsMargins(10, 15, 10, 15)
         nav_layout.setSpacing(10)
 
-        btn_home = QPushButton("like")
-        btn_fb = QPushButton("Facebook")
+        # Add Facebook logo
+        logo_path = resource_path("image/facebookLogo.svg")
+        logo_widget = QSvgWidget(logo_path)
+        logo_widget.setFixedSize(40, 40)
+        nav_layout.addWidget(logo_widget, alignment=Qt.AlignHCenter)
+        nav_layout.addSpacing(15)
+
+        btn_home = QPushButton("採集點讚用戶")
+        btn_fb = QPushButton("採集社群成員")
         for b in (btn_home, btn_fb):
             b.setFixedHeight(36)
             b.setFont(QFont("微軟雅黑", 10))
             b.setStyleSheet(
                 """
-                QPushButton { border-radius: 6px; background-color: #ffffff; border: 1px solid #e0e0e0; }
-                QPushButton:hover { background-color: #f5f5f5; }
-                QPushButton:checked { background-color: #e6f4ff; border-color: #91caff; }
+                QPushButton { 
+                    border-radius: 6px; 
+                    background-color: transparent; 
+                    border: none;
+                    color: #3d9e87;
+                    text-align: left;
+                    padding-left: 12px;
+                }
+                QPushButton:hover { background-color: #e0f0e0; }
+                QPushButton:checked { 
+                    background-color: #3d9e87; 
+                    color: white;
+                }
                 """
             )
             b.setCheckable(True)
@@ -106,15 +81,21 @@ class MainLayout(QWidget):
         # 版本信息标签放置于导航底部
         self.version = versions
         self.day = days
-        version_label = QLabel(f"{self.version} 剩余天数：{self.day}")
+        version_label = QLabel(f"版本: {self.version}")
         version_label.setFont(QFont("微軟雅黑", 8))
         version_label.setStyleSheet("color: #999;")
         version_label.setAlignment(Qt.AlignHCenter)
         nav_layout.addWidget(version_label)
+        
+        day_label = QLabel(f"剩余天數: {self.day}")
+        day_label.setFont(QFont("微軟雅黑", 8))
+        day_label.setStyleSheet("color: #999;")
+        day_label.setAlignment(Qt.AlignHCenter)
+        nav_layout.addWidget(day_label)
         nav.setLayout(nav_layout)
 
         self.stack = QStackedWidget()
-        self.stack.setStyleSheet("QStackedWidget { background-color: #ffffff; }")
+        self.stack.setStyleSheet("QStackedWidget { background-color: #fefbf8; }")
 
         # 页面：首頁
         self.home_page = likePage()
@@ -147,11 +128,9 @@ class MainLayout(QWidget):
         if index == 0:
             btn_home.setChecked(True)
             btn_fb.setChecked(False)
-            self.title_label.setText("Facebook · like")
         else:
             btn_home.setChecked(False)
             btn_fb.setChecked(True)
-            self.title_label.setText("Facebook · reptile")
 
     # 拖动无边框窗口
     def mousePressEvent(self, event):
@@ -165,7 +144,7 @@ class MainLayout(QWidget):
             event.accept()
 
     def closeEvent(self, event):
-        """重写关闭事件，发出关闭信号"""
+        """发出关闭信号"""
         self.close_app_signal.emit()  # 发出关闭应用程序信号
         super().closeEvent(event)
 
