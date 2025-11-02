@@ -10,15 +10,14 @@ import winreg  # 仅适用于Windows
 import shutil  # 适用于Linux和macOS
 import sys
 import re
-import aiohttp
-import requests
+import datetime
 from urllib.parse import urlparse, parse_qs
 from PyQt5.QtWidgets import QApplication
 from FB_loginwin import win_main
 from playwright.async_api import async_playwright
 from FB_status import StatusWindow
 from database_manager import db_manager
-
+from concurrent.futures import ThreadPoolExecutor
 
 class Crawler:
     def __init__(self, cookies, params):
@@ -40,6 +39,8 @@ class Crawler:
         self.supportId = ""
         self.post_user_cunt = 0
         self.post_name = ""
+        self.eq_type = None
+        self.device = params.get('device')
 
     async def safe_update_status(self, text):
         """安全的异步状态更新"""
@@ -527,7 +528,7 @@ class Crawler:
         if not addresses:
             print("没有提供地址列表")
             return
-
+        self.eq_type = 1
         for i in range(len(addresses)):
             url = addresses[i].strip()
             # 创建一个新的CSV文件名
@@ -545,6 +546,8 @@ class Crawler:
                 groups_num_selector = '//span[@dir="auto"]/div//a[@role="link" and contains(text(), "成員")]'
                 groups_num_function = await self.page.wait_for_selector(groups_num_selector, timeout=10000)
                 self.groups_num = await groups_num_function.inner_text()
+                day_match = re.search(r'\d+', self.groups_num)
+                self.groups_num = day_match.group()
                 print(self.groups_num)
                 await self.robust_update_status(f"社團名:{self.groups_name} 社團人數：{self.groups_num}")
             except Exception as e:
@@ -590,7 +593,7 @@ class Crawler:
                                 'name': text.strip(),
                                 'user_id': user_id
                             })
-                            print(f"{user_counter}：{user_id} {text.strip()}")
+                            # print(f"{user_counter}：{user_id} {text.strip()}")
                             await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
                             in_csv_data.append([user_id, text.strip(), self.extract_group_id(url)])
 
@@ -616,12 +619,34 @@ class Crawler:
                 if scroll_attempts >= 3:  # 连续3次没有新用户就停止
                     print("已加载所有用户")
                     break
-            # 将数据写入CSV文件
-            with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
-                csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
-                csv_writer.writerows(in_csv_data)  # 写入数据
-            print(f"爬取完成，共获取 {user_counter} 个用户信息")
+            if len(users) > 0:
+                # 将数据写入CSV文件
+                with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+                    csv_writer = csv.writer(csvfile)
+                    csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                    csv_writer.writerows(in_csv_data)  # 写入数据
+                print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                # 使用线程池执行数据库提交（避免阻塞主线程）
+                loop = asyncio.get_event_loop()
+                with ThreadPoolExecutor() as executor:
+                    await loop.run_in_executor(
+                        executor,
+                        submit_data_to_database,
+                        csv_filename,
+                        i,
+                        self.eq_type,
+                        self.extract_group_id(url),  # 社团ID
+                        self.groups_name,  # 社团名称
+                        self.groups_num,  # 总成员数
+                        user_counter  # 实际获取数量
+                    )
+
+                await self.robust_update_status(f"{csv_filename}数据提交完成")
+                upend_time = datetime.datetime.now()
+                db_manager.update_updata_table(self.device, len(users), upend_time)
+            else:
+                print("無用戶")
+
             # return users
 
     async def getusers_fans(self):
@@ -629,7 +654,7 @@ class Crawler:
         if not addresses:
             print("没有提供地址列表")
             return
-
+        self.eq_type = 2
         for i in range(len(addresses)):
             url = addresses[i].strip()
             # 创建一个新的CSV文件名
@@ -703,7 +728,7 @@ class Crawler:
                                 'name': text.strip(),
                                 'user_id': user_id
                             })
-                            print(f"{user_counter}：{user_id} {text.strip()}")
+                            # print(f"{user_counter}：{user_id} {text.strip()}")
                             await self.robust_update_status(f"{user_counter}：{user_id} {text.strip()}")
                             in_csv_data.append([user_id, text.strip(), await self.extract_facebook_identifier(url)])
 
@@ -729,12 +754,32 @@ class Crawler:
                 if scroll_attempts >= 3:  # 连续3次没有新用户就停止
                     print("已加载所有用户")
                     break
-            # 将数据写入CSV文件
-            with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
-                csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
-                csv_writer.writerows(in_csv_data)  # 写入数据
-            print(f"爬取完成，共获取 {user_counter} 个用户信息")
+            if len(users) > 0:
+                # 将数据写入CSV文件
+                with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+                    csv_writer = csv.writer(csvfile)
+                    csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                    csv_writer.writerows(in_csv_data)  # 写入数据
+                print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                # 使用线程池执行数据库提交（避免阻塞主线程）
+                loop = asyncio.get_event_loop()
+                with ThreadPoolExecutor() as executor:
+                    await loop.run_in_executor(
+                        executor,
+                        submit_data_to_database,
+                        csv_filename,
+                        i,
+                        self.eq_type,
+                        self.extract_fans_id(url),  # 粉丝专页ID
+                        self.groups_name,  # 粉丝专页名称
+                        self.groups_num,  # 总粉丝数
+                        user_counter  # 实际获取数量
+                    )
+                await self.robust_update_status(f"{csv_filename}数据提交完成")
+                upend_time = datetime.datetime.now()
+                db_manager.update_updata_table(self.device, len(users), upend_time)
+            else:
+                print("無用戶")
 
     async def getusers_like(self):
         await self.page.goto(url="https://www.facebook.com/", wait_until='load', timeout=50000)
@@ -987,6 +1032,8 @@ class Crawler:
             }
             print('提交数据', post_info)
             db_manager.insert_post_info(post_info)
+            upend_time = datetime.datetime.now()
+            db_manager.update_updata_table(self.device, len(users), upend_time)
         else:
             print('数据为空不提交')
             await self.robust_update_status(f"沒有成員跳過~")
@@ -1205,6 +1252,56 @@ class Crawler:
         # 再使用平台特定的方法
         self.minimize_browser_window()
 
+
+def submit_data_to_database(csv_filename, batch_number, eq_type, societies_url_id, societies_name, total_number,
+                            getnum):
+    """提交数据到数据库"""
+    try:
+        with open(csv_filename, 'r', newline='', encoding='utf-8') as csvfile:
+            csv_reader = csv.reader(csvfile)
+            next(csv_reader)  # 跳过表头
+            data = list(csv_reader)
+            print(f"批次 {batch_number}: 开始提交数据...")
+
+            batch_size = 80  # 每批80条
+            for i in range(0, len(data), batch_size):
+                batch_data = data[i:i + batch_size]
+
+                if eq_type == 1:
+                    # 插入社团用户表
+                    success = db_manager.insert_societies_user_batch(batch_data)
+                else:
+                    # 插入粉丝用户表
+                    success = db_manager.insert_fans_user_batch(batch_data)
+
+                if not success:
+                    print(f"批次 {batch_number} 第 {i // batch_size + 1} 批数据插入失败")
+                    continue
+
+                print(f"批次 {batch_number} 第 {i // batch_size + 1} 批数据插入成功")
+
+                # 批次间等待
+                sleep_time = random.uniform(8, 14)
+                time.sleep(sleep_time)
+
+            print(f"批次 {batch_number}: 提交完成，共 {len(data)} 条数据")
+
+            # 所有批次数据提交完成后，插入汇总信息
+            if eq_type == 1:
+                # 插入社团汇总信息
+                db_manager.insert_societies_inf(societies_url_id, societies_name, total_number, getnum)
+            else:
+                # 插入粉丝专页汇总信息
+                db_manager.insert_fans_inf(societies_url_id, societies_name, total_number, getnum)
+
+        # 提交完成后删除CSV文件
+        os.remove(csv_filename)
+        print(f"完成: {csv_filename}")
+        return True
+
+    except Exception as e:
+        print(f"提交数据到数据库时出错: {str(e)}")
+        return False
 
 def parse_bool(type_data):
     type_data = str(type_data).lower().strip()

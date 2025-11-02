@@ -230,5 +230,134 @@ class DatabaseManager:
                     pass
             return False
 
+    def insert_societies_user_batch(self, data):
+        """批量插入社团用户数据"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # 使用executemany批量插入数据
+            cursor.executemany(
+                "INSERT INTO societiesUser (userid, username, societiesid) VALUES (?, ?, ?)",
+                data
+            )
+            conn.commit()
+            print(f"成功插入 {len(data)} 条社团用户数据")
+            return True
+        except Exception as e:
+            print(f"插入社团用户数据时出错: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def insert_fans_user_batch(self, data):
+        """批量插入粉丝用户数据"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # 使用executemany批量插入数据
+            cursor.executemany(
+                "INSERT INTO FansUser (userid, username, societiesid) VALUES (?, ?, ?)",
+                data
+            )
+            conn.commit()
+            print(f"成功插入 {len(data)} 条粉丝用户数据")
+            return True
+        except Exception as e:
+            print(f"插入粉丝用户数据时出错: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+
+    def insert_societies_inf(self, societiesid, societiesname, number, getnum):
+        """插入社团信息到 societiesInf 表"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "INSERT INTO societiesInf (societiesid, societiesname, number, getnum) VALUES (?, ?, ?, ?)",
+                societiesid, societiesname, number, getnum
+            )
+            conn.commit()
+            print(f"成功插入社团信息: {societiesid} - {societiesname}")
+            return True
+        except Exception as e:
+            print(f"插入社团信息失败: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+
+    def insert_fans_inf(self, userid, fansname, number, getnum):
+        """插入粉丝专页信息到 FansInf 表"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "INSERT INTO FansInf (userid, fansname, number, getnum) VALUES (?, ?, ?, ?)",
+                userid, fansname, number, getnum
+            )
+            conn.commit()
+            print(f"成功插入粉丝专页信息: {userid} - {fansname}")
+            return True
+        except Exception as e:
+            print(f"插入粉丝专页信息失败: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def update_updata_table(self, device_name, updatanumber, uptime):
+        """
+        更新 upData 表
+        使用 MERGE 语句，如果同一天有同一个设备，则更新数量（累加），否则插入新记录
+
+        参数:
+            device_name: 设备名称
+            updatanumber: 更新数据数量
+            uptime: 更新时间
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                MERGE INTO upData AS target
+                USING (VALUES (?, ?, ?)) AS source(deviceName, updatanumber, uptime)
+                ON target.deviceName = source.deviceName AND CAST(target.uptime AS DATE) = CAST(source.uptime AS DATE)
+                WHEN MATCHED THEN
+                    UPDATE SET target.updatanumber = target.updatanumber + source.updatanumber,
+                               target.uptime = source.uptime
+                WHEN NOT MATCHED THEN
+                    INSERT (deviceName, updatanumber, uptime)
+                    VALUES (source.deviceName, source.updatanumber, source.uptime);
+            """, device_name, updatanumber, uptime)
+
+            conn.commit()
+            print(f"成功更新 upData 表: {device_name} - {updatanumber} - {uptime}")
+            return True
+        except Exception as e:
+            print(f"更新 upData 表失败: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
 # 创建全局实例
 db_manager = DatabaseManager()

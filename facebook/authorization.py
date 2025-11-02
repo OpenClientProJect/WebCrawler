@@ -151,7 +151,7 @@ def check_authorization():
         connection_string = (
             r"Driver={SQL Server};"
             r"Server=dbs.kydb.vip;"
-            r"Database=LINEGroupSend;"
+            r"Database=DeviceAuthData;"
             r"UID=sa;"
             r"PWD=Yunsin@#861123823_shp4;"
             r"timeout=35;"
@@ -163,7 +163,7 @@ def check_authorization():
 
         query = """
                 SELECT PCCoded, installDate, ExpiryDate
-                FROM FBUserData
+                FROM UserData
                 WHERE PCCoded = ? \
                 """
         cursor.execute(query, (machine_code,))

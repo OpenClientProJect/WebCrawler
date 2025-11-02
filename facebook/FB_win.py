@@ -394,7 +394,7 @@ class MyApp(QWidget):
             'search_content': search_content,
             'search_count': search_count,
             'crawl_count': crawl_count,
-            'device_id': device_id,
+            'device': device_id,
             'combo_value': combo_value,
             'action': 'search',
             'types': 'facebook'

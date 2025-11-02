@@ -87,7 +87,7 @@ class MainLayout(QWidget):
         version_label.setAlignment(Qt.AlignHCenter)
         nav_layout.addWidget(version_label)
         
-        day_label = QLabel(f"剩余天數: {self.day}")
+        day_label = QLabel(f"剩余: {self.day} 天")
         day_label.setFont(QFont("微軟雅黑", 8))
         day_label.setStyleSheet("color: #999;")
         day_label.setAlignment(Qt.AlignHCenter)
