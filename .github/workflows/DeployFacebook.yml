@@ -11,7 +11,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -29,16 +29,14 @@ jobs:
       # 读取并执行打包命令
       - name: Build project
         run: |
-          COMMAND=$(cat facebook/packaging_script/packaging.text)
-          # 替换分号为冒号以适配Linux系统
-          COMMAND=$(echo "$COMMAND" | sed 's/;/:/g')
-          eval $COMMAND
+          $command = Get-Content -Path "facebook\packaging_script\packaging.text"
+          Invoke-Expression $command
 
       - name: Create release folder and zip executable
         run: |
-          mkdir -p release
-          apt-get install zip
-          zip release/FBreptilever.zip dist/FBreptilever.exe
+          New-Item -ItemType Directory -Force -Path release\
+           # 将 FBrereptilever.exe 压缩为 ZIP 文件
+          Compress-Archive -Path "dist\FBreptilever.exe" -DestinationPath "release\FBreptilever.zip"
 
       - name: Upload to server via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
