@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master  # 监听分支提交
-#    paths:
-#      - "facebook/**"
+  #    paths:
+  #      - "facebook/**"
   workflow_dispatch:
 
 
@@ -47,4 +47,6 @@ jobs:
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
-          server-dir: /UpData/FBfans/test/
+          server-dir: /UpData/FBfans/
+          security: loose
+          passive-mode: true
