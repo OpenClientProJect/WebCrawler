@@ -46,17 +46,6 @@ jobs:
            # 将 FBrereptilever.exe 压缩为 ZIP 文件
           Compress-Archive -Path "dist\FBreptilever.exe" -DestinationPath "release\FBreptilever.zip"
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-
       - name: Upload to server via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
@@ -71,12 +60,22 @@ jobs:
           exclude: |
             release/*.json
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/FBreptilever.zip
-          asset_name: FBreptilever.zip
-          asset_content_type: application/zip
+        #- name: Create GitHub Release
+        #        id: create_release
+        #        uses: actions/create-release@v1
+        #        env:
+        #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #        with:
+        #          tag_name: ${{ github.ref_name }}
+        #          release_name: Release ${{ github.ref_name }}
+        #          draft: false
+        #          prerelease: false
+#      - name: Upload Release Asset
+#        uses: actions/upload-release-asset@v1.0.1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: release/FBreptilever.zip
+#          asset_name: FBreptilever.zip
+#          asset_content_type: application/zip
