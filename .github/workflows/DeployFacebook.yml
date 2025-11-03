@@ -1,0 +1,27 @@
+name: 🚀 Deploy via FTP
+
+on:
+  push:
+    branches:
+      - master  # 监听分支提交
+    paths:
+      - "facebook/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload to server via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: facebook/image/warn.svg  # 要上传的本地目录
+          server-dir: /www/wwwroot/myproject  # 目标服务器目录
