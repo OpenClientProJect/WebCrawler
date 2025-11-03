@@ -6,6 +6,8 @@ on:
       - master  # 监听分支提交
     paths:
       - "facebook/**"
+  workflow_dispatch:
+
 
 jobs:
   deploy:
