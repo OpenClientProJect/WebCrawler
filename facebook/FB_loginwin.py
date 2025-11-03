@@ -201,15 +201,9 @@ class MyApplog(QDialog):
             self.move(event.globalPos() - self.dragPosition)
             event.accept()
     def closeEvent(self, event):
-        reply = QMessageBox.question(
-            self, "關閉確認", "確認要關閉爬取程序嗎？",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-        )
-        if reply == QMessageBox.Yes:
-            self.window_closed.emit()
-            super().closeEvent(event)
-        else:
-            event.ignore()
+        """发出关闭信号"""
+        self.close_app_signal.emit()  # 发出关闭应用程序信号
+        super().closeEvent(event)
     def center(self):
         # 获取窗口框架几何信息
         frame_gm = self.frameGeometry()
