@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - master  # 监听分支提交
-  #    paths:
-  #      - "facebook/**"
+    tags:
+      - v*
+    paths:
+      - "facebook/**"
   workflow_dispatch:
 
 
@@ -48,3 +50,16 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
+          security:
+          exclude: |
+            release/*.json
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release/FBreptilever.zip
+          asset_name: FBreptilever.zip
+          asset_content_type: application/zip
