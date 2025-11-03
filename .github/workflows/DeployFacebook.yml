@@ -2,8 +2,8 @@ name: Deploy via FTP
 
 on:
   push:
-    tags:
-      - 'v*'  # 监听标签推送，只匹配以'v'开头的标签
+    branches:
+      - master
   #    paths:
   #      - "facebook/**"
   workflow_dispatch:
@@ -56,7 +56,8 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
-          security:
+          passive-mode: true
+          security: loose
           exclude: |
             release/*.json
 
