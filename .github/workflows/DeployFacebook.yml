@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master  # 监听分支提交
-    paths:
-      - "facebook/**"
+#    paths:
+#      - "facebook/**"
   workflow_dispatch:
-      
+
 
 jobs:
   deploy:
