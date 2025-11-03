@@ -1,11 +1,12 @@
 import asyncio
 import os.path
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTextEdit, \
-    QComboBox, QMessageBox, QDialog
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
+
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QDialog
 from qasync import QEventLoop
+
 
 class MyApplog(QDialog):
     window_closed = pyqtSignal()

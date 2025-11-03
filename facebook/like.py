@@ -1,14 +1,17 @@
-import sys
 import os
+import sys
+
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont
+from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSpinBox,
-    QTextEdit, QPushButton, QFrame, QSizePolicy, QAbstractSpinBox,QMessageBox
+    QTextEdit, QPushButton, QSizePolicy, QAbstractSpinBox
 )
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, pyqtSignal
-from qasync import QEventLoop, asyncClose, asyncSlot
-from PyQt5.QtSvg import QSvgWidget
+from qasync import asyncSlot
+
 from FB_middle import main
+
 
 class likePage(QWidget):
     hideMainRequested = pyqtSignal()

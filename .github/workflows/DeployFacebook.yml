@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-  #    paths:
-  #      - "facebook/**"
+    paths:
+      - "facebook/**"
   workflow_dispatch:
 
 jobs:
@@ -26,8 +26,8 @@ jobs:
           pip install pyinstaller
           pip install PyQt5
           pip install pyodbc
-          pip install clr
           pip install pyperclip
+          pip install pythonnet
           pip install playwright
           pip install qasync
           pip install aiohttp
@@ -56,10 +56,10 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
-          passive-mode: true
           security: loose
           exclude: |
             release/*.json
+            .ftp-deploy-sync-state.json
 
         #- name: Create GitHub Release
         #        id: create_release

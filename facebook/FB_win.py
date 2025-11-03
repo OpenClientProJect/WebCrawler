@@ -1,14 +1,18 @@
 import asyncio
 import os
 import sys
+
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont, QPalette, QColor
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,
-                             QMessageBox, QFrame, QSizePolicy)
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt, pyqtSignal
-from qasync import QEventLoop, asyncClose, asyncSlot
+                             QMessageBox, QFrame)
+from qasync import QEventLoop, asyncSlot
+
 from FB_middle import main
 from database_manager import db_manager
+
+
 class MyApp(QWidget):
     # 嵌入模式下请求隐藏主窗口
     hideMainRequested = pyqtSignal()

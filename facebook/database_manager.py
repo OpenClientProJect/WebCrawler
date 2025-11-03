@@ -1,8 +1,8 @@
 # database_manager.py
-import pyodbc
 import re
 from typing import List, Optional
-from urllib.parse import urlparse
+
+import pyodbc
 
 
 class DatabaseManager:

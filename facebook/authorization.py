@@ -1,18 +1,14 @@
 # authorization.py
+import datetime
+import os
 import re
 
 import pyodbc
-import datetime
-import clr
-import sys
-import os
-
 import pyperclip
-from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout,
-                             QLabel, QPushButton, QTextEdit, QMessageBox)
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
 from PyQt5.QtCore import Qt
-import threading
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox)
+import clr
 
 # 添加dll引用路径
 try:

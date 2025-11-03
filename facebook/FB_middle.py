@@ -1,11 +1,9 @@
-import os
 import json
-import sys
+import os
 
 import aiohttp
-from PyQt5.QtWidgets import QApplication
+
 from FBmain import Crawler
-from FB_status import StatusWindow
 
 
 def getCookie():
