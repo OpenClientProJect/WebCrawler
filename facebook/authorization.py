@@ -31,7 +31,7 @@ class AuthorizationDialog(QDialog):
     def __init__(self, machine_code, parent=None):
         super().__init__(parent)
         self.machine_code = machine_code
-        self.setWindowTitle("授权验证")
+        self.setWindowTitle("授權驗證")
         self.setFixedSize(400, 300)
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
         self.initUI()
@@ -43,20 +43,20 @@ class AuthorizationDialog(QDialog):
         layout.setSpacing(15)
 
         # 标题
-        title_label = QLabel("授权验证")
+        title_label = QLabel("授權驗證")
         title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("color: #ff6b6b;")
         layout.addWidget(title_label)
 
         # 提示信息
-        info_label = QLabel("当前软件未授权或授权已过期")
+        info_label = QLabel("當前軟件未授權或授權已經過期")
         info_label.setFont(QFont("微軟雅黑", 10))
         info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(info_label)
 
         # 机器码显示
-        machine_label = QLabel("请复制以下机器码联系管理员授权：")
+        machine_label = QLabel("請複製以下機器碼聯繫管理員授權：")
         machine_label.setFont(QFont("微軟雅黑", 9))
         layout.addWidget(machine_label)
 
@@ -76,7 +76,7 @@ class AuthorizationDialog(QDialog):
         layout.addWidget(self.code_text)
 
         # 复制按钮
-        copy_btn = QPushButton("复制机器码")
+        copy_btn = QPushButton("複製機器碼")
         copy_btn.setFixedHeight(35)
         copy_btn.clicked.connect(self.copy_code)
         copy_btn.setStyleSheet("""
@@ -124,7 +124,7 @@ class AuthorizationDialog(QDialog):
         # clipboard = QApplication.clipboard()
         # clipboard.setText(self.machine_code)
         pyperclip.copy(self.machine_code)
-        QMessageBox.information(self, "提示", "机器码已复制到剪贴板")
+        QMessageBox.information(self, "提示", "機器碼已複製到剪切板")
 
     def close_application(self):
         QApplication.quit()
@@ -185,17 +185,17 @@ def check_authorization():
                 if installDate <= current_date <= ExpiryDate:
                     days_remaining = (ExpiryDate - current_date).days
                     print(f"当前日期在有效期内。剩余天数: {days_remaining}")
-                    return True, f"授权有效，剩余{days_remaining}天", machine_code
+                    return True, f"授權有效，剩餘{days_remaining}天", machine_code
                 else:
                     print("当前日期不在有效期内。")
-                    return False, "授权已过期", machine_code
+                    return False, "授權已經過期", machine_code
         else:
             print("没有找到授权信息！")
-            return False, "未找到授权信息", machine_code
+            return False, "未找到授權信息", machine_code
 
     except Exception as e:
         print(f"授权检查失败: {e}")
-        return False, f"授权检查失败: {str(e)}", "获取失败"
+        return False, f"授權檢測失敗: {str(e)}", "獲取失敗"
 
 
 def show_authorization_dialog(machine_code):
