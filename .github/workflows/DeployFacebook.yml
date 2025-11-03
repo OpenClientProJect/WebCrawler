@@ -48,5 +48,3 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
-          security: loose
-          passive-mode: true
