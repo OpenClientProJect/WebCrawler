@@ -2,8 +2,6 @@ name: Deploy via FTP
 
 on:
   push:
-    branches:
-      - master  # 监听分支提交
     tags:
       - 'v*'  # 监听标签推送，只匹配以'v'开头的标签
   #    paths:
@@ -26,6 +24,15 @@ jobs:
       - name: Install PyInstaller
         run: |
           pip install pyinstaller
+          pip install PyQt5
+          pip install pyodbc
+          pip install clr
+          pip install pyperclip
+          pip install playwright
+          pip install qasync
+          pip install aiohttp
+          pip install requests
+          pip install setuptools
 
       # 读取并执行打包命令
       - name: Build project
@@ -64,12 +71,12 @@ jobs:
           exclude: |
             release/*.json
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/FBreptilever.zip
-          asset_name: FBreptilever.zip
-          asset_content_type: application/zip
+#      - name: Upload Release Asset
+#        uses: actions/upload-release-asset@v1.0.1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: release/FBreptilever.zip
+#          asset_name: FBreptilever.zip
+#          asset_content_type: application/zip
