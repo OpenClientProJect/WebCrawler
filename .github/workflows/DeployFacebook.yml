@@ -30,6 +30,8 @@ jobs:
       - name: Build project
         run: |
           COMMAND=$(cat facebook/packaging_script/packaging.text)
+          # 替换分号为冒号以适配Linux系统
+          COMMAND=$(echo "$COMMAND" | sed 's/;/:/g')
           eval $COMMAND
 
       - name: Create release folder and zip executable
