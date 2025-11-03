@@ -1,15 +1,14 @@
-name: eploy via FTP
+name: Deploy via FTP
 
 on:
   push:
     branches:
       - master  # 监听分支提交
     tags:
-      - v*
-    paths:
-      - "facebook/**"
+      - 'v*'  # 监听标签推送，只匹配以'v'开头的标签
+  #    paths:
+  #      - "facebook/**"
   workflow_dispatch:
-
 
 jobs:
   deploy:
@@ -39,6 +38,17 @@ jobs:
           New-Item -ItemType Directory -Force -Path release\
            # 将 FBrereptilever.exe 压缩为 ZIP 文件
           Compress-Archive -Path "dist\FBreptilever.exe" -DestinationPath "release\FBreptilever.zip"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
 
       - name: Upload to server via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
