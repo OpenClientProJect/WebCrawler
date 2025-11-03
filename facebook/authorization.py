@@ -6,6 +6,8 @@ import datetime
 import clr
 import sys
 import os
+
+import pyperclip
 from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout,
                              QLabel, QPushButton, QTextEdit, QMessageBox)
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
@@ -119,8 +121,9 @@ class AuthorizationDialog(QDialog):
         self.move(frame_gm.topLeft())
 
     def copy_code(self):
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.machine_code)
+        # clipboard = QApplication.clipboard()
+        # clipboard.setText(self.machine_code)
+        pyperclip.copy(self.machine_code)
         QMessageBox.information(self, "提示", "机器码已复制到剪贴板")
 
     def close_application(self):

@@ -84,7 +84,7 @@ class Crawler:
         self.task_order = task_order or []
         self.executed_tasks = []  # 用于跟踪已执行的任务
         self.rest_times = rest_times or {}  # 存储休息时间配置
-        self.username = content1
+        self.account  = content1
         self.device_number = content0  # 设备号，可以从配置中获取
         self.machine_code = self.generate_machine_code()  # 获取机器码
         self.is_phone = 0  # 是否是手机
@@ -277,13 +277,13 @@ class Crawler:
                     remaining_time = completion_time - elapsed_time
 
                     if remaining_time > 0:
-                        await self.robust_update_status(f"{task_name}提前完成，等待剩余时间: {int(remaining_time)}秒")
+                        await self.robust_update_status(f"{task_name}提前完成，等待剩餘時間: {int(remaining_time)}秒")
                         # 更新倒计时显示为剩余等待时间
                         if self.status_window and hasattr(self.status_window, 'update_task_countdown'):
                             asyncio.create_task(self.update_waiting_countdown(task_id, int(remaining_time)))
                         await asyncio.sleep(remaining_time)
                     else:
-                        await self.robust_update_status(f"{task_name}在指定时间内完成")
+                        await self.robust_update_status(f"{task_name}在指定時間內完成")
 
                 except asyncio.TimeoutError:
                     await self.robust_update_status(f"{task_name}執行超時，強制結束並進入下一個任務")
@@ -477,7 +477,7 @@ class Crawler:
 
                 # 請求數據
                 tweet = await self.fetch_data(
-                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}")
+                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.account}")
                 response_url = tweet.split("|+|")
                 comment_text = response_url[7].split("{}")
 
@@ -508,7 +508,7 @@ class Crawler:
 
                 #請求數據
                 tweet = await self.fetch_data(
-                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}")
+                    f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.account}")
                 response_url = tweet.split("|+|")
                 comment_text = response_url[7].split("{}")
 
@@ -644,7 +644,7 @@ class Crawler:
     # """發文、推文"""
     async def tweet_comment(self):
         await self.robust_update_status("開始執行發文")
-        tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
+        tweet = await self.fetch_data(f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.account}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = tweet.split("|+|")
         post_url = response_url[0].split("{}")
         # 發文內容設置
@@ -705,7 +705,7 @@ class Crawler:
         await self.robust_update_status(f"開始執行推文")
         asyncio.create_task(self.report_task_status(f"開始執行推文"))
         post = await self.fetch_data(
-            f"http://aj.ry188.vip/api/GetPostUrlList.aspx?Account={self.username}&UrlCount={self.Count_num}&Count1={self.Count1}&Count2={self.Count2}")
+            f"http://aj.ry188.vip/api/GetPostUrlList.aspx?Account={self.account}&UrlCount={self.Count_num}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = post.split("|+|")
         post_url = response_url[0].split("{}")
         print(post_url)  # 推文留言網址
@@ -728,7 +728,7 @@ class Crawler:
     # 加社團up
     async def add_join_groups(self):
         groups = await self.fetch_data2(
-            f"http://aj.ry188.vip/api/GetGroupUrl.aspx?Account={self.username}")
+            f"http://aj.ry188.vip/api/GetGroupUrl.aspx?Account={self.account}")
         is_on_line = parse_bool(groups["IsOnLineGroupData"])#是否在線社團
         answer = ["遵守版規", "同意版規", "感謝版主"]
         for i in range(len(groups["GroupDataList"])):
@@ -958,7 +958,7 @@ class Crawler:
 
     async def post_personal_updates(self):
         tweet = await self.fetch_data(
-            f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.username}&Count1={self.Count1}&Count2={self.Count2}")
+            f"http://aj.ry188.vip/api/GetUrlList.aspx?Account={self.account}&Count1={self.Count1}&Count2={self.Count2}")
         response_url = tweet.split("|+|")
         await self.page.goto(url="https://www.facebook.com/", wait_until='load',timeout=50000)
         title = await self.page.title()
@@ -1103,7 +1103,7 @@ class Crawler:
             encoded_bytes = base64.b64encode(task_name.encode('utf-8'))
             encoded_task_name = encoded_bytes.decode('utf-8')
 
-            url = f"http://aj.ry188.vip/api/UpJoinGroupUrl.aspx?Account={self.username}&Urls={encoded_task_name}"
+            url = f"http://aj.ry188.vip/api/UpJoinGroupUrl.aspx?Account={self.account}&Urls={encoded_task_name}"
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1120,7 +1120,7 @@ class Crawler:
         """异步上报推文網址"""
         try:
             task_name = await self.extract_posturl_ids(task_name)
-            url = f"http://aj.ry188.vip/api/UpPostUrl.aspx?Account={self.username}&PostId={task_name}&UserNumber={self.customer_code}&GroupName="
+            url = f"http://aj.ry188.vip/api/UpPostUrl.aspx?Account={self.account}&PostId={task_name}&UserNumber={self.customer_code}&GroupName="
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1137,7 +1137,7 @@ class Crawler:
         """异步上报粉丝专页推文網址"""
         try:
             # task_name = await self.extract_posturl_ids(task_name)
-            url = f"http://aj.ry188.vip/api/UpPagesPostUrl.aspx?Account={self.username}&UserNumber={user_numer}&Urls={task_name}"
+            url = f"http://aj.ry188.vip/api/UpPagesPostUrl.aspx?Account={self.account}&UserNumber={user_numer}&Urls={task_name}"
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1154,7 +1154,7 @@ class Crawler:
         """异步上报刪除推文網址"""
         try:
             task_name = await self.extract_posturl_ids(task_name)
-            url = f"http://aj.ry188.vip/api/DeleteUrls.aspx?Account={self.username}&PostId={task_name}"
+            url = f"http://aj.ry188.vip/api/DeleteUrls.aspx?Account={self.account}&PostId={task_name}"
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1179,7 +1179,7 @@ class Crawler:
                 print("提取的群组ID:", group_id)
             else:
                 print("未找到群组ID")
-            url = f"http://aj.ry188.vip/api/UpUrls.aspx?Account={self.username}&Urls={task_name}&GroupId={group_id}&GroupName='123'&PostId={task_name2}&UserNumber={code}"
+            url = f"http://aj.ry188.vip/api/UpUrls.aspx?Account={self.account}&Urls={task_name}&GroupId={group_id}&GroupName='123'&PostId={task_name2}&UserNumber={code}"
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1278,7 +1278,7 @@ class Crawler:
     async def report_online_status(self):
         """异步上报在线状态"""
         try:
-            url = f"http://aj.ry188.vip/API/UpDataState.aspx?Account={self.username}&DeviceNumber={self.device_number}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}&RunText=在线"
+            url = f"http://aj.ry188.vip/API/UpDataState.aspx?Account={self.account}&DeviceNumber={self.device_number}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}&RunText=在线"
 
             # 使用 aiohttp 进行异步请求
             timeout = aiohttp.ClientTimeout(total=10)  # 设置10秒超时
@@ -1296,7 +1296,7 @@ class Crawler:
     async def report_task_status(self, task_name):
         """异步上报任务执行状态"""
         try:
-            url = f"http://aj.ry188.vip/API/UpDataRunState.aspx?Account={self.username}&DeviceNumber={self.device_number}&RunText={task_name}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}"
+            url = f"http://aj.ry188.vip/API/UpDataRunState.aspx?Account={self.account}&DeviceNumber={self.device_number}&RunText={task_name}&DeviceCode={self.machine_code}&IsPhone={self.is_phone}&RemoteId={self.remote_id}"
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as session:
