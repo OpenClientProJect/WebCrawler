@@ -25,5 +25,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: facebook/image/warn.svg  # 要上传的本地目录
+          local-dir: facebook/image/  # 要上传的本地目录
           server-dir: /UpData/FBfans/  # 目标服务器目录
+          exclude: |
+            **!warn.svg
+            
