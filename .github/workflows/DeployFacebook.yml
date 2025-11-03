@@ -29,8 +29,8 @@ jobs:
       # 读取并执行打包命令
       - name: Build project
         run: |
-          $command = Get-Content -Path "facebook\packaging_script\packaging.text"
-          Invoke-Expression $command
+          COMMAND=$(cat facebook/packaging_script/packaging.text)
+          eval $COMMAND
 
       - name: Create release folder and zip executable
         run: |
