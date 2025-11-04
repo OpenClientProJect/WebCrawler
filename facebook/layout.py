@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from PyQt5.QtWidgets import (
@@ -81,18 +82,18 @@ class MainLayout(QWidget):
         # 版本信息标签放置于导航底部
         self.version = versions
         self.day = days
-        version_label = QLabel(f"版本: {self.version}")
-        version_label.setFont(QFont("微軟雅黑", 8))
-        version_label.setStyleSheet("color: #999;")
-        version_label.setAlignment(Qt.AlignHCenter)
-        nav_layout.addWidget(version_label)
-        
         day_label = QLabel(f"剩余: {self.day} 天")
         day_label.setFont(QFont("微軟雅黑", 8))
         day_label.setStyleSheet("color: #999;")
         day_label.setAlignment(Qt.AlignHCenter)
         nav_layout.addWidget(day_label)
         nav.setLayout(nav_layout)
+
+        version_label = QLabel(f"版本: {self.version}")
+        version_label.setFont(QFont("微軟雅黑", 8))
+        version_label.setStyleSheet("color: #999;")
+        version_label.setAlignment(Qt.AlignHCenter)
+        nav_layout.addWidget(version_label)
 
         # 右侧内容区域容器
         right_content_container = QWidget()
@@ -246,5 +247,8 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 if __name__ == '__main__':
-    main("1.0.0.0", 1)
+    with open('config.json', 'r', encoding='utf-8') as f:
+        conig = json.load(f)
+        version = conig['version']
+    main(version, 1)
 

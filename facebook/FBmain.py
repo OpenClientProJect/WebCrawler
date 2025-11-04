@@ -552,7 +552,7 @@ class Crawler:
                 await self.robust_update_status(f"社團名:{self.groups_name} 社團人數：{self.groups_num}")
             except Exception as e:
                 print(f"提取社团信息时出错: {str(e)}")
-            await self.robust_update_status("开始爬取用户信息...")
+            await self.robust_update_status("開始爬取用戶信息...")
             # 滚动加载更多用户
             previous_count = 0
             current_count = 0
@@ -676,7 +676,7 @@ class Crawler:
                 await self.robust_update_status(f"粉絲專頁名:{self.groups_name} 粉絲人數：{self.groups_num}")
             except Exception as e:
                 print(f"提取粉丝专页信息时出错: {str(e)}")
-            await self.robust_update_status("开始爬取用户信息...")
+            await self.robust_update_status("開始爬取用戶信息...")
             # 滚动加载更多用户
             previous_count = 0
             current_count = 0
@@ -912,8 +912,8 @@ class Crawler:
 
     async def get_sponsor_user(self):
         """修正版：获取赞助帖子的点赞用户"""
-        print("开始获取赞助帖子用户...")
-        await self.robust_update_status("开始获取赞助帖子用户...")
+        print("開始獲取贊助帖子用戶......")
+        await self.robust_update_status("開始獲取贊助帖子用戶...")
 
         # 初始化变量（移到循环外）
         previous_count = 0

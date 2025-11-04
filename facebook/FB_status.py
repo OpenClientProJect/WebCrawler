@@ -228,7 +228,7 @@ class StatusWindow(QDialog):
         title_container = QWidget()
         title_container.setFixedHeight(40)  # 设置标题栏高度
         title_container.setStyleSheet(
-            "background-color: #e0e5e0; border-top-left-radius: 8px; border-top-right-radius: 8px;")
+            "background-color: #e4eee9; border-top-left-radius: 8px; border-top-right-radius: 8px;")
 
         title_bar = QHBoxLayout(title_container)
         title_bar.setContentsMargins(15, 0, 15, 0)
