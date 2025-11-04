@@ -56,9 +56,6 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
-          security: loose
-          timeout: 3600000
           dry-run: true
           exclude: |
             release/*.json
-            .ftp-deploy-sync-state.json
