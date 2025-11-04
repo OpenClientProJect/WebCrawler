@@ -154,7 +154,7 @@ class Crawler:
                         await self.getusers()
                     else:
                         await self.getusers_fans()
-            await self.robust_update_status(f"全部任務完成")
+            await self.robust_update_status(f"全部爬取完成")
         except Exception as e:
             print(f"任务执行出错: {str(e)}")
             raise
@@ -552,7 +552,7 @@ class Crawler:
                 await self.robust_update_status(f"社團名:{self.groups_name} 社團人數：{self.groups_num}")
             except Exception as e:
                 print(f"提取社团信息时出错: {str(e)}")
-            await self.robust_update_status("开始爬取用户信息...")
+            await self.robust_update_status("開始爬取用戶信息...")
             # 滚动加载更多用户
             previous_count = 0
             current_count = 0
@@ -626,6 +626,7 @@ class Crawler:
                     csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                await self.robust_update_status("開始提交數據...")
                 # 使用线程池执行数据库提交（避免阻塞主线程）
                 loop = asyncio.get_event_loop()
                 with ThreadPoolExecutor() as executor:
@@ -641,7 +642,7 @@ class Crawler:
                         user_counter  # 实际获取数量
                     )
 
-                await self.robust_update_status(f"{csv_filename}数据提交完成")
+                await self.robust_update_status(f"{csv_filename}數據提交完成")
                 upend_time = datetime.datetime.now()
                 db_manager.update_updata_table(self.device, len(users), upend_time)
             else:
@@ -676,7 +677,7 @@ class Crawler:
                 await self.robust_update_status(f"粉絲專頁名:{self.groups_name} 粉絲人數：{self.groups_num}")
             except Exception as e:
                 print(f"提取粉丝专页信息时出错: {str(e)}")
-            await self.robust_update_status("开始爬取用户信息...")
+            await self.robust_update_status("開始爬取用戶信息...")
             # 滚动加载更多用户
             previous_count = 0
             current_count = 0
@@ -761,6 +762,7 @@ class Crawler:
                     csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                await self.robust_update_status("開始提交數據...")
                 # 使用线程池执行数据库提交（避免阻塞主线程）
                 loop = asyncio.get_event_loop()
                 with ThreadPoolExecutor() as executor:
@@ -775,13 +777,14 @@ class Crawler:
                         self.groups_num,  # 总粉丝数
                         user_counter  # 实际获取数量
                     )
-                await self.robust_update_status(f"{csv_filename}数据提交完成")
+                await self.robust_update_status(f"{csv_filename}數據提交完成")
                 upend_time = datetime.datetime.now()
                 db_manager.update_updata_table(self.device, len(users), upend_time)
             else:
                 print("無用戶")
 
     async def getusers_like(self):
+        await self.robust_update_status("開始獲取贊助帖子用戶...")
         await self.page.goto(url="https://www.facebook.com/", wait_until='load', timeout=50000)
         title = await self.page.title()
         if "Facebook" in title:
@@ -835,7 +838,7 @@ class Crawler:
                 if element:
                     await element.scroll_into_view_if_needed()
                     print(f"第 {i} 个帖子")
-                    await self.robust_update_status(f"第 {i} 个帖子")
+                    await self.robust_update_status(f"第 {i} 個帖子")
                     like_count, seek_count = await self.sponsor_like(selector, like_count, seek_count)
                     # if like_count >= num_posts:
                     #     break
@@ -850,6 +853,7 @@ class Crawler:
         return like_count, seek_count
 
     async def getusers_like_url(self, url):
+        await self.robust_update_status("開始獲取指定貼文點贊用戶...")
         for i in range(len(url)):
             await self.page.goto(url=url[i], wait_until='load', timeout=50000)
 
@@ -913,7 +917,6 @@ class Crawler:
     async def get_sponsor_user(self):
         """修正版：获取赞助帖子的点赞用户"""
         print("开始获取赞助帖子用户...")
-        await self.robust_update_status("开始获取赞助帖子用户...")
 
         # 初始化变量（移到循环外）
         previous_count = 0
@@ -1099,12 +1102,12 @@ class Crawler:
 
             if not page_size:
                 print("未找到页面窗口")
-                await self.robust_update_status(f"未找到弹窗")
+                await self.robust_update_status(f"未找到彈窗")
                 return
 
         except Exception as e:
             print(f"等待窗口出现时出错: {str(e)}")
-            await self.robust_update_status(f"等待弹窗出现时出错")
+            await self.robust_update_status(f"等待彈窗出現時出錯")
             return
         try:
             # 获取弹窗的位置和大小
@@ -1117,7 +1120,7 @@ class Crawler:
                 print(f"鼠标滚动，位置: ({center_x}, {center_y})")
         except Exception as e:
             print(f"鼠标滚动出错: {str(e)}")
-            await self.robust_update_status(f"鼠标滚动出错")
+            await self.robust_update_status(f"鼠標滾動出錯")
 
     async def home_post(self):
         await self.page.goto(url="https://www.facebook.com/", wait_until='load')

@@ -166,12 +166,12 @@ class DatabaseManager:
                     userid, username, supportid = item
                     
                     # 检查是否已存在相同的记录
-                    cursor.execute("SELECT COUNT(*) FROM SupportUser_copy1 WHERE userid = ? AND Supportid = ?", 
+                    cursor.execute("SELECT COUNT(*) FROM SupportUser WHERE userid = ? AND Supportid = ?",
                                    userid, supportid)
                     if cursor.fetchone()[0] == 0:
                         # 不存在相同记录，执行插入
                         query = """
-                        INSERT INTO SupportUser_copy1 (userid, username, Supportid)
+                        INSERT INTO SupportUser (userid, username, Supportid)
                         VALUES (?, ?, ?)
                         """
                         cursor.execute(query, userid, username, supportid)
@@ -202,12 +202,12 @@ class DatabaseManager:
             # 使用 UPSERT 操作（如果记录存在则更新，否则插入）
             cursor.execute(
                 """
-                IF EXISTS (SELECT 1 FROM SupportInf_copy1 WHERE Supportid = ?)
-                    UPDATE SupportInf_copy1 
+                IF EXISTS (SELECT 1 FROM SupportInf WHERE Supportid = ?)
+                    UPDATE SupportInf 
                     SET number = number + ?, SupportName = ?
                     WHERE Supportid = ?
                 ELSE
-                    INSERT INTO SupportInf_copy1 (Supportid, SupportName, number)
+                    INSERT INTO SupportInf (Supportid, SupportName, number)
                     VALUES (?, ?, ?)
                 """,
                 post_info['Supportid'], 
