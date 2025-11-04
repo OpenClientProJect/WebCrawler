@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    paths:
-      - "facebook/**"
+#    paths:
+#      - "facebook/**"
   workflow_dispatch:
 
 jobs:
@@ -58,6 +58,7 @@ jobs:
           server-dir: /UpData/FBfans/
           security: loose
           timeout: 3600000
+          dry-run: true
           exclude: |
             release/*.json
             .ftp-deploy-sync-state.json
