@@ -201,7 +201,9 @@ def version_ver():
     if remote_version > version:
         install_new_version_thread(version, remote_version)
     else:
-        win_main(version, 1)
+        # 使用授权验证来启动主程序
+        from authorization import verify_and_run
+        verify_and_run(version, 1)
 if __name__ == "__main__":
     application_path = get_real_path()
     os.chdir(application_path)
