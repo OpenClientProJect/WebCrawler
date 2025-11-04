@@ -33,6 +33,8 @@ def parse_bool(type_data):
 
 
 async def main(content0, content1):
+    is_multiple_accounts = True
+    multiple_accounts = 5
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
