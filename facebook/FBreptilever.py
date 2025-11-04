@@ -186,11 +186,13 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
 
 
 async def check_version():
-    with open('config.json', 'r', encoding='utf-8') as f:
-        conig = json.load(f)
-        version = conig['version']
-        print("当前版本：", version)
-        remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=FBreptile'
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            conig = json.load(f)
+            version = conig['version']
+            print("当前版本：", version)
+            remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=FBreptile'
 
     async with aiohttp.ClientSession() as session:
         async with session.get(remote_version_url, headers=headers) as response:
