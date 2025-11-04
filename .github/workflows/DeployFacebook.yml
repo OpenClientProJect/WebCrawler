@@ -56,3 +56,4 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: release/
           server-dir: /UpData/FBfans/
+          timeout: 3600000
