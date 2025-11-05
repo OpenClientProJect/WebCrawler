@@ -941,9 +941,13 @@ class TaskOrderWindow(QDialog):
                     QMessageBox.warning(self, "輸入錯誤", "時間格式不正確，請使用 HH:MM 格式（如 09:00）")
                     #設置字體顏色為黑色
                     QMessageBox.setStyleSheet("""
-                        color: #2b2d30
+                       QMessageBox {
+                            background-color: white;
+                        }
+                        QMessageBox QLabel {
+                            color: #000000;
+                        }
                     """)
-
                     return
 
         # 收集所有任务的配置

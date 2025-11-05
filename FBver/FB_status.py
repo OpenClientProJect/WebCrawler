@@ -376,7 +376,7 @@ class StatusWindow(QDialog):
         # 任务标题栏
         task_title_bar = QWidget()
         task_title_bar.setFixedHeight(50)
-        task_title_bar.setStyleSheet("background-color: #ffffff;")
+        task_title_bar.setStyleSheet("background-color: #edf6f7;")
         task_title_layout = QVBoxLayout(task_title_bar)
         task_title_layout.setContentsMargins(15, 10, 15, 10)
         task_title_layout.setSpacing(0)
@@ -387,10 +387,10 @@ class StatusWindow(QDialog):
         task_title_layout.addWidget(task_title)
         
         # 分隔线
-        separator = QFrame()
-        separator.setFixedHeight(1)
-        separator.setStyleSheet("background-color: #b3d9ff;")
-        task_title_layout.addWidget(separator)
+        # separator = QFrame()
+        # separator.setFixedHeight(1)
+        # separator.setStyleSheet("background-color: #b3d9ff;")
+        # task_title_layout.addWidget(separator)
         
         left_layout.addWidget(task_title_bar)
 
@@ -440,7 +440,7 @@ class StatusWindow(QDialog):
         # 标题栏容器
         title_container = QWidget()
         title_container.setFixedHeight(50)
-        title_container.setStyleSheet("background-color: #ffffff;")
+        title_container.setStyleSheet("background-color: #e8f4f5;")
 
         title_bar = QVBoxLayout(title_container)
         title_bar.setContentsMargins(15, 10, 15, 10)
@@ -448,6 +448,7 @@ class StatusWindow(QDialog):
         
         title_hbox = QHBoxLayout()
         title_hbox.setContentsMargins(0, 0, 0, 0)
+        title_hbox.setSpacing(8)  # 设置按钮之间的间距
         
         self.title_label = QLabel("執行任務狀態")
         self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
@@ -489,10 +490,10 @@ class StatusWindow(QDialog):
         title_bar.addLayout(title_hbox)
         
         # 分隔线
-        separator2 = QFrame()
-        separator2.setFixedHeight(1)
-        separator2.setStyleSheet("background-color: #b3d9ff;")
-        title_bar.addWidget(separator2)
+        # separator2 = QFrame()
+        # separator2.setFixedHeight(1)
+        # separator2.setStyleSheet("background-color: #b3d9ff;")
+        # title_bar.addWidget(separator2)
 
         right_layout.addWidget(title_container)
 
@@ -761,7 +762,15 @@ class StatusWindow(QDialog):
         """重写关闭事件，发出关闭信号"""
         reply = QMessageBox.question(
             self, "關閉確認", "確認要關閉腳本程序嗎？",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+            QMessageBox.setStyleSheet("""
+                QMessageBox {
+                            background-color: white;
+                        }
+                        QMessageBox QLabel {
+                            color: #000000;
+                        }
+            """)
         )
         if reply == QMessageBox.Yes:
             self.close_app_signal.emit()  # 发出关闭应用程序信号
