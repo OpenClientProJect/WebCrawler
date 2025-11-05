@@ -2,10 +2,10 @@ name: Deploy via FTP
 
 on:
   push:
-    branches:
-      - master
-    paths:
-      - "facebook/**"
+#    branches:
+#      - master
+#    paths:
+#      - "facebook/**"
   workflow_dispatch:
 
 jobs:
