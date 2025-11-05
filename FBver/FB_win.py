@@ -1,13 +1,15 @@
+import asyncio
 import os
 import sys
-import asyncio
+
 import aiohttp
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-                             QLineEdit, QPushButton, QLabel, QTextEdit, QComboBox,
-                             QMessageBox, QCheckBox, QStackedWidget, QFrame, QSizePolicy)
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
 from PyQt5.QtCore import Qt, QTimer
-from qasync import QEventLoop, asyncClose, asyncSlot
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+                             QLineEdit, QPushButton, QLabel, QMessageBox, QCheckBox, QStackedWidget, QFrame,
+                             QSizePolicy)
+from qasync import QEventLoop, asyncSlot
+
 from FB_middle import main
 
 
@@ -79,7 +81,7 @@ class MyApp(QWidget):
 
         # 创建轮播图
         self.slider = ImageSlider()
-        self.slider.add_image(resource_path("image/slide4.png"))
+        self.slider.add_image(resource_path("image/loginBackground.png"))
         left_layout.addWidget(self.slider)
 
         # 左侧底部文本
@@ -145,13 +147,13 @@ class MyApp(QWidget):
         right_layout.addLayout(title_bar)
         login_title0 = QLabel("Facebook自動化腳本")
         login_title0.setFont(QFont("微軟雅黑", 10, QFont.Bold))
-        login_title0.setStyleSheet("margin-top: 3px; margin-bottom: 2px;color: #6e6e70;font-weight: bold;")
+        login_title0.setStyleSheet("margin-top: 3px; margin-bottom: 2px;color: #8ac5ec;font-weight: bold;")
         login_title0.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(login_title0)
         # 添加登录表单标题
         login_title = QLabel("用戶登錄")
         login_title.setFont(QFont("微軟雅黑", 16, QFont.Bold))
-        login_title.setStyleSheet("margin-top: 10px; margin-bottom: 20px;color: #1e5eff;font-weight: bold;")
+        login_title.setStyleSheet("margin-top: 10px; margin-bottom: 20px;color: #8ac5ec;font-weight: bold;")
         login_title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(login_title)
 
@@ -255,17 +257,17 @@ class MyApp(QWidget):
         self.button.setStyleSheet("""
             QPushButton {
                 border-radius: 8px;
-                background-color: #1e5eff;
+                background-color: #7bbfe6;
                 color: white;
                 font-size: 12px;
                 font-weight: bold;
                 margin-top: 10px;
             }
             QPushButton:hover {
-                background-color: #40a9ff;
+                background-color: #6BB5D7;
             }
             QPushButton:pressed {
-                background-color: #096dd9;
+                background-color: #7bbfe6;
             }
         """)
         right_layout.addWidget(self.button)
