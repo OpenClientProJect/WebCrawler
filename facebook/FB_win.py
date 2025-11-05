@@ -356,7 +356,7 @@ class MyApp(QWidget):
         """设置搜索按钮状态"""
         self.is_searching = searching
         if searching:
-            self.search_button.setText("获取中...")
+            self.search_button.setText("獲取中...")
             self.search_button.setEnabled(False)
         else:
             self.search_button.setText("搜索")
