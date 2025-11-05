@@ -758,20 +758,37 @@ class StatusWindow(QDialog):
                 else:
                     # 如果倒计时结束，隐藏时间显示
                     status_label.hide()
+
     def closeEvent(self, event):
         """重写关闭事件，发出关闭信号"""
-        reply = QMessageBox.question(
-            self, "關閉確認", "確認要關閉腳本程序嗎？",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
-            QMessageBox.setStyleSheet("""
-                QMessageBox {
-                            background-color: white;
-                        }
-                        QMessageBox QLabel {
-                            color: #000000;
-                        }
-            """)
-        )
+        # 创建消息框实例
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("關閉確認")
+        msg_box.setText("確認要關閉腳本程序嗎？")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+
+        # 设置样式表
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+            }
+            QMessageBox QLabel {
+                color: #000000;
+            }
+            QMessageBox QPushButton {
+                background-color: #f0f0f0;
+                border: 1px solid #cccccc;
+                padding: 5px 15px;
+                border-radius: 4px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+        """)
+
+        reply = msg_box.exec_()
+
         if reply == QMessageBox.Yes:
             self.close_app_signal.emit()  # 发出关闭应用程序信号
             super().closeEvent(event)
