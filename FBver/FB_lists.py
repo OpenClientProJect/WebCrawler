@@ -1,4 +1,3 @@
-import sys
 import os
 import sys
 
@@ -584,7 +583,7 @@ class TaskOrderWindow(QDialog):
         title_bar = QWidget()
         title_bar.setFixedHeight(50)
         title_bar.setStyleSheet("""
-            background-color: #e6f0ff; 
+            background-color: #e8f4f5; 
             border-top-left-radius: 5px; 
             border-top-right-radius: 5px;
         """)
@@ -593,7 +592,7 @@ class TaskOrderWindow(QDialog):
 
         self.title_label = QLabel("任務執行順序")
         self.title_label.setStyleSheet("color: #88c5ec;")
-        self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
+        self.title_label.setFont(QFont("微軟雅黑", 13, QFont.Bold))
         title_bar_layout.addWidget(self.title_label)
         title_bar_layout.addStretch(1)
 
