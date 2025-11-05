@@ -165,10 +165,18 @@ def check_authorization():
                 FROM UserData
                 WHERE PCCoded = ? \
                 """
+        update = """
+                 UPDATE UserData
+                 SET UseCount = UseCount + 1
+                 WHERE PCCoded = ? \
+                 """
         cursor.execute(query, (machine_code,))
         results = cursor.fetchall()
 
         if results:
+            # 更新UseCount
+            cursor.execute(update, (machine_code,))
+            conn.commit()
             for row in results:
                 PCCoded = row[0]
                 installDate = row[1]
