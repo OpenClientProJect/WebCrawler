@@ -1,13 +1,13 @@
-import asyncio
 import sys
 import os
+import sys
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt, QMimeData, QByteArray, QDataStream, QIODevice
+from PyQt5.QtGui import QDrag, QColor, QFont, QPalette, QPainter, QIcon, QPen
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QPushButton, QFrame, QMessageBox, QScrollArea,
                              QSizePolicy, QGridLayout, QMenu, QInputDialog, QDialog)
-from PyQt5.QtCore import Qt, QMimeData, QByteArray, QDataStream, QIODevice, QPoint, QEventLoop
-from PyQt5.QtGui import QDrag, QColor, QFont, QPalette, QCursor, QPainter, QIcon, QPen
-from PyQt5 import QtCore
-from qasync import asyncSlot
 
 
 def resource_path(relative_path):
@@ -87,7 +87,7 @@ class DraggableLabel(QLabel):
 
     def getDarkerColor(self):
         """获取更深的颜色用于悬停效果"""
-        colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+        colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
         original_color = colors[self.index]
         # 简单的颜色变暗处理
         if original_color.startswith('#'):
@@ -102,7 +102,7 @@ class DraggableLabel(QLabel):
 
     def getOriginalColor(self):
         """获取原始颜色"""
-        colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+        colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
         return colors[self.index]
 
     def mousePressEvent(self, event):
@@ -256,7 +256,7 @@ class DropArea(QFrame):
                         self.labels.pop(i)
 
                         # 创建新标签并添加到相同位置
-                        colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+                        colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
                         texts = ["循環發文", "循環推文", "循環加社團", "養號", "粉絲專頁", "休息時間"]
                         new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                         new_label.is_internal = True  # 标记为内部标签
@@ -308,7 +308,7 @@ class DropArea(QFrame):
                         self.swapLabels(source_index, target_index)
                 else:
                     # 外部拖动：插入新标签并移除目标标签
-                    colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+                    colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
                     texts = ["循環發文", "循環推文", "循環加社團", "養號", "粉絲專頁", "休息時間"]
 
                     # 移除目标位置的标签
@@ -344,7 +344,7 @@ class DropArea(QFrame):
                     self.labels.insert(target_index, new_label)
             else:
                 # 添加到末尾
-                colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+                colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
                 texts = ["循環發文", "循環推文", "循環加社團", "養號", "粉絲專頁", "休息時間"]
                 new_label = DraggableLabel(index, colors[index], texts[index], draggable=True)
                 new_label.is_internal = True  # 标记为内部标签
@@ -574,7 +574,7 @@ class TaskOrderWindow(QDialog):
 
     def initUI(self):
         # 设置窗口背景颜色
-        self.setStyleSheet("background-color: #e6f0ff; color: white;")
+        self.setStyleSheet("background-color: #f8fafc; color: white;")
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -582,18 +582,17 @@ class TaskOrderWindow(QDialog):
 
         # 创建自定义标题栏
         title_bar = QWidget()
-        title_bar.setFixedHeight(30)
+        title_bar.setFixedHeight(50)
         title_bar.setStyleSheet("""
             background-color: #e6f0ff; 
             border-top-left-radius: 5px; 
             border-top-right-radius: 5px;
-            border-bottom:1px solid #739bff;
         """)
         title_bar_layout = QHBoxLayout(title_bar)
         title_bar_layout.setContentsMargins(10, 0, 5, 0)
 
         self.title_label = QLabel("任務執行順序")
-        self.title_label.setStyleSheet("color: #739bff;")  # 改为黑色字体
+        self.title_label.setStyleSheet("color: #88c5ec;")
         self.title_label.setFont(QFont("微軟雅黑", 10, QFont.Bold))
         title_bar_layout.addWidget(self.title_label)
         title_bar_layout.addStretch(1)
@@ -653,7 +652,7 @@ class TaskOrderWindow(QDialog):
 
         # 右侧可拖拽标签区域
         right_panel = QFrame()
-        right_panel.setStyleSheet("background-color: #e6f0ff;")
+        right_panel.setStyleSheet("background-color: #f8fafc;")
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 10, 10, 10)
 
@@ -664,7 +663,7 @@ class TaskOrderWindow(QDialog):
         right_layout.addWidget(label)
 
         # 创建4个可拖拽的标签，但根据配置决定是否显示
-        colors = ["#165dff", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
+        colors = ["#82c3ec", "#a5d6a7", "#ffe0b2", "#DDA0DD", "#f8bbd0", "#9fa8da"]
         texts = ["循環發文", "循環推文", "循環加社團", "養號", "粉絲專頁", "休息時間"]
 
         # 根据配置决定哪些标签应该显示
@@ -723,7 +722,7 @@ class TaskOrderWindow(QDialog):
         self.clear_btn.setFixedWidth(self.clear_btn.fontMetrics().width("清空任務") + 20)
         self.clear_btn.setStyleSheet("""
             QPushButton {
-                background-color: #ff6b6b;
+                background-color: #f8b4b4;
                 color: white;
                 border: none;
                 padding: 8px;
@@ -740,7 +739,7 @@ class TaskOrderWindow(QDialog):
         save_btn.setFixedWidth(save_btn.fontMetrics().width("保存順序") + 20)
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #63b5ff;
+                background-color: #6fb8db;
                 color: white;
                 border: none;
                 padding: 8px;
@@ -767,11 +766,8 @@ class TaskOrderWindow(QDialog):
             QLabel {
                 color: #99989e;
                 font-size: 12px;
-                background-color: #f5f0ff;
                 padding: 5px;
-                border: 1px solid #f5f0ff;
                 border-radius: 5px;
-
             }
         """)
         guide_text.setWordWrap(True)  # 允许文本换行
