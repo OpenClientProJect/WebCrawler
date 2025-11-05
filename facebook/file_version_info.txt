@@ -33,14 +33,14 @@ VSVersionInfo(
         [StringStruct('Comments', ''),
         StringStruct('CompanyName', ''),
         StringStruct('FileDescription', 'FBreptilever'),
-        StringStruct('FileVersion', '1.0.0.5'),
+        StringStruct('FileVersion', '1.0.0.6'),
         StringStruct('InternalName', 'FBreptilever.exe'),
         StringStruct('LegalCopyright', 'Copyright ©  2025'),
         StringStruct('LegalTrademarks', ''),
         StringStruct('OriginalFilename', 'FBreptilever'),
         StringStruct('ProductName', 'FBreptilever'),
-        StringStruct('ProductVersion', '1.0.0.5'),
-        StringStruct('Assembly Version', '1.0.0.5')])
+        StringStruct('ProductVersion', '1.0.0.6'),
+        StringStruct('Assembly Version', '1.0.0.6')])
       ])
   ]
 )
