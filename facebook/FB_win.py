@@ -539,9 +539,9 @@ class MyApp(QWidget):
             # 总是创建新的crawler实例，避免资源冲突
             await main(params)
 
-            QMessageBox.information(self, "完成", "爬取任务已完成！")
+            QMessageBox.information(self, "完成", "爬取任務已完成！")
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"爬取过程中出现错误: {str(e)}")
+            QMessageBox.critical(self, "错误", f"爬取過程中出現錯誤: {str(e)}")
         finally:
             self.confirm_button.setEnabled(True)
             if not self.embedded:
