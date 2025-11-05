@@ -939,6 +939,11 @@ class TaskOrderWindow(QDialog):
                 import re
                 if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', scheduled_time):
                     QMessageBox.warning(self, "輸入錯誤", "時間格式不正確，請使用 HH:MM 格式（如 09:00）")
+                    #設置字體顏色為黑色
+                    QMessageBox.setStyleSheet("""
+                        color: #2b2d30
+                    """)
+
                     return
 
         # 收集所有任务的配置

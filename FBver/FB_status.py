@@ -252,12 +252,13 @@
 #         base_path = os.path.abspath(".")
 #     return os.path.join(base_path, relative_path)
 
+import os
 import sys
-from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QMessageBox, \
-    QScrollArea, QFrame, QWidget, QTextEdit, QGridLayout
+
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
-import os
+from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QMessageBox, \
+    QScrollArea, QFrame, QWidget, QTextEdit
 
 
 class StatusWindow(QDialog):
@@ -353,34 +354,53 @@ class StatusWindow(QDialog):
         self.move(x, y)
 
     def initUI(self):
+        # 设置窗口样式 - 圆角和阴影效果
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #ffffff;
+                border-radius: 8px;
+            }
+        """)
+        
         # 主布局 - 改为水平布局
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 左侧任务方块区域
+        # 左侧任务方块区域（30-35%宽度）
         self.left_panel = QWidget()
-        self.left_panel.setFixedWidth(200)  # 固定宽度
-        self.left_panel.setStyleSheet("background-color: #e6f0ff; border-right: 1px solid #e0e0e0;")
-
         left_layout = QVBoxLayout(self.left_panel)
-        left_layout.setContentsMargins(10, 50, 10, 10)
-        left_layout.setSpacing(10)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
 
-        # 任务标题
+        # 任务标题栏
+        task_title_bar = QWidget()
+        task_title_bar.setFixedHeight(50)
+        task_title_bar.setStyleSheet("background-color: #ffffff;")
+        task_title_layout = QVBoxLayout(task_title_bar)
+        task_title_layout.setContentsMargins(15, 10, 15, 10)
+        task_title_layout.setSpacing(0)
+        
         task_title = QLabel("任務隊列")
-        task_title.setFont(QFont("微软雅黑", 12, QFont.Bold))
-        task_title.setStyleSheet("color: #165dff; padding: 5px; border-bottom: 1px solid #d4d4ff;")
-        task_title.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(task_title)
+        task_title.setFont(QFont("微軟雅黑", 12, QFont.Bold))
+        task_title.setStyleSheet("color: #82c3ed; background: transparent;")
+        task_title_layout.addWidget(task_title)
+        
+        # 分隔线
+        separator = QFrame()
+        separator.setFixedHeight(1)
+        separator.setStyleSheet("background-color: #b3d9ff;")
+        task_title_layout.addWidget(separator)
+        
+        left_layout.addWidget(task_title_bar)
 
-        # 任务容器（滚动区域）
+        # 任务容器（滚动区域）- 白色背景
         task_scroll = QScrollArea()
         task_scroll.setWidgetResizable(True)
         task_scroll.setFrameShape(QFrame.NoFrame)
         task_scroll.setStyleSheet("""
             QScrollArea {
-                background-color: transparent;
+                background-color: #ffffff;
                 border: none;
             }
             QScrollBar:vertical {
@@ -398,79 +418,81 @@ class StatusWindow(QDialog):
         """)
 
         self.task_container = QWidget()
+        self.task_container.setStyleSheet("background-color: #ffffff;")
         self.task_layout = QVBoxLayout(self.task_container)
         self.task_layout.setAlignment(Qt.AlignTop)
-        self.task_layout.setSpacing(8)
-        self.task_layout.setContentsMargins(5, 5, 5, 5)
+        self.task_layout.setSpacing(10)
+        self.task_layout.setContentsMargins(10, 10, 10, 10)
 
         task_scroll.setWidget(self.task_container)
         left_layout.addWidget(task_scroll)
+        
+        # 设置左侧面板宽度比例（约30-35%）
+        main_layout.addWidget(self.left_panel, 1)
 
-        # 添加到主布局
-        main_layout.addWidget(self.left_panel)
-
-        # 右侧内容区域
+        # 右侧内容区域（65-70%宽度）
         right_container = QWidget()
+        right_container.setStyleSheet("background-color: #ffffff;")
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
 
         # 标题栏容器
         title_container = QWidget()
-        title_container.setFixedHeight(40)
-        title_container.setStyleSheet(
-            "background-color: #e6f0ff; border-top-right-radius: 8px;")
+        title_container.setFixedHeight(50)
+        title_container.setStyleSheet("background-color: #ffffff;")
 
-        title_bar = QHBoxLayout(title_container)
-        title_bar.setContentsMargins(15, 0, 15, 0)
-
+        title_bar = QVBoxLayout(title_container)
+        title_bar.setContentsMargins(15, 10, 15, 10)
+        title_bar.setSpacing(0)
+        
+        title_hbox = QHBoxLayout()
+        title_hbox.setContentsMargins(0, 0, 0, 0)
+        
         self.title_label = QLabel("執行任務狀態")
         self.title_label.setFont(QFont("微軟雅黑", 12, QFont.Bold))
-        self.title_label.setStyleSheet("color: #165dff; background: transparent;")
-        title_bar.addWidget(self.title_label)
-        title_bar.addStretch(1)
-
-        # 最小化按钮
+        self.title_label.setStyleSheet("color: #82c3ed; background: transparent;")
+        title_hbox.addWidget(self.title_label)
+        title_hbox.addStretch(1)
+        
+        # 窗口控制按钮
         min_button = QPushButton("", self)
-        min_button.setFixedSize(20, 20)
-        min_button.setFont(QFont("Arial", 12, QFont.Bold))
-        min_button.clicked.connect(self.showMinimized)
+        min_button.setFixedSize(12, 12)
         min_button.setStyleSheet("""
             QPushButton {
-                background-color: #165dff;
-                color: white;
-                border-radius: 10px;
+                background-color: #4fc3f7;
+                border-radius: 6px;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #5a4abc;
-            }
-            QPushButton:pressed {
-                background-color: #4a3aac;
+                background-color: #29b6f6;
             }
         """)
-        title_bar.addWidget(min_button)
-
-        # 关闭按钮
+        min_button.clicked.connect(self.showMinimized)
+        title_hbox.addWidget(min_button)
+        
         close_button = QPushButton("", self)
-        close_button.setFixedSize(20, 20)
-        close_button.setFont(QFont("Arial", 12, QFont.Bold))
-        close_button.clicked.connect(self.close)
+        close_button.setFixedSize(12, 12)
         close_button.setStyleSheet("""
             QPushButton {
-                background-color: #69a1ff;
-                color: white;
-                border-radius: 10px;
+                background-color: #66bb6a;
+                border-radius: 6px;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #ff5252;
-            }
-            QPushButton:pressed {
-                background-color: #ff3838;
+                background-color: #4caf50;
             }
         """)
-        title_bar.addWidget(close_button)
+        close_button.clicked.connect(self.close)
+        title_hbox.addWidget(close_button)
+        
+        title_bar.addLayout(title_hbox)
+        
+        # 分隔线
+        separator2 = QFrame()
+        separator2.setFixedHeight(1)
+        separator2.setStyleSheet("background-color: #b3d9ff;")
+        title_bar.addWidget(separator2)
 
         right_layout.addWidget(title_container)
 
@@ -488,15 +510,14 @@ class StatusWindow(QDialog):
         self.plan_countdown_label.hide()
         right_layout.addWidget(self.plan_countdown_label)
 
-        # 创建滚动区域
+        # 创建滚动区域 - 白色背景
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.NoFrame)
         scroll_area.setStyleSheet("""
             QScrollArea {
-                background-color: #8b8b8b; 
+                background-color: #ffffff; 
                 border: none;
-                border-bottom-right-radius: 8px;
             }
             QScrollBar:vertical {
                 border: none;
@@ -521,25 +542,27 @@ class StatusWindow(QDialog):
             }
         """)
 
-        # 创建内容容器
+        # 创建内容容器（无边框，只作为容器）
         content_widget = QWidget()
-        content_widget.setStyleSheet("background-color: #eff4ff;")
+        content_widget.setStyleSheet("background-color: #ffffff;")
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(15, 10, 15, 15)
+        content_layout.setContentsMargins(15, 15, 15, 15)
         content_layout.setAlignment(Qt.AlignTop)
 
-        # 状态文本区域
+        # 状态文本区域 - 添加虚线边框
         self.status_textedit = QTextEdit()
         self.status_textedit.setReadOnly(True)
         self.status_textedit.setFont(QFont("微軟雅黑", 10))
+        # 禁用 QTextEdit 自己的滚动条，使用外层滚动条
+        self.status_textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.status_textedit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.status_textedit.setStyleSheet("""
             QTextEdit {
-                color: #3c9d6d;
+                color: #333333;
                 background-color: #ffffff;
-                border: none;
+                border: 2px dashed #b3d9ff;
                 border-radius: 10px;
-                border: 2px dashed #d4d4ff;
-                padding: 10px;
+                padding: 15px;
                 font-size: 14px;
             }
         """)
@@ -550,14 +573,14 @@ class StatusWindow(QDialog):
         scroll_area.setWidget(content_widget)
         right_layout.addWidget(scroll_area)
 
-        # 将右侧区域添加到主布局
-        main_layout.addWidget(right_container)
+        # 将右侧区域添加到主布局（65-70%宽度）
+        main_layout.addWidget(right_container, 2)
 
         self.setLayout(main_layout)
 
-        # 设置暗色主题
+        # 设置浅色主题
         palette = QPalette()
-        palette.setColor(QPalette.Window, QColor(239, 244, 255))
+        palette.setColor(QPalette.Window, QColor(255, 255, 255))
         palette.setColor(QPalette.WindowText, QColor(51, 51, 51))
         palette.setColor(QPalette.Base, QColor(255, 255, 255))
         self.setPalette(palette)
@@ -588,15 +611,21 @@ class StatusWindow(QDialog):
             5: "休息時間"
         }
 
-        # 任务颜色映射
-        task_colors = {
-            0: "#165dff",
-            1: "#a5d6a7",
-            2: "#ffe0b2",
-            3: "#DDA0DD",
-            4: "#f8bbd0",
-            5: "#9fa8da"
+        # 任务颜色映射（用于非活动任务的轻微颜色提示）
+        task_light_colors = {
+            0: "#82c3ec",  #蓝色
+            1: "#d5eadd",  #绿色
+            2: "#ffefd5",  #黄色
+            3: "#e9d5ff",  #紫色
+            4: "#fce4ec",  #粉色
+            5: "#ffefd5"   #黄色（休息时间）
         }
+        
+        # 活动任务颜色（浅蓝色）
+        active_task_color = "#90CAF9"
+        
+        # 当前活动任务ID（用于判断哪个任务是活动的）
+        current_active_task = getattr(self, 'current_active_task_id', None)
 
         # 显示当前任务队列 - 使用位置而不是索引作为唯一标识
         for position, task_index in enumerate(self.task_order):
@@ -605,57 +634,85 @@ class StatusWindow(QDialog):
 
             # 检查这个特定的任务实例是否完成
             is_completed = task_id in self.completed_tasks
+            
+            # 判断是否是当前活动任务（有倒计时且未完成）
+            is_active = (task_id == current_active_task) and not is_completed
+            
+            # 获取任务的剩余时间
+            remaining_time = getattr(self, 'task_remaining_times', {}).get(task_id, 0)
+            
+            # 如果有倒计时且未完成，则是活动任务
+            if remaining_time > 0 and not is_completed:
+                is_active = True
+                self.current_active_task_id = task_id
 
             task_frame = QFrame()
-            task_frame.setFixedHeight(60)
-            task_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {task_colors.get(task_index, "#cccccc")};
-                    border-radius: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    margin: 2px;
-                }}
-            """)
+            task_frame.setFixedHeight(50)
+            
+            if is_active:
+                # 活动任务：浅蓝色实心背景，白色文字
+                task_frame.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: {active_task_color};
+                        border-radius: 8px;
+                        margin: 2px;
+                    }}
+                """)
+            else:
+                # 非活动任务：非常浅的背景，有轻微颜色提示
+                task_frame.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: {task_light_colors.get(task_index, "#ffffff")};
+                        border-radius: 8px;
+                        margin: 2px;
+                    }}
+                """)
 
             task_layout = QHBoxLayout(task_frame)
-            task_layout.setContentsMargins(8, 4, 8, 4)
+            task_layout.setContentsMargins(12, 8, 12, 8)
 
             # 任务名称
             name_label = QLabel(task_names.get(task_index, f"{task_index}"))
-            name_label.setFont(QFont("微软雅黑", 9))
-            name_label.setStyleSheet("color: white; font-weight: bold;")
-
-            # 状态指示器 - 修改为显示倒计时或完成标记
-            if is_completed:
-                # 已完成：显示✓
-                status_label = QLabel("✓")
-                status_label.setFont(QFont("Arial", 12, QFont.Bold))
-                status_label.setStyleSheet("color: #00ff00;")
+            name_label.setFont(QFont("微軟雅黑", 10))
+            if is_active:
+                name_label.setStyleSheet("color: white; font-weight: bold;")
             else:
-                # 未完成：显示倒计时
-                # 获取任务的剩余时间（如果有的话）
-                remaining_time = getattr(self, 'task_remaining_times', {}).get(task_id, 0)
+                name_label.setStyleSheet("color: #333333; font-weight: normal;")
+
+            # 状态指示器
+            status_label = None
+            if is_active:
+                # 活动任务：显示倒计时（白色文字）
                 if remaining_time > 0:
-                    # 显示格式化的时间
                     minutes = remaining_time // 60
                     seconds = remaining_time % 60
                     time_text = f"{minutes:02d}:{seconds:02d}"
                     status_label = QLabel(time_text)
-                    status_label.setFont(QFont("Arial", 10, QFont.Bold))
-                    status_label.setStyleSheet("color: #ffff00;")  # 黄色显示倒计时
+                    status_label.setFont(QFont("Arial", 11, QFont.Bold))
+                    status_label.setStyleSheet("color: white;")
+                    status_label.setAlignment(Qt.AlignCenter)
+                    status_label.setMinimumWidth(50)
                 else:
-                    # 没有倒计时信息，显示默认状态
-                    status_label = QLabel("●")
-                    status_label.setFont(QFont("Arial", 12, QFont.Bold))
-                    status_label.setStyleSheet("color: #ffff00;")
+                    status_label = QLabel("")
+                    status_label.setFixedSize(0, 0)
+            elif is_completed:
+                # 已完成：不显示任何标记
+                status_label = QLabel("")
+                status_label.setFixedSize(0, 0)
+            else:
+                # 非活动未完成：显示黄色小圆圈
+                status_label = QLabel("●")
+                status_label.setFont(QFont("Arial", 10, QFont.Bold))
+                status_label.setStyleSheet("color: #ffd700;")  # 黄色
+                status_label.setFixedSize(12, 12)
+                status_label.setAlignment(Qt.AlignCenter)
 
-            status_label.setAlignment(Qt.AlignCenter)
-            status_label.setFixedSize(40, 20)
-
-            # task_layout.addWidget(seq_label)
             task_layout.addWidget(name_label)
             task_layout.addStretch(1)
-            task_layout.addWidget(status_label)
+            if status_label:
+                task_layout.addWidget(status_label)
+                # 存储状态标签的引用，以便后续更新
+                task_frame.status_label = status_label
 
             self.task_layout.addWidget(task_frame)
             self.task_labels[task_id] = task_frame
@@ -666,28 +723,40 @@ class StatusWindow(QDialog):
         if not hasattr(self, 'task_remaining_times'):
             self.task_remaining_times = {}
 
+        old_active_task = getattr(self, 'current_active_task_id', None)
         self.task_remaining_times[task_id] = remaining_seconds
+        
+        # 更新当前活动任务ID
+        if remaining_seconds > 0:
+            self.current_active_task_id = task_id
+        else:
+            if hasattr(self, 'current_active_task_id') and self.current_active_task_id == task_id:
+                self.current_active_task_id = None
 
-        # 如果该任务标签存在，则更新显示
+        # 如果活动任务发生变化，需要刷新整个列表以更新样式
+        if old_active_task != self.current_active_task_id:
+            self.refresh_task_display()
+            return
+
+        # 如果任务标签存在，直接更新其时间显示（避免完全刷新）
         if task_id in self.task_labels:
             task_frame = self.task_labels[task_id]
-            # 找到状态标签（布局中的最后一个widget）
-            layout = task_frame.layout()
-            if layout and layout.count() > 0:
-                status_widget = layout.itemAt(layout.count() - 1).widget()
-                if isinstance(status_widget, QLabel):
-                    if remaining_seconds > 0:
-                        # 显示格式化的时间
-                        minutes = remaining_seconds // 60
-                        seconds = remaining_seconds % 60
-                        time_text = f"{minutes:02d}:{seconds:02d}"
-                        status_widget.setText(time_text)
-                        status_widget.setStyleSheet("color: #ffff00;")
-                        status_widget.setFont(QFont("Arial", 10, QFont.Bold))
-                    else:
-                        # 如果任务已完成，应该已经在completed_tasks中，这里不需要处理
-                        # 保持原有的完成状态显示
-                        pass
+            if hasattr(task_frame, 'status_label') and task_frame.status_label:
+                status_label = task_frame.status_label
+                if remaining_seconds > 0:
+                    # 更新倒计时显示
+                    minutes = remaining_seconds // 60
+                    seconds = remaining_seconds % 60
+                    time_text = f"{minutes:02d}:{seconds:02d}"
+                    status_label.setText(time_text)
+                    status_label.setStyleSheet("color: white;")
+                    status_label.setFont(QFont("Arial", 11, QFont.Bold))
+                    status_label.setAlignment(Qt.AlignCenter)
+                    status_label.setMinimumWidth(50)
+                    status_label.show()
+                else:
+                    # 如果倒计时结束，隐藏时间显示
+                    status_label.hide()
     def closeEvent(self, event):
         """重写关闭事件，发出关闭信号"""
         reply = QMessageBox.question(
