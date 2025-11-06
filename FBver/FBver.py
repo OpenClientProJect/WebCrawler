@@ -1,19 +1,18 @@
-import os.path
-import time
 import asyncio
-import aiohttp
-import requests
 import os
-import sys
+import os.path
 import subprocess
+import sys
 import threading
+import time
+import tkinter as tk
 from tkinter import messagebox
 from tkinter.ttk import Progressbar
-import tkinter as tk
 
+import aiohttp
+import requests
 from PyQt5.QtWidgets import QApplication
 
-from FB_win import win_main
 # headers = {
 #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 #     "Accept-Language": "en-US,en;q=0.9",
@@ -187,7 +186,7 @@ def download_file_with_progress_http(url, local_path, progress_var, progress_lab
 
 
 async def check_version():
-    version = '1.0.0.2'
+    version = '1.0.0.3'
     remote_version_url = 'http://ver.ry188.vip/API/getver.aspx?N=FBver'
 
     async with aiohttp.ClientSession() as session:
