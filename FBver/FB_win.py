@@ -25,7 +25,7 @@ class ImageSlider(QStackedWidget):
     def add_image(self, image_path):
         label = QLabel()
         pixmap = QPixmap(image_path)
-        scaled_pixmap = pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         label.setPixmap(scaled_pixmap)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("border-radius: 10px;")
@@ -37,7 +37,7 @@ class ImageSlider(QStackedWidget):
             label = self.widget(i)
             if label and isinstance(label, QLabel):
                 pixmap = QPixmap(label.pixmap())
-                scaled_pixmap = pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 label.setPixmap(scaled_pixmap)
         super().resizeEvent(event)
 
@@ -71,7 +71,7 @@ class MyApp(QWidget):
         left_frame = QFrame()
         left_frame.setStyleSheet("""
             QFrame {
-                background-color: #f5f5f5;
+                background-color: #ffffff;
                 border-top-left-radius: 15px;
                 border-bottom-left-radius: 15px;
             }

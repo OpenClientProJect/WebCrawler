@@ -196,7 +196,7 @@
 #             self.countdown_seconds = seconds
 #             minutes = seconds // 60
 #             remaining_seconds = seconds % 60
-#             self.countdown_label.setText(f"休息倒计时:{minutes:02d}:{remaining_seconds:02d}")
+#             self.countdown_label.setText(f"休息倒計時:{minutes:02d}:{remaining_seconds:02d}")
 #             self.countdown_label.show()
 #
 #             # 启动或重启计时器
@@ -216,7 +216,7 @@
 #             self.countdown_seconds -= 1
 #             minutes = self.countdown_seconds // 60
 #             remaining_seconds = self.countdown_seconds % 60
-#             self.countdown_label.setText(f"休息倒计时: {minutes:02d}:{remaining_seconds:02d}")
+#             self.countdown_label.setText(f"休息倒計時: {minutes:02d}:{remaining_seconds:02d}")
 #         else:
 #             self.countdown_label.hide()
 #             self.countdown_timer.stop()
@@ -507,7 +507,7 @@ class StatusWindow(QDialog):
         # 添加计划时间倒计时标签 - 放在休息倒计时下面
         self.plan_countdown_label = QLabel("", self)
         self.plan_countdown_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.plan_countdown_label.setStyleSheet("color: #ff6b6b; font-weight: bold; padding: 5px; margin-top: 10px;")
+        self.plan_countdown_label.setStyleSheet("color: #ff6b6b; background-color: #f0f0f0; font-weight: bold; padding: 5px; border-radius: 4px;")
         self.plan_countdown_label.hide()
         right_layout.addWidget(self.plan_countdown_label)
 
@@ -545,7 +545,7 @@ class StatusWindow(QDialog):
 
         # 创建内容容器（无边框，只作为容器）
         content_widget = QWidget()
-        content_widget.setStyleSheet("background-color: #ffffff;")
+        content_widget.setStyleSheet("background-color: #f0f0f0;")
         content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(15, 15, 15, 15)
         content_layout.setAlignment(Qt.AlignTop)
