@@ -11,6 +11,8 @@ from tkinter import messagebox
 from tkinter.ttk import Progressbar
 import tkinter as tk
 
+from PyQt5.QtWidgets import QApplication
+
 from Instagram_mainwin import win_main
 # headers = {
 #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -194,6 +196,10 @@ async def check_version():
             return version, remote_version
 
 def version_ver():
+    # 确保只有一个QApplication实例
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     version, remote_version = loop.run_until_complete(check_version())
@@ -201,7 +207,8 @@ def version_ver():
     if remote_version > version:
         install_new_version_thread(version, remote_version)
     else:
-        win_main(version, 1)
+        from authorization import verify_and_run
+        verify_and_run(version, 1)
 if __name__ == "__main__":
     application_path = get_real_path()
     os.chdir(application_path)

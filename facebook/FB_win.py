@@ -126,7 +126,7 @@ class MyApp(QWidget):
         row_layout.setSpacing(16)
 
         # 搜索数量
-        search_count_label = QLabel("搜索數量:")
+        search_count_label = QLabel("搜索社群數量:")
         search_count_label.setFont(QFont("微軟雅黑", 10))
         self.search_count_input = QLineEdit()
         self.search_count_input.setText("10")
@@ -135,7 +135,7 @@ class MyApp(QWidget):
         row_layout.addWidget(self.search_count_input, 1)
 
         # 爬取数量
-        crawl_count_label = QLabel("爬取數量:")
+        crawl_count_label = QLabel("採集成員數量:")
         crawl_count_label.setFont(QFont("微軟雅黑", 10))
         self.crawl_count_input = QLineEdit()
         self.crawl_count_input.setText("2025")

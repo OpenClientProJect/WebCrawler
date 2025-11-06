@@ -49,7 +49,7 @@ class MyApp(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # 设置窗口属性
-        self.setWindowTitle('Instagram用戶獲取')
+        self.setWindowTitle('Instagram用戶採集')
         self.resize(400, 650)  # 设置窗口初始大小
 
         # 创建整体布局
@@ -126,7 +126,7 @@ class MyApp(QWidget):
         main_content_layout.addWidget(icon_label)
 
         # 主标题
-        self.title_label = QLabel("Instagram用戶獲取", self)
+        self.title_label = QLabel("Instagram用戶採集", self)
         self.title_label.setFont(QFont("微軟雅黑", 14, QFont.Bold))
         self.title_label.setStyleSheet("color: white; background: transparent; border: none;")
         self.title_label.setAlignment(Qt.AlignCenter)
@@ -283,7 +283,7 @@ class MyApp(QWidget):
         count_label_layout.addWidget(shequn_icon)
 
         # 添加文本标签
-        count_label = QLabel("獲取的人數", self)
+        count_label = QLabel("採集人數", self)
         count_label.setStyleSheet(label_style)
         count_label_layout.addWidget(count_label)
 
@@ -303,9 +303,9 @@ class MyApp(QWidget):
         browser_group = QVBoxLayout()
         browser_group.setSpacing(8)
 
-        # 创建水平布局
-        browser_label_layout = QHBoxLayout()
-        browser_label_layout.setSpacing(3)
+        # 第一行：点赞用户
+        browser_label_layout1 = QHBoxLayout()
+        browser_label_layout1.setSpacing(3)
 
         # 图片左侧
         browser_peth = resource_path("./image/shixin.png")
@@ -313,15 +313,35 @@ class MyApp(QWidget):
         shixin_pixmap = QPixmap(browser_peth)
         shixin_icon.setPixmap(shixin_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         shixin_icon.setStyleSheet("background: transparent; border: none;")
-        browser_label_layout.addWidget(shixin_icon)
+        browser_label_layout1.addWidget(shixin_icon)
 
         # 文本标签右侧
-        browser_label = QLabel("指定作品的點讚用戶列表和評論用戶列表", self)
+        browser_label = QLabel("指定作品的點讚用戶列表", self)
         browser_label.setStyleSheet(label_style)
-        browser_label_layout.addWidget(browser_label)
+        browser_label_layout1.addWidget(browser_label)
 
-        browser_label_layout.addStretch(1)  # 添加伸缩量
-        browser_group.addLayout(browser_label_layout)
+        browser_label_layout1.addStretch(1)  # 添加伸缩量
+        browser_group.addLayout(browser_label_layout1)
+
+        # 第二行：评论用户
+        browser_label_layout2 = QHBoxLayout()
+        browser_label_layout2.setSpacing(3)
+
+        # 图片左侧2
+        browser_peth2 = resource_path("./image/suo.png")
+        shixin_icon2 = QLabel(self)
+        shixin_pixmap2 = QPixmap(browser_peth2)
+        shixin_icon2.setPixmap(shixin_pixmap2.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        shixin_icon2.setStyleSheet("background: transparent; border: none;")
+        browser_label_layout2.addWidget(shixin_icon2)
+
+        # 文本标签右侧
+        browser_label2 = QLabel("指定作品的評論用戶列表", self)
+        browser_label2.setStyleSheet(label_style)
+        browser_label_layout2.addWidget(browser_label2)
+
+        browser_label_layout2.addStretch(1)  # 添加伸缩量
+        browser_group.addLayout(browser_label_layout2)
 
         self.browser_dropdown = CustomComboBox(self)
         self.browser_dropdown.setFixedSize(input_size)

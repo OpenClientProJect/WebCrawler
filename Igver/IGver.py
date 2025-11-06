@@ -195,15 +195,8 @@ def version_ver():
         install_new_version_thread(version, remote_version)
     else:
         print("当前已是最新版本。")
-        # clr.AddReference("mscorlib")
-        # clr.AddReference("AuthorizeManage")
-        # # 导入命名空间中的类
-        # from AuthorizeManage import AuthorizeX
-        #
-        # # 调用GetAuthorize方法
-        # get_result = AuthorizeX.GetAuthorize("FBCJ")
-        # print(get_result)
-        win_main(version,1)
+        from authorization import verify_and_run
+        verify_and_run(version, 1)
 if __name__ == "__main__":
     application_path = get_real_path()
     os.chdir(application_path)

@@ -24,7 +24,7 @@ class MyApp(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # 设置窗口属性
-        self.setWindowTitle('Threads用戶獲取')  # 这个标题现在只用于任务栏显示
+        self.setWindowTitle('Threads用戶採集')  # 这个标题现在只用于任务栏显示
         # 创建整体布局
         main_layout = QVBoxLayout()
         main_layout.setSpacing(0)  # 设置为0间距
@@ -91,7 +91,7 @@ class MyApp(QWidget):
         threads_icon.setAlignment(Qt.AlignCenter)
         threads_icon.setStyleSheet("margin-bottom: 5px;background: transparent; border: none;")
 
-        main_title = QLabel("Threads用戶獲取", self)
+        main_title = QLabel("Threads用戶採集", self)
         main_title.setFont(QFont("微軟雅黑", 16, QFont.Bold))
         main_title.setAlignment(Qt.AlignCenter)
         main_title.setStyleSheet("color: white; margin-top: 5px;border: none;")
@@ -255,7 +255,7 @@ class MyApp(QWidget):
         people_icon = QLabel()
         people_icon.setPixmap(QIcon(resource_path("iamge/renqun.png")).pixmap(20, 20))
         people_icon.setStyleSheet("margin-right: 3px;")
-        people_label = QLabel("獲取的人數:")
+        people_label = QLabel("採集人數:")
         people_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
         people_layout.addWidget(people_icon)
         people_layout.addWidget(people_label)
@@ -268,7 +268,7 @@ class MyApp(QWidget):
         post_icon = QLabel()
         post_icon.setPixmap(QIcon(resource_path("iamge/wenjian.png")).pixmap(20, 20))
         post_icon.setStyleSheet("margin-right: 3px;")
-        post_label = QLabel("獲取的貼文的評論數:")
+        post_label = QLabel("採集的貼文的評論數:")
         post_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
         post_layout.addWidget(post_icon)
         post_layout.addWidget(post_label)
@@ -281,7 +281,7 @@ class MyApp(QWidget):
         follower_icon = QLabel()
         follower_icon.setPixmap(QIcon(resource_path("iamge/shequn.png")).pixmap(20, 20))
         follower_icon.setStyleSheet("margin-right: 3px;")
-        follower_label = QLabel("獲取幾個用戶的粉絲:")
+        follower_label = QLabel("採集幾個用戶的粉絲:")
         follower_label.setStyleSheet("color: #a6acb2; font-weight: bold;")
         follower_layout.addWidget(follower_icon)
         follower_layout.addWidget(follower_label)
@@ -324,7 +324,7 @@ class MyApp(QWidget):
         QCheckBox {
                         background-color: white;
                     }""")
-        self.check_userpost = QCheckBox("用戶帖子", self)
+        self.check_userpost = QCheckBox("用戶貼文", self)
         self.check_userpost.setStyleSheet('background-color: white;')
         self.check_follower = QCheckBox("粉絲列表", self)
         self.check_follower.setStyleSheet('background-color: white;')
