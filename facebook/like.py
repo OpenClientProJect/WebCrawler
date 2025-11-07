@@ -115,7 +115,7 @@ class likePage(QWidget):
 
         add_row("設備號*", self.device_input)
         add_row("刷新數", self.refresh_input)
-        add_row("採集贊助帖子數量*", self.post_count, "贊助貼文與指定貼文僅能二選一進行採集")
+        add_row("採集贊助貼文數量*", self.post_count, "贊助貼文與指定貼文僅能二選一進行採集")
         add_row("採集數*", self.collect_count)
         add_row("採集指定貼文鏈接", self.links_text)
 

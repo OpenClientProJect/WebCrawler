@@ -199,7 +199,7 @@ class StatusWindow(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        icon_path = resource_path("Thcat.ico")
+        icon_path = resource_path("image/FBre.ico")
         self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # 无边框
         self.setFixedSize(400, 550)  # 固定大小

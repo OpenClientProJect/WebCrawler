@@ -29,7 +29,7 @@ class MyApp(QWidget):
             'search_content': '',
             'search_count': '10',
             'crawl_count': '2025',
-            'device_id': '000',
+            'device': '000',
             'combo_value': '社團',
             'addresses': ''
         }
@@ -518,7 +518,7 @@ class MyApp(QWidget):
             'search_content': search_content,
             'search_count': search_count,
             'crawl_count': crawl_count,
-            'device_id': device_id,
+            'device': device_id,
             'combo_value': combo_value,
             'addresses': final_addresses,
             'action': 'confirm',

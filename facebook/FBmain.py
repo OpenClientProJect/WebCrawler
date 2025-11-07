@@ -41,6 +41,7 @@ class Crawler:
         self.post_name = ""
         self.eq_type = None
         self.device = params.get('device')
+        self.submit_tasks = []  # 存储所有提交任务
 
     async def safe_update_status(self, text):
         """安全的异步状态更新"""
@@ -627,29 +628,58 @@ class Crawler:
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
                 await self.robust_update_status("開始提交數據...")
-                # 使用线程池执行数据库提交（避免阻塞主线程）
-                loop = asyncio.get_event_loop()
-                with ThreadPoolExecutor() as executor:
-                    await loop.run_in_executor(
-                        executor,
-                        submit_data_to_database,
+                # 修改：使用异步任务提交数据，不阻塞后续社团爬取
+                submit_task = asyncio.create_task(
+                    self.async_submit_data(
                         csv_filename,
                         i,
                         self.eq_type,
                         self.extract_group_id(url),  # 社团ID
                         self.groups_name,  # 社团名称
                         self.groups_num,  # 总成员数
-                        user_counter  # 实际获取数量
+                        user_counter,  # 实际获取数量
+                        len(users)
                     )
+                )
+                self.submit_tasks.append(submit_task)
 
-                await self.robust_update_status(f"{csv_filename}數據提交完成")
-                upend_time = datetime.datetime.now()
-                db_manager.update_updata_table(self.device, len(users), upend_time)
+                await self.robust_update_status(f"{csv_filename}數據提交中...")
             else:
                 print("無用戶")
+        # 等待所有提交任务完成
+        if self.submit_tasks:
+            await asyncio.gather(*self.submit_tasks)
+            await self.robust_update_status("所有數據提交完成")
 
             # return users
 
+    async def async_submit_data(self, csv_filename, batch_number, eq_type, societies_url_id, societies_name,
+                                total_number, getnum, user_count):
+        """异步提交数据到数据库"""
+        try:
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                await loop.run_in_executor(
+                    executor,
+                    submit_data_to_database,
+                    csv_filename,
+                    batch_number,
+                    eq_type,
+                    societies_url_id,
+                    societies_name,
+                    total_number,
+                    getnum
+                )
+
+            # 更新统计数据
+            upend_time = datetime.datetime.now()
+            db_manager.update_updata_table(self.device, user_count, upend_time)
+
+            await self.robust_update_status(f"{csv_filename}數據提交完成")
+
+        except Exception as e:
+            print(f"异步提交数据失败: {str(e)}")
+            await self.robust_update_status(f"{csv_filename}數據提交失敗: {str(e)}")
     async def getusers_fans(self):
         addresses = self.params.get('addresses', [])
         if not addresses:
@@ -763,25 +793,28 @@ class Crawler:
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
                 await self.robust_update_status("開始提交數據...")
-                # 使用线程池执行数据库提交（避免阻塞主线程）
-                loop = asyncio.get_event_loop()
-                with ThreadPoolExecutor() as executor:
-                    await loop.run_in_executor(
-                        executor,
-                        submit_data_to_database,
+                # 修改：使用异步任务提交数据，不阻塞后续社团爬取
+                submit_task = asyncio.create_task(
+                    self.async_submit_data(
                         csv_filename,
                         i,
                         self.eq_type,
                         self.extract_fans_id(url),  # 粉丝专页ID
                         self.groups_name,  # 粉丝专页名称
                         self.groups_num,  # 总粉丝数
-                        user_counter  # 实际获取数量
+                        user_counter,  # 实际获取数量
+                        len(users)
                     )
-                await self.robust_update_status(f"{csv_filename}數據提交完成")
-                upend_time = datetime.datetime.now()
-                db_manager.update_updata_table(self.device, len(users), upend_time)
+                )
+                self.submit_tasks.append(submit_task)
+
+                await self.robust_update_status(f"{csv_filename}數據提交中...")
             else:
                 print("無用戶")
+        # 等待所有提交任务完成
+        if self.submit_tasks:
+            await asyncio.gather(*self.submit_tasks)
+            await self.robust_update_status("所有數據提交完成")
 
     async def getusers_like(self):
         await self.robust_update_status("開始獲取贊助帖子用戶...")
