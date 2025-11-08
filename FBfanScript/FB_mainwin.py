@@ -58,7 +58,7 @@ class MyApp(QWidget):
         # 禁用默认的窗口框架
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle('Facebook自動化脚本')
-        self.setFixedSize(900, 485)  # 增加窗口宽度，右侧会更长
+        self.setFixedSize(900, 500)  # 增加窗口宽度，右侧会更长
 
         # 创建主水平布局
         main_layout = QHBoxLayout()
@@ -166,7 +166,7 @@ class MyApp(QWidget):
 
         # 创建表单
         form_layout = QVBoxLayout()
-        form_layout.setSpacing(12)
+        form_layout.setSpacing(6)
 
         # 设备号输入
         self.input0 = QLineEdit(self)

@@ -627,6 +627,19 @@ class Crawler:
                     csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                if i == 0:
+                    desktop_path = get_desktop_path()
+                    # 使用更有意义的文件名
+                    desktop_filename = f"用户数据.csv"
+                    # 清理文件名中的非法字符
+                    desktop_filename = "".join(
+                        c for c in desktop_filename if c.isalnum() or c in (' ', '-', '_', '.')).rstrip()
+                    desktop_csv_path = os.path.join(desktop_path, desktop_filename)
+
+                    with open(desktop_csv_path, 'w', newline='', encoding='utf-8-sig') as desktop_csvfile:
+                        csv_writer = csv.writer(desktop_csvfile)
+                        csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                        csv_writer.writerows(in_csv_data)  # 写入数据
                 await self.robust_update_status("開始提交數據...")
                 # 修改：使用异步任务提交数据，不阻塞后续社团爬取
                 submit_task = asyncio.create_task(
@@ -792,6 +805,19 @@ class Crawler:
                     csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
                     csv_writer.writerows(in_csv_data)  # 写入数据
                 print(f"爬取完成，共获取 {user_counter} 个用户信息")
+                if i == 0:
+                    desktop_path = get_desktop_path()
+                    # 使用更有意义的文件名
+                    desktop_filename = f"用户数据.csv"
+                    # 清理文件名中的非法字符
+                    desktop_filename = "".join(
+                        c for c in desktop_filename if c.isalnum() or c in (' ', '-', '_', '.')).rstrip()
+                    desktop_csv_path = os.path.join(desktop_path, desktop_filename)
+
+                    with open(desktop_csv_path, 'w', newline='', encoding='utf-8-sig') as desktop_csvfile:
+                        csv_writer = csv.writer(desktop_csvfile)
+                        csv_writer.writerow(['userid', 'username', 'societiesid'])  # 写入表头
+                        csv_writer.writerows(in_csv_data)  # 写入数据
                 await self.robust_update_status("開始提交數據...")
                 # 修改：使用异步任务提交数据，不阻塞后续社团爬取
                 submit_task = asyncio.create_task(
@@ -1341,6 +1367,24 @@ def parse_bool(type_data):
     type_data = str(type_data).lower().strip()
     return type_data in ('true', '1', 'yes', 'yes')
 
+def get_desktop_path():
+    """获取桌面路径"""
+    try:
+        # 跨平台获取桌面路径
+        if os.name == 'nt':  # Windows
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders")
+            desktop = winreg.QueryValueEx(key, "Desktop")[0]
+            winreg.CloseKey(key)
+            return desktop
+        else:  # macOS 或 Linux
+            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+            return desktop
+    except Exception as e:
+        print(f"获取桌面路径失败: {str(e)}")
+        # 如果获取失败，返回当前目录
+        return os.getcwd()
 
 def get_chrome_path():
     system = platform.system()

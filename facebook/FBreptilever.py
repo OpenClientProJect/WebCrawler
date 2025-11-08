@@ -56,7 +56,7 @@ def create_shutdown_and_extract_script(zip_file_path):
         f'    goto CHECK\n'
         f')\n'
         f'echo 删除旧程序...\n'
-        f'del "%~dp0FBScriptver.exe"\n'  # 使用 %~dp0 获取批处理文件所在目录
+        f'del "%~dp0FBreptilever.exe"\n'  # 使用 %~dp0 获取批处理文件所在目录
         f'echo 解压新程序...\n'
         f'powershell -Command "Expand-Archive -Path \'%~dp0{zip_file_path}\' -DestinationPath \'%~dp0\' -Force"\n'
         f'echo 启动新程序...\n'
@@ -92,7 +92,7 @@ def create_registry_file():
     """
     # 使用绝对路径生成注册表文件
     regeditfile = get_absolute_path('regeditfile.reg')
-    sstap_path = get_absolute_path("FBScriptver.exe")
+    sstap_path = get_absolute_path("FBreptilever.exe")
     sstap_path_registry = sstap_path.replace("\\", "\\\\")
 
     script_content = (

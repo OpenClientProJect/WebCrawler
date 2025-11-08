@@ -14,6 +14,7 @@ class StatusWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         icon_path = resource_path("FBmie.ico")
+        self.setWindowTitle('Facebook')
         self.setWindowIcon(QIcon(icon_path))
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # 无边框
         self.setFixedSize(600, 550)  # 增加宽度以容纳左右布局
