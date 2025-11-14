@@ -5,15 +5,9 @@
 # -*- coding: utf-8 -*-
 # copy from https://github.com/aneasystone/selenium-test/blob/master/12-slider-captcha.py
 # thanks to aneasystone for his great work
-
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# copy from https://github.com/aneasystone/selenium-test/blob/master/12-slider-captcha.py
-# thanks to aneasystone for his great work
 import math
 from typing import List, Tuple
 
-import numpy as np
 import numpy as np
 
 
