@@ -1,4 +1,12 @@
-
+# 声明：本代码仅供学习和研究目的使用。使用者应遵守以下原则：
+# 1. 不得用于任何商业用途。
+# 2. 使用时应遵守目标平台的使用条款和robots.txt规则。
+# 3. 不得进行大规模爬取或对平台造成运营干扰。
+# 4. 应合理控制请求频率，避免给目标平台带来不必要的负担。
+# 5. 不得用于任何非法或不当的用途。
+#
+# 详细许可条款请参阅项目根目录下的LICENSE文件。
+# 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
 
 # -*- coding: utf-8 -*-
@@ -7,14 +15,11 @@
 # @Desc    : B站存储实现类
 from typing import Dict
 
-import aiofiles
-import config
 from base.base_crawler import AbstractStore
 from database.db_session import get_session
 from database.models import BilibiliVideoComment, BilibiliVideo, BilibiliUpInfo, BilibiliUpDynamic, BilibiliContactInfo
 from database.mongodb_store_base import MongoDBStoreBase
 from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
 from tools import utils, words
 from tools.async_file_writer import AsyncFileWriter
 from var import crawler_type_var
@@ -288,7 +293,7 @@ class BiliSqliteStoreImplement(BiliDbStoreImplement):
 
 class BiliMongoStoreImplement(AbstractStore):
     """B站MongoDB存储实现"""
-    
+
     def __init__(self):
         self.mongo_store = MongoDBStoreBase(collection_prefix="bilibili")
 
@@ -301,7 +306,7 @@ class BiliMongoStoreImplement(AbstractStore):
         video_id = content_item.get("video_id")
         if not video_id:
             return
-        
+
         await self.mongo_store.save_or_update(
             collection_suffix="contents",
             query={"video_id": video_id},
@@ -318,7 +323,7 @@ class BiliMongoStoreImplement(AbstractStore):
         comment_id = comment_item.get("comment_id")
         if not comment_id:
             return
-        
+
         await self.mongo_store.save_or_update(
             collection_suffix="comments",
             query={"comment_id": comment_id},
@@ -335,7 +340,7 @@ class BiliMongoStoreImplement(AbstractStore):
         user_id = creator_item.get("user_id")
         if not user_id:
             return
-        
+
         await self.mongo_store.save_or_update(
             collection_suffix="creators",
             query={"user_id": user_id},

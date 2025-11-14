@@ -9,9 +9,8 @@ from base.base_crawler import AbstractStore
 from database.db_session import get_session
 from database.models import XhsNote, XhsNoteComment, XhsCreator
 from database.mongodb_store_base import MongoDBStoreBase
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 from tools import utils
 from tools.async_file_writer import AsyncFileWriter
 from tools.time_util import get_current_timestamp

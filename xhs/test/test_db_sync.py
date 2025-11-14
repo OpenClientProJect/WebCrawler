@@ -8,7 +8,6 @@ import os
 import sys
 
 from sqlalchemy import create_engine, inspect as sqlalchemy_inspect
-from sqlalchemy.schema import MetaData
 
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
