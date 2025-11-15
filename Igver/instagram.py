@@ -22,7 +22,6 @@ DATABASE_CONFIG = {
 
 PROXY_CONFIG = "http://127.0.0.1:25378"
 
-
 class InstagramScraper:
     def __init__(self, cookies, log, db,progress_callback=None,getinputnum = 0):
         self.username = None
@@ -605,7 +604,7 @@ class InstagramScraper:
             if hasNextPage != False:
                 try:
                     data['variables'] = json.dumps(variables)
-                    response = requests.post(url, headers=headers, data=data, timeout=10)
+                    response = requests.get(url, headers=headers, timeout=10)
                     response.raise_for_status()
 
                     resp_headers = response.headers
@@ -672,7 +671,6 @@ class InstagramScraper:
         ds_user_id = next((cookie for cookie in self.cookies if cookie['name'] == "ds_user_id"), None)
         mid = next((cookie for cookie in self.cookies if cookie['name'] == "mid"), None)
         timestamp = "{:.3f}".format(time.time())
-
         api_url = "https://i.instagram.com/api/v1/fbsearch/account_serp/?"
 
         params = {
